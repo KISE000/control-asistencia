@@ -9,7 +9,11 @@ function inicializarApp() {
     if (window.supabase && window.supabase.createClient) {
         try {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            if (supabase) cargarHistorial();
+            if (supabase) {
+                cargarHistorial();
+                // Sincronizar empleados con la base de datos
+                sincronizarEmpleadosConSupabase();
+            }
         } catch (e) { console.error("Error Supabase:", e); }
     } else { console.warn('Librería Supabase no detectada.'); }
 
@@ -76,12 +80,31 @@ function eliminarFeriado(fecha) {
     renderFeriados(); guardarConfiguracion();
 }
 
-function agregarEmpleado() {
+async function agregarEmpleado() {
     const val = document.getElementById('nuevoEmpleado').value.trim();
     if (!val) return;
-    empleados.push({id: nextId++, nombre: val, seleccionado: true});
+    
+    // Guardar en Supabase primero
+    const empleadoDB = await guardarEmpleadoSupabase(val);
+    
+    if (empleadoDB) {
+        // Agregar localmente con el ID de Supabase
+        empleados.push({
+            id: empleadoDB.id,
+            supabaseId: empleadoDB.id,
+            nombre: val,
+            seleccionado: true
+        });
+        showToast('✅ Empleado agregado', 'success');
+    } else {
+        // Si falla, agregar solo localmente
+        empleados.push({id: nextId++, nombre: val, seleccionado: true});
+        showToast('⚠️ Empleado agregado solo localmente', 'warning');
+    }
+    
     document.getElementById('nuevoEmpleado').value = '';
-    renderEmpleados(); guardarConfiguracion();
+    renderEmpleados(); 
+    guardarConfiguracion();
 }
 
 function toggleSeleccionEmpleado(id) {
@@ -101,17 +124,33 @@ function editarNombre(id) {
     if(n) { e.nombre = n; renderEmpleados(); guardarConfiguracion(); }
 }
 
-function eliminarEmpleado(id) {
-    if(confirm('¿Eliminar empleado?')) { 
+async function eliminarEmpleado(id) {
+    if(confirm('¿Eliminar empleado?')) {
+        const empleado = empleados.find(x => x.id === id);
+        
+        // Intentar eliminar de Supabase si tiene supabaseId
+        if (empleado && empleado.supabaseId) {
+            await eliminarEmpleadoSupabase(empleado.supabaseId, empleado.nombre);
+        }
+        
+        // Eliminar localmente
         empleados = empleados.filter(x => x.id !== id); 
-        renderEmpleados(); guardarConfiguracion(); 
+        renderEmpleados(); 
+        guardarConfiguracion();
     }
 }
 
-function limpiarEmpleados() {
-    if(confirm('¿Estás seguro de borrar toda la lista?')) { 
-        empleados = []; feriados = []; 
-        renderEmpleados(); renderFeriados(); guardarConfiguracion(); 
+async function limpiarEmpleados() {
+    if(confirm('¿Estás seguro de borrar toda la lista?')) {
+        // Eliminar en Supabase
+        await limpiarEmpleadosSupabase();
+        
+        // Limpiar localmente
+        empleados = []; 
+        feriados = []; 
+        renderEmpleados(); 
+        renderFeriados(); 
+        guardarConfiguracion();
     }
 }
 
