@@ -49,17 +49,28 @@ function renderEmpleados() {
     if (!grid) return;
     if (empleados.length === 0) {
         grid.innerHTML = `
-            <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
-                <i data-lucide="users" style="width:48px; height:48px; opacity:0.2; margin-bottom:10px;"></i>
-                <p>Lista de empleados vacía</p>
+            <div class="empty-state" style="grid-column:1/-1;">
+                <div class="empty-state-icon">
+                    <i data-lucide="users" style="width:80px; height:80px;"></i>
+                </div>
+                <p style="font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Lista de empleados vacía</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Agrega tu primer empleado para comenzar</p>
             </div>`;
         actualizarEstadisticas();
         if(window.lucide) lucide.createIcons();
         return;
     }
-    grid.innerHTML = empleados.map(emp => `
-        <div class="empleado-card">
+    
+    grid.innerHTML = empleados.map(emp => {
+        // Generate avatar
+        const avatar = typeof generateAvatar === 'function' ? generateAvatar(emp.nombre) : { initials: emp.nombre.substring(0, 2).toUpperCase(), colorClass: 'avatar-color-1' };
+        
+        return `
+        <div class="empleado-card fade-in">
             <div class="card-left">
+                <div class="employee-avatar ${avatar.colorClass}">
+                    ${avatar.initials}
+                </div>
                 <input type="checkbox" class="card-checkbox" ${emp.seleccionado ? 'checked' : ''} onchange="toggleSeleccionEmpleado(${emp.id})">
                 <div class="empleado-nombre">${emp.nombre}</div>
             </div>
@@ -71,8 +82,9 @@ function renderEmpleados() {
                     <i data-lucide="trash-2" style="width:14px;"></i>
                 </button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
+    
     if(window.lucide) lucide.createIcons();
     actualizarEstadisticas();
 }

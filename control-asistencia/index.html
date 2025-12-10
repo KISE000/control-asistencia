@@ -23,6 +23,8 @@
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/enhanced.css">
+    <link rel="stylesheet" href="css/mobile.css">
     
     <style>
         /* Estilos para Modal Excel */
@@ -642,6 +644,10 @@
                 <button class="btn-ghost" onclick="importarConfiguracion()" title="Importar Backup">
                     <i data-lucide="upload-cloud" style="width: 18px;"></i>
                 </button>
+                
+                <!-- DARK MODE TOGGLE -->
+                <button class="theme-toggle" onclick="toggleDarkMode()" title="Cambiar tema" aria-label="Toggle dark mode"></button>
+                
                 <div class="separator" style="width:1px; height:24px; background:var(--border-subtle); margin:0 8px;"></div>
                 
                 <!-- MENÚ DE USUARIO -->
@@ -1028,6 +1034,7 @@
     <script src="js/pdf.js"></script>
     <script src="js/excel.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/enhanced.js"></script>
     <script src="js/app.js"></script>
     <script>
         // Inicializar iconos al cargar por si acaso
