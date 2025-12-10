@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -28,7 +28,7 @@
                 </button>
                 <div class="brand">
                     <div class="brand-icon">
-                        <i data-lucide="layout-grid"></i>
+                        <i data-lucide="layers"></i>
                     </div>
                     <div class="brand-info">
                         <h1>Control Asistencia</h1>
@@ -44,9 +44,9 @@
                 <button class="btn-ghost" onclick="importarConfiguracion()" title="Importar Backup">
                     <i data-lucide="upload-cloud" style="width: 18px;"></i>
                 </button>
-                <div class="separator" style="width:1px; height:20px; background:var(--border-subtle); margin:0 8px;"></div>
+                <div class="separator" style="width:1px; height:24px; background:var(--border-subtle); margin:0 8px;"></div>
                 <button class="btn-icon-circle" onclick="mostrarAyuda()">
-                    <i data-lucide="help-circle" style="width: 20px;"></i>
+                    <i data-lucide="help-circle" style="width: 22px;"></i>
                 </button>
             </div>
         </div>
@@ -66,13 +66,13 @@
                         <div class="logo-preview-area" id="logoPreviewContainer" onclick="document.getElementById('logoInput').click()">
                             <img id="logoPreview" src="" style="display: none;">
                             <div class="text-placeholder">
-                                <i data-lucide="upload" style="color:var(--primary); width:24px;"></i>
+                                <i data-lucide="upload-cloud" style="color:var(--primary); width:28px; margin-bottom:4px;"></i>
                                 <span>Subir Logo Empresa</span>
                             </div>
                         </div>
                         <input type="file" id="logoInput" accept="image/*" onchange="cargarLogo()" style="display: none;">
-                        <button class="btn-text text-danger" onclick="eliminarLogo()" id="btnEliminarLogo" style="display: none; margin-top:10px; width:100%; justify-content:center;">
-                            <i data-lucide="trash-2" style="width: 14px;"></i> Eliminar Logo
+                        <button class="btn-text text-danger" onclick="eliminarLogo()" id="btnEliminarLogo" style="display: none; margin-top:12px; width:100%; justify-content:center;">
+                            <i data-lucide="trash-2" style="width: 16px;"></i> Eliminar Logo
                         </button>
                     </div>
                 </div>
@@ -80,7 +80,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    <i data-lucide="calendar" class="icon-header"></i>
+                    <i data-lucide="calendar-days" class="icon-header"></i>
                     <h3>Periodo & Horario</h3>
                 </div>
                 <div class="card-body">
@@ -132,22 +132,22 @@
                     <h3>Días Inhábiles</h3>
                 </div>
                 <div class="card-body">
-                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
                         <input type="date" id="fechaFeriado" style="flex:1;">
-                        <button class="btn-text" onclick="agregarFeriado()" style="padding: 0 12px;">
+                        <button class="btn-text" onclick="agregarFeriado()" style="padding: 0 14px;">
                             <i data-lucide="plus"></i>
                         </button>
                     </div>
-                    <input type="text" id="descFeriado" placeholder="Motivo (Opcional)" style="margin-bottom: 12px;">
+                    <input type="text" id="descFeriado" placeholder="Motivo (Opcional)" style="margin-bottom: 16px;">
                     
                     <div id="listaFeriados" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                    <p id="emptyFeriadosMsg" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 10px;">No hay feriados registrados.</p>
+                    <p id="emptyFeriadosMsg" style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 10px;">No hay feriados registrados.</p>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <i data-lucide="settings" class="icon-header"></i>
+                    <i data-lucide="sliders" class="icon-header"></i>
                     <h3>Configuración PDF</h3>
                 </div>
                 <div class="card-body">
@@ -177,7 +177,7 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon-wrapper bg-blue-soft">
-                        <i data-lucide="users" style="width: 24px;"></i>
+                        <i data-lucide="users" style="width: 26px;"></i>
                     </div>
                     <div class="stat-details">
                         <span class="stat-label">Total Personal</span>
@@ -186,7 +186,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon-wrapper bg-green-soft">
-                        <i data-lucide="check-circle" style="width: 24px;"></i>
+                        <i data-lucide="check-circle-2" style="width: 26px;"></i>
                     </div>
                     <div class="stat-details">
                         <span class="stat-label">Seleccionados</span>
@@ -196,18 +196,19 @@
                 
                 <button class="btn-hero" id="btnGenerar" onclick="generarPDFs()">
                     <div class="btn-content">
+                        <i data-lucide="file-check-2"></i>
                         <span>Generar Documentos</span>
                     </div>
                     <div class="btn-shine"></div>
                 </button>
             </div>
 
-            <div id="progress" style="display: none; background: white; border: 1px solid var(--border-subtle); padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; font-weight: 500;">
+            <div id="progress" style="display: none; background: white; border: 1px solid var(--border-subtle); padding: 24px; border-radius: 12px; margin-bottom: 32px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; font-weight: 600;">
                     <span id="progressDetail">Generando PDFs...</span>
                     <span id="progressText">0%</span>
                 </div>
-                <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                <div style="height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden;">
                     <div id="progressFill" style="height: 100%; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
                 </div>
             </div>
@@ -239,7 +240,7 @@
                         <input type="text" id="nuevoEmpleado" class="modern-input" placeholder="Nombre del empleado..." onkeypress="if(event.key==='Enter') agregarEmpleado()">
                     </div>
                     <button class="btn-primary" onclick="agregarEmpleado()">
-                        <i data-lucide="plus" style="width: 18px;"></i> <span class="desktop-only">Agregar</span>
+                        <i data-lucide="plus" style="width: 20px;"></i> <span class="desktop-only">Agregar</span>
                     </button>
                 </div>
 
@@ -250,7 +251,7 @@
             <div class="card main-card" style="margin-top: 32px;">
                 <div class="card-header-flex">
                     <div class="header-title">
-                        <div class="icon-box" style="color: var(--primary); background: var(--primary-fade);">
+                        <div class="icon-box" style="color: var(--primary); background: var(--primary-light);">
                             <i data-lucide="cloud"></i>
                         </div>
                         <div>
@@ -282,14 +283,14 @@
                         </div>
                         <button class="btn-primary" id="btnSubir" onclick="subirArchivoSupabase()">
                             <span class="btn-text-content" style="display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="arrow-up-circle" style="width: 18px;"></i> Subir
+                                <i data-lucide="arrow-up-circle" style="width: 20px;"></i> Subir
                             </span>
                             <div class="btn-loader" style="display: none;"></div>
                         </button>
                     </div>
                     
                     <div id="filePreview" class="file-preview-badge" style="display: none;">
-                        <i data-lucide="paperclip" style="width: 14px;"></i> <span id="fileNameDisplay"></span>
+                        <i data-lucide="paperclip" style="width: 16px;"></i> <span id="fileNameDisplay"></span>
                         <i data-lucide="x" class="close-preview" onclick="limpiarSeleccionArchivo()"></i>
                     </div>
                 </div>
