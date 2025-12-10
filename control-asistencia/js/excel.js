@@ -290,7 +290,15 @@ async function generarExcel() {
 /**
  * Abre modal con tabla editable de datos para el periodo seleccionado (Mantenido)
  */
-function abrirEditorExcel() {
+/**
+ * Abre modal con tabla editable de datos para el periodo seleccionado
+ * Carga datos existentes de Supabase y los combina
+ */
+/**
+ * Abre modal con tabla editable de datos para el periodo seleccionado
+ * Carga datos existentes de Supabase y los combina
+ */
+async function abrirEditorExcel() {
     const seleccionados = empleados.filter(e => e.seleccionado);
     if (seleccionados.length === 0) {
         return showToast('Selecciona al menos un empleado', 'warning');
@@ -299,46 +307,154 @@ function abrirEditorExcel() {
     const mes = parseInt(document.getElementById('mes').value);
     const ano = parseInt(document.getElementById('ano').value);
     const diasMes = new Date(ano, mes, 0).getDate();
-    const horaEstandar = document.getElementById('horaEstandar').value;
-    const horaSalida = document.getElementById('horaSalida').value;
+    const horaEstandar = document.getElementById('horaEstandar').value || "09:00 a. m.";
+    const horaSalida = document.getElementById('horaSalida').value || "06:00 p. m.";
+    const periodo = `${obtenerNombreMes(mes)}_${ano}`;
 
-    // Generar datos base
-    datosAsistenciaExcel = [];
+    // Mostrar loader
+    const btn = document.querySelector('button[onclick="abrirEditorExcel()"]');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<div class="btn-loader"></div> Cargando...';
+        btn.disabled = true;
+    }
 
-    seleccionados.forEach(emp => {
-        for (let dia = 1; dia <= diasMes; dia++) {
-            const fecha = new Date(ano, mes - 1, dia);
-            const fechaStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-            const esFeriado = feriados.some(f => f.fecha === fechaStr);
-
-            let estado = 'Presente';
-            if (esFeriado) {
-                estado = 'Feriado';
-            }
-
-            // Datos default iShop (laboral todos los días, excepto feriado)
-            const horasTrabajadas = (horaSalida && horaEstandar) ? calcularDiferenciaHoras(horaEstandar, horaSalida) : 8;
-
-            datosAsistenciaExcel.push({
-                id: `${emp.id}_${fechaStr}`,
-                empleado: emp.nombre,
-                empleadoId: emp.id,
-                fecha: fechaStr,
-                dia: dia,
-                estado: estado,
-                horaEntrada: esFeriado ? '' : horaEstandar,
-                horaSalida: esFeriado ? '' : horaSalida,
-                horasTrabajadas: esFeriado ? 0 : horasTrabajadas,
-                horasExtra: 0,
-                observaciones: esFeriado ? `Feriado: ${feriados.find(f => f.fecha === fechaStr)?.descripcion || ''}` : ''
-            });
+    try {
+        // 1. Cargar datos existentes de Supabase
+        let datosExistentes = [];
+        if (typeof cargarAsistenciasDesdeSupabase === 'function') {
+            datosExistentes = await cargarAsistenciasDesdeSupabase(periodo) || [];
         }
-    });
 
-    renderTablaExcel();
-    document.getElementById('modalExcel').style.display = 'flex';
-    modoEdicionExcel = true;
-    if (window.lucide) lucide.createIcons();
+        // Generar datos base mergeando con existentes
+        datosAsistenciaExcel = [];
+
+        seleccionados.forEach(emp => {
+            for (let dia = 1; dia <= diasMes; dia++) {
+                const fecha = new Date(ano, mes - 1, dia);
+                const fechaStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                
+                // Buscar si ya existe registro para este empleado y fecha
+                const registroExistente = datosExistentes.find(d => 
+                    d.empleado_id === emp.id && d.fecha === fechaStr
+                );
+
+                const esFeriado = feriados.some(f => f.fecha === fechaStr);
+
+                let estado = 'Presente';
+                if (esFeriado) estado = 'Feriado';
+
+                // Datos default
+                let horaEntradaDef = esFeriado ? '' : horaEstandar;
+                let horaSalidaDef = esFeriado ? '' : horaSalida;
+                let horasTrabajadasDef = (horaSalida && horaEstandar) ? calcularDiferenciaHoras(horaEstandar, horaSalida) : 8;
+                let horasExtraDef = 0;
+                let obsDef = esFeriado ? `Feriado: ${feriados.find(f => f.fecha === fechaStr)?.descripcion || ''}` : '';
+                let completadoDef = false;
+
+                // Si existe registro, usar sus datos (Prioridad a lo guardado)
+                if (registroExistente) {
+                    estado = registroExistente.estado || estado;
+                    
+                    // Convertir de formato DB (HH:MM:SS) a formato App (hh:mm a. m.)
+                    horaEntradaDef = formatearHoraDesdeDB(registroExistente.hora_entrada) || '';
+                    horaSalidaDef = formatearHoraDesdeDB(registroExistente.hora_salida) || '';
+                    
+                    horasTrabajadasDef = registroExistente.horas_trabajadas || 0;
+                    horasExtraDef = registroExistente.horas_extra || 0;
+                    
+                    // Recuperar 'completado' desde observaciones (hack con tag [✓])
+                    let obsRaw = registroExistente.observaciones || '';
+                    if (obsRaw.includes('[✓]')) {
+                        completadoDef = true;
+                        obsDef = obsRaw.replace('[✓]', '').trim();
+                    } else {
+                        completadoDef = registroExistente.completado || false; // Fallback compatibilidad
+                        obsDef = obsRaw;
+                    }
+                }
+
+                datosAsistenciaExcel.push({
+                    id: `${emp.id}_${fechaStr}`,
+                    empleado: emp.nombre,
+                    empleadoId: emp.id,
+                    fecha: fechaStr,
+                    dia: dia,
+                    estado: estado,
+                    horaEntrada: horaEntradaDef,
+                    horaSalida: horaSalidaDef,
+                    horasTrabajadas: horasTrabajadasDef,
+                    horasExtra: horasExtraDef,
+                    observaciones: obsDef,
+                    completado: completadoDef
+                });
+            }
+        });
+
+        renderTablaExcel();
+        document.getElementById('modalExcel').style.display = 'flex';
+        modoEdicionExcel = true;
+        if (window.lucide) lucide.createIcons();
+
+    } catch (error) {
+        console.error('Error al abrir editor:', error);
+        showToast('Error al cargar datos previos', 'error');
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+}
+
+/**
+ * Convierte hora DB (24h) a Formato Display (12h am/pm)
+ * Ej: 14:00:00 -> 02:00 p. m.
+ */
+function formatearHoraDesdeDB(hora24) {
+    if (!hora24) return null;
+    // Si ya tiene formato am/pm, devolver tal cual (legacy o local)
+    if (hora24.includes('m.')) return hora24;
+    
+    try {
+        const [h, m] = hora24.split(':');
+        let hour = parseInt(h);
+        const ampm = hour >= 12 ? 'p. m.' : 'a. m.';
+        hour = hour % 12;
+        hour = hour ? hour : 12; // el 0 es 12
+        return `${String(hour).padStart(2, '0')}:${m} ${ampm}`;
+    } catch(e) {
+        return hora24;
+    }
+}
+
+/**
+ * Convierte hora Display (12h am/pm) a Formato DB (24h)
+ * Ej: 02:00 p. m. -> 14:00:00
+ */
+function convertirHoraAFormato24h(horaStr) {
+    if (!horaStr) return null;
+    
+    // Si ya parece formato 24h (sin letras), devolver
+    if (!horaStr.match(/[a-z]/i)) return horaStr;
+
+    try {
+        const match = horaStr.match(/(\d{1,2}):(\d{2})\s*([ap]\.?\s*m\.?)/i);
+        if (match) {
+            let h = parseInt(match[1]);
+            const m = parseInt(match[2]);
+            const ampm = match[3].toLowerCase();
+            
+            if (ampm.includes('p') && h < 12) h += 12;
+            if (ampm.includes('a') && h === 12) h = 0;
+            
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+        }
+        return null;
+    } catch(e) {
+        console.error('Error parseando hora:', horaStr, e);
+        return null;
+    }
 }
 
 /**
@@ -348,9 +464,16 @@ function generarOpcionesHora(valorSeleccionado) {
     let opciones = '';
     for (let h = 0; h < 24; h++) {
         for (let m = 0; m < 60; m += 30) {
-            const hora = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-            const selected = hora === valorSeleccionado ? 'selected' : '';
-            opciones += `<option value="${hora}" ${selected}>${hora}</option>`;
+            // Generar formato AM/PM para coincidir con los inputs
+            const hour = h;
+            const period = hour >= 12 ? 'p. m.' : 'a. m.';
+            const hour12 = hour % 12 || 12; // 0 se convierte en 12
+            
+            const horaStr = `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+            
+            // Comparación flexible para selección
+            const selected = (valorSeleccionado && valorSeleccionado === horaStr) ? 'selected' : '';
+            opciones += `<option value="${horaStr}" ${selected}>${horaStr}</option>`;
         }
     }
     return opciones;
@@ -462,6 +585,7 @@ function renderTablaExcel() {
                                 <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 90px;">Hrs Trab.</th>
                                 <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 90px;">Hrs Extra</th>
                                 <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 200px;">Observaciones</th>
+                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 80px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -470,9 +594,43 @@ function renderTablaExcel() {
         grupo.filas.forEach(fila => {
             const idx = fila.globalIdx;
             const esFeriado = fila.estado === 'Feriado';
-            const rowBg = esFeriado ? '#fff7ed' : (fila.dia % 2 === 0 ? '#fafafa' : 'white');
-            const borderLeft = esFeriado ? '4px solid #f97316' : '4px solid transparent';
             
+            // Si está completado, usar verde. Si es feriado, naranja. Si no, alternar.
+            let rowBg = esFeriado ? '#fff7ed' : (fila.dia % 2 === 0 ? '#fafafa' : 'white');
+            if (fila.completado) rowBg = '#dcfce7'; // Verde realizado
+
+            const borderLeft = esFeriado ? '4px solid #f97316' : (fila.completado ? '4px solid #22c55e' : '4px solid transparent');
+            
+            // Input readonly para TimePicker
+            // Nota: usamos un input text readonly en lugar de select para la hora, para ser consistente con el nuevo TimePicker
+            // O si queremos usar el select generado por generarOpcionesHora, hay que ver si el timepicker funciona con selects.
+            // El timepicker está diseñado para inputs.
+            
+            // SOLUCIÓN: Usar inputs readonly que abren el timepicker en lugar de selects
+            const inputEntrada = `
+                <input type="text" 
+                    value="${fila.horaEntrada}" 
+                    readonly
+                    onclick="abrirTimePickerParaTabla(${idx}, 'horaEntrada', 'Entrada ${fila.fecha}')"
+                    class="input-tabla"
+                    ${esFeriado ? 'disabled' : ''}
+                    style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; cursor: pointer; ${esFeriado ? 'background: #f1f5f9; color: #94a3b8;' : 'background: white;'}"
+                    placeholder="--:--"
+                >
+            `;
+            
+            const inputSalida = `
+                <input type="text" 
+                    value="${fila.horaSalida}" 
+                    readonly
+                    onclick="abrirTimePickerParaTabla(${idx}, 'horaSalida', 'Salida ${fila.fecha}')"
+                    class="input-tabla"
+                    ${esFeriado ? 'disabled' : ''}
+                    style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; cursor: pointer; ${esFeriado ? 'background: #f1f5f9; color: #94a3b8;' : 'background: white;'}"
+                    placeholder="--:--"
+                >
+            `;
+
             html += `
                 <tr data-idx="${idx}" style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9; border-left: ${borderLeft};">
                     <td style="padding: 10px 16px; color: #334155; font-variant-numeric: tabular-nums;">${fila.fecha.split('-').slice(1).join('/')}</td>
@@ -489,22 +647,10 @@ function renderTablaExcel() {
                         </select>
                     </td>
                     <td style="padding: 10px 16px;">
-                        <select class="input-tabla" 
-                            onchange="actualizarCeldaExcel(${idx}, 'horaEntrada', this.value)" 
-                            ${esFeriado ? 'disabled' : ''} 
-                            style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; ${esFeriado ? 'background: #f1f5f9; color: #94a3b8;' : 'background: white; cursor: pointer;'}">
-                            <option value="">--:--</option>
-                            ${generarOpcionesHora(fila.horaEntrada)}
-                        </select>
+                        ${inputEntrada}
                     </td>
                     <td style="padding: 10px 16px;">
-                        <select class="input-tabla" 
-                            onchange="actualizarCeldaExcel(${idx}, 'horaSalida', this.value)" 
-                            ${esFeriado ? 'disabled' : ''} 
-                            style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; ${esFeriado ? 'background: #f1f5f9; color: #94a3b8;' : 'background: white; cursor: pointer;'}">
-                            <option value="">--:--</option>
-                            ${generarOpcionesHora(fila.horaSalida)}
-                        </select>
+                        ${inputSalida}
                     </td>
                     <td style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.horasTrabajadas}" 
@@ -524,6 +670,26 @@ function renderTablaExcel() {
                             onchange="actualizarCeldaExcel(${idx}, 'observaciones', this.value)" 
                             placeholder="Observaciones..."
                             style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px;">
+                    </td>
+                    <td style="padding: 10px 16px; text-align: center;">
+                        <button onclick="completarDia(${idx})" 
+                            class="btn-icon-small"
+                            title="${fila.completado ? 'Marcar como pendiente' : 'Marcar como realizado'}"
+                            style="
+                                background: ${fila.completado ? '#22c55e' : '#f1f5f9'}; 
+                                color: ${fila.completado ? 'white' : '#64748b'};
+                                border: none;
+                                border-radius: 6px;
+                                width: 32px;
+                                height: 32px;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                            <i data-lucide="${fila.completado ? 'check' : 'check-circle'}" style="width: 18px; height: 18px;"></i>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -550,6 +716,36 @@ function renderTablaExcel() {
     `;
     
     container.innerHTML = html;
+}
+
+/**
+ * Función auxiliar para conectar el TimePicker con la tabla
+ * Se necesita porque el TimePicker original usa IDs, y aquí generamos dinámicamente inputs sin ID único fácil
+ * O podemos asignarles IDs dinámicos.
+ */
+function abrirTimePickerParaTabla(idx, campo, titulo) {
+    // Generar un ID temporal único si no tiene
+    const inputId = `time_input_${idx}_${campo}`;
+    
+    // Buscar el input en el DOM (usando selectores relativos al row)
+    const row = document.querySelector(`tr[data-idx="${idx}"]`);
+    if (!row) return;
+    
+    // Encontrar el input específico. Como sabemos el HTML, podemos buscar por onclick
+    // O más fácil: asignar el ID al elemento que disparó el evento (this) no funciona directo aqui
+    // Mejor: buscar el input que tiene ese evento onclick
+    const input = row.querySelector(`input[onclick*="'${campo}'"]`);
+    if (input) {
+        input.id = inputId;
+        
+        // Escuchar cambios en este input específico para actualizar el modelo de datos
+        // Usamos oncchange o un listener una sola vez
+        input.onchange = function() {
+            actualizarCeldaExcel(idx, campo, this.value);
+        };
+        
+        abrirTimePicker(inputId, titulo);
+    }
 }
 
 /**
@@ -605,7 +801,8 @@ function actualizarCeldaExcel(idx, campo, valor) {
         datosAsistenciaExcel[idx][campo] = valor;
 
         if (campo === 'horaEntrada' || campo === 'horaSalida') {
-            const horas = calcularDiferenciaHoras(datosAsistenciaExcel[idx].horaEntrada, datosAsistenciaExcel[idx].horaSalida);
+            // Calcular diferencia (soportando formato AM/PM)
+            const horas = calcularDiferenciaHorasAMPM(datosAsistenciaExcel[idx].horaEntrada, datosAsistenciaExcel[idx].horaSalida);
             datosAsistenciaExcel[idx].horasTrabajadas = horas;
 
             const rowElement = document.querySelector(`tr[data-idx="${idx}"]`);
@@ -647,15 +844,70 @@ function calcularDiferenciaHoras(hora1, hora2) {
 }
 
 /**
- * Guarda los datos editados en Supabase con validación de autenticación
+ * Calcula diferencia de horas soportando formato 12h (AM/PM) y 24h
  */
-async function guardarExcelSupabase() {
+function calcularDiferenciaHorasAMPM(hora1, hora2) {
+    if (!hora1 || !hora2) return 0;
+    
+    // Función helper para convertir a minutos desde medianoche
+    const toMinutes = (timeStr) => {
+        // Regex para AM/PM
+        const match = timeStr.match(/(\d{1,2}):(\d{2})\s*([ap]\.?\s*m\.?)/i);
+        if (match) {
+            let h = parseInt(match[1]);
+            const m = parseInt(match[2]);
+            const ampm = match[3].toLowerCase();
+            
+            if (ampm.includes('p') && h < 12) h += 12;
+            if (ampm.includes('a') && h === 12) h = 0;
+            return h * 60 + m;
+        }
+        
+        // Regex para 24h (fallback)
+        const match24 = timeStr.match(/(\d{1,2}):(\d{2})/);
+        if (match24) {
+            return parseInt(match24[1]) * 60 + parseInt(match24[2]);
+        }
+        return 0;
+    };
+
+    const min1 = toMinutes(hora1);
+    const min2 = toMinutes(hora2);
+    
+    // Si salida es menor que entrada, asumir día siguiente (add 24h)
+    let diff = min2 - min1;
+    if (diff < 0) diff += 24 * 60;
+    
+    return (diff / 60).toFixed(1);
+}
+
+// Mantener compatibilidad con la función anterior
+function calcularDiferenciaHoras(h1, h2) {
+    return calcularDiferenciaHorasAMPM(h1, h2);
+}
+
+/**
+ * Guarda el progreso actual y mantiene el modal abierto (Guardado Diario)
+ */
+async function guardarProgreso() {
+    await guardarExcelSupabase(true);
+}
+
+/**
+ * Guarda los datos editados en Supabase con validación de autenticación
+ * @param {boolean} keepOpen - Si es true, mantiene el modal abierto (guardado parcial)
+ */
+async function guardarExcelSupabase(keepOpen = false) {
     // Verificar que Supabase existe
     if (!supabase) {
         return showToast('❌ Error: Conexión a base de datos no disponible', 'error');
     }
 
-    const btn = document.getElementById('btnGuardarExcel');
+    // Identificar botón a usar para loading state
+    const btnId = keepOpen ? 'btnGuardarProgreso' : 'btnGuardarExcel';
+    const btn = document.getElementById(btnId);
+    if (!btn) return; // Seguridad
+
     const originalContent = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<div class="btn-loader"></div> Guardando...';
@@ -689,49 +941,63 @@ async function guardarExcelSupabase() {
             throw new Error('No hay datos para guardar');
         }
 
-        const registros = datosAsistenciaExcel.map(d => ({
-            empleado_id: d.empleadoId,
-            empleado_nombre: d.empleado,
-            fecha: d.fecha,
-            estado: d.estado,
-            hora_entrada: d.horaEntrada || null,
-            hora_salida: d.horaSalida || null,
-            horas_trabajadas: parseFloat(d.horasTrabajadas) || 0,
-            horas_extra: parseFloat(d.horasExtra) || 0,
-            observaciones: d.observaciones || '',
-            periodo: periodo,
-            periodo_etiqueta: periodo
-        }));
+        // Preparar registros
+        // 1. Convertir horas a formato 24h para la DB (Postgres TIME)
+        // 2. Empaquetar estado 'completado' dentro de observaciones con tag [✓] para persistencia sin cambiar schema
+        const registros = datosAsistenciaExcel.map(d => {
+            let obsFinal = d.observaciones || '';
+            // Si está completado, agregar tag si no existe
+            if (d.completado && !obsFinal.includes('[✓]')) {
+                obsFinal = `${obsFinal} [✓]`.trim();
+            } else if (!d.completado) {
+                // Limpiar tag si existe (desmarcado)
+                obsFinal = obsFinal.replace('[✓]', '').trim();
+            }
+
+            return {
+                empleado_id: d.empleadoId,
+                empleado_nombre: d.empleado,
+                fecha: d.fecha,
+                estado: d.estado,
+                hora_entrada: convertirHoraAFormato24h(d.horaEntrada),
+                hora_salida: convertirHoraAFormato24h(d.horaSalida),
+                horas_trabajadas: parseFloat(d.horasTrabajadas) || 0,
+                horas_extra: parseFloat(d.horasExtra) || 0,
+                observaciones: obsFinal,
+                periodo: periodo,
+                periodo_etiqueta: periodo
+                // Removido 'completado' directo columna para evitar error de schema
+            };
+        });
 
         console.log('📤 Intentando guardar', registros.length, 'registros...');
 
-        // Upsert (Insertar o Actualizar)
+        // Upsert
         const { data, error } = await supabase
             .from('asistencias')
             .upsert(registros, { onConflict: 'empleado_id,fecha' });
 
         if (error) {
             console.error('❌ Error de Supabase:', error);
-            throw new Error(`Error de base de datos: ${error.message} (Código: ${error.code})`);
+            throw new Error(`Error de base de datos: ${error.message}`);
         }
 
-        console.log('✅ Datos guardados correctamente:', data);
-        showToast('✅ Datos guardados exitosamente en la nube', 'success');
-        cerrarModalExcel();
+        console.log('✅ Datos guardados correctamente');
+        
+        if (keepOpen) {
+            showToast('✅ Progreso guardado correctamente', 'success');
+        } else {
+            showToast('✅ Datos guardados exitosamente en la nube', 'success');
+            cerrarModalExcel();
+        }
 
     } catch (error) {
         console.error('❌ Error guardando en Supabase:', error);
         
-        // Mensajes de error más descriptivos
         let mensajeError = 'Error al guardar en la nube';
-        
         if (error.message.includes('sesión')) {
             mensajeError = '🔒 Debes iniciar sesión para guardar';
-        } else if (error.message.includes('Permission denied') || error.message.includes('401')) {
-            mensajeError = '🔒 No tienes permisos para guardar. Verifica tu sesión.';
-        } else if (error.message.includes('violates')) {
-            mensajeError = '⚠️ Error: Datos duplicados o conflicto en la base de datos';
-        } else if (error.message) {
+        } else {
             mensajeError = error.message;
         }
         
@@ -871,4 +1137,50 @@ function obtenerNombreMes(num) {
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return meses[num - 1] || 'Mes';
+}
+
+/**
+ * Marca un día como completado (Realizado)
+ * Alterna el estado y actualiza el estilo de la fila
+ */
+function completarDia(idx) {
+    if (datosAsistenciaExcel[idx]) {
+        // Alternar estado
+        datosAsistenciaExcel[idx].completado = !datosAsistenciaExcel[idx].completado;
+        const completado = datosAsistenciaExcel[idx].completado;
+        
+        // Si se marca como completado y no tiene horas, se podría intentar poner horas default
+        // Pero por ahora solo cambiamos el estado visual
+        
+        // Actualizar fila en el DOM para feedback inmediato
+        const row = document.querySelector(`tr[data-idx="${idx}"]`);
+        if (row) {
+            // Actualizar fondo y borde
+            const esFeriado = datosAsistenciaExcel[idx].estado === 'Feriado';
+            
+            if (completado) {
+                row.style.background = '#dcfce7'; // Verde
+                row.style.borderLeft = '4px solid #22c55e';
+            } else {
+                // Restaurar color original
+                row.style.background = esFeriado ? '#fff7ed' : (datosAsistenciaExcel[idx].dia % 2 === 0 ? '#fafafa' : 'white');
+                row.style.borderLeft = esFeriado ? '4px solid #f97316' : '4px solid transparent';
+            }
+            
+            // Actualizar botón
+            const btn = row.querySelector('button[onclick^="completarDia"]');
+            if (btn) {
+                btn.style.background = completado ? '#22c55e' : '#f1f5f9';
+                btn.style.color = completado ? 'white' : '#64748b';
+                btn.title = completado ? 'Marcar como pendiente' : 'Marcar como realizado';
+                
+                // Actualizar icono (necesita reinicializar lucide o cambiar innerHTML)
+                // Es más seguro cambiar el innerHTML del SVG si no podemos llamar a lucide inmediatamente
+                 if (window.lucide) {
+                    btn.innerHTML = `<i data-lucide="${completado ? 'check' : 'check-circle'}" style="width: 18px; height: 18px;"></i>`;
+                    lucide.createIcons({ root: btn });
+                }
+            }
+        }
+    }
 }

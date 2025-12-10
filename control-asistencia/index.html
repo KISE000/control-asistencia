@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/enhanced.css">
     <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/timepicker.css">
     
     <style>
         /* Estilos para Modal Excel */
@@ -221,11 +222,15 @@
                 <button class="btn-text" onclick="cerrarModalExcel()">
                     <i data-lucide="x"></i> Cancelar
                 </button>
-                <button class="btn-primary" onclick="descargarExcelEditado()">
+                <div style="flex: 1;"></div>
+                <button class="btn-primary" onclick="descargarExcelEditado()" style="background: #10b981;">
                     <i data-lucide="download"></i> Descargar Excel
                 </button>
+                <button class="btn-primary" id="btnGuardarProgreso" onclick="guardarProgreso()" style="background: #0ea5e9;">
+                    <i data-lucide="save-all"></i> Guardar Progreso
+                </button>
                 <button class="btn-primary" id="btnGuardarExcel" onclick="guardarExcelSupabase()">
-                    <i data-lucide="save"></i> Guardar en Nube
+                    <i data-lucide="cloud-upload"></i> Guardar en Nube
                 </button>
             </div>
         </div>
@@ -429,6 +434,76 @@
                         Crear Cuenta
                     </span>
                     <div class="btn-loader" style="display: none;"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TIME PICKER -->
+    <div class="modal-excel" id="modalTimePicker" style="display: none;">
+        <div class="modal-excel-content" style="max-width: 380px; animation: fadeInUp 0.3s ease;">
+            <div class="modal-excel-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom: none;">
+                <h2 style="color: white;">
+                    <i data-lucide="clock" style="width: 28px; height: 28px;"></i>
+                    <span id="timePickerTitle">Seleccionar Hora</span>
+                </h2>
+                <button class="btn-close-modal" onclick="cerrarTimePicker()" style="color: white;">
+                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+                </button>
+            </div>
+            
+            <div class="modal-excel-body" style="padding: 32px;">
+                <div class="time-picker-container">
+                    <div class="time-selectors">
+                        <!-- Selector de Horas -->
+                        <div class="time-selector-column">
+                            <div class="time-selector-scroll" id="hourSelector">
+                                <div class="time-option" data-value="01">01</div>
+                                <div class="time-option" data-value="02">02</div>
+                                <div class="time-option" data-value="03">03</div>
+                                <div class="time-option" data-value="04">04</div>
+                                <div class="time-option" data-value="05">05</div>
+                                <div class="time-option" data-value="06">06</div>
+                                <div class="time-option" data-value="07">07</div>
+                                <div class="time-option" data-value="08">08</div>
+                                <div class="time-option active" data-value="09">09</div>
+                                <div class="time-option" data-value="10">10</div>
+                                <div class="time-option" data-value="11">11</div>
+                                <div class="time-option" data-value="12">12</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Separador -->
+                        <div class="time-separator">:</div>
+                        
+                        <!-- Selector de Minutos -->
+                        <div class="time-selector-column">
+                            <div class="time-selector-scroll" id="minuteSelector">
+                                <div class="time-option active" data-value="00">00</div>
+                                <div class="time-option" data-value="01">01</div>
+                                <div class="time-option" data-value="02">02</div>
+                                <div class="time-option" data-value="03">03</div>
+                                <div class="time-option" data-value="04">04</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selector AM/PM -->
+                        <div class="time-selector-column">
+                            <div class="time-selector-scroll" id="ampmSelector">
+                                <div class="time-option ampm active" data-value="a. m.">a. m.</div>
+                                <div class="time-option ampm" data-value="p. m.">p. m.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-excel-footer" style="padding: 20px 32px; background: var(--surface-subtle); border-top: 1px solid var(--border-subtle);">
+                <button class="btn-text" onclick="cerrarTimePicker()">
+                    <i data-lucide="x"></i> Cancelar
+                </button>
+                <button class="btn-primary" onclick="confirmarTiempo()">
+                    <i data-lucide="check"></i> Confirmar
                 </button>
             </div>
         </div>
@@ -749,11 +824,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Entrada</label>
-                            <input type="time" id="horaEstandar" value="09:00">
+                            <input type="text" id="horaEstandar" value="09:00 a. m." class="time-input-native" readonly onclick="abrirTimePicker('horaEstandar', 'Hora de Entrada')" style="cursor: pointer;">
                         </div>
                         <div class="form-group">
                             <label>Salida</label>
-                            <input type="time" id="horaSalida" value="18:00">
+                            <input type="text" id="horaSalida" value="06:00 p. m." class="time-input-native" readonly onclick="abrirTimePicker('horaSalida', 'Hora de Salida')" style="cursor: pointer;">
                         </div>
                     </div>
                 </div>
@@ -832,7 +907,7 @@
                     <button class="btn-hero" id="btnGenerar" onclick="generarPDFs()">
                         <div class="btn-content">
                             <i data-lucide="file-check-2"></i>
-                            <span>Generar Documentos</span>
+                            <span>Generar PDF</span>
                         </div>
                         <div class="btn-shine"></div>
                     </button>
@@ -1035,6 +1110,7 @@
     <script src="js/excel.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/enhanced.js"></script>
+    <script src="js/timepicker.js"></script>
     <script src="js/app.js"></script>
     <script>
         // Inicializar iconos al cargar por si acaso

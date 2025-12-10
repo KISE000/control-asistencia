@@ -1,0 +1,97 @@
+/* Estilos para el Time Picker - Control Asistencia PRO */
+
+.time-picker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    width: 100%;
+}
+
+.time-selectors {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px; /* Espacio entre columnas */
+    position: relative;
+}
+
+/* Columna individual (Horas, Minutos, AM/PM) */
+.time-selector-column {
+    width: 80px; /* Un poco más ancho para pulgares */
+    height: 240px; /* Altura aumentada */
+    overflow-y: scroll; /* Scroll vertical */
+    position: relative;
+    scroll-behavior: smooth;
+    /* Ocultar scrollbar */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+    border-radius: 8px; /* Opcional */
+}
+
+.time-selector-column::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+/* Contenedor interno del scroll */
+.time-selector-scroll {
+    /* Padding para centrar el primer y último elemento */
+    /* Altura container (240) / 2 - Altura item (48) / 2 = 120 - 24 = 96px */
+    padding: 96px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Opción de tiempo individual */
+.time-option {
+    height: 48px; /* Tweak for mobile touch */
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--text-muted, #94a3b8); /* Fallback color */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    font-weight: 500;
+}
+
+.time-option:hover {
+    color: var(--text, #1e293b);
+    background-color: var(--surface-hover, #f1f5f9);
+    border-radius: 6px;
+}
+
+/* Estado activo (seleccionado) */
+.time-option.active {
+    color: white;
+    background-color: var(--primary, #3b82f6);
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-radius: 8px;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Separador (:) */
+.time-separator {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-muted, #94a3b8);
+    align-self: center;
+    padding-bottom: 8px; /* Ajuste visual */
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.time-picker-container {
+    animation: fadeIn 0.3s ease-out;
+}

@@ -41,75 +41,193 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
     const dias = new Date(ano, mes, 0).getDate();
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     
-    let y = 12;
-    if(logoData) try { doc.addImage(logoData, 'PNG', 14, 6, 15, 15, undefined, 'FAST'); } catch(e){}
-    doc.setFontSize(14); doc.setFont(undefined, 'bold');
-    doc.text('CONTROL DE ASISTENCIA', 108, y, {align:'center'});
-    y+=8; doc.setDrawColor(150); doc.setLineWidth(0.5); doc.line(14, y, 200, y);
-    y+=3; doc.setFillColor(248, 250, 252); doc.setDrawColor(220); doc.roundedRect(14, y, 186, 14, 2, 2, 'FD');
-    
-    const infoY = y+9; doc.setFontSize(9);
-    doc.setFont(undefined, 'bold'); doc.text('EMPLEADO:', 18, infoY);
-    doc.setFont(undefined, 'normal'); doc.text(emp.nombre, 40, infoY);
-    doc.setFont(undefined, 'bold'); doc.text('PERIODO:', 100, infoY);
-    doc.setFont(undefined, 'normal'); doc.text(`${meses[mes-1].toUpperCase()} ${ano}`, 118, infoY);
-    doc.setFont(undefined, 'bold'); doc.text('HORARIO:', 155, infoY);
-    doc.setFont(undefined, 'normal'); doc.text(`${hIn} - ${hOut}`, 173, infoY);
-    y+=18;
+    // Configuración de Colores
+    const colors = {
+        primary: [44, 62, 80],
+        secondary: [52, 73, 94],
+        accent: [66, 185, 131],
+        gray: [241, 245, 249],
+        text: [60, 60, 60],
+        lightText: [100, 100, 100],
+        white: [255, 255, 255]
+    };
 
-    let cols = [{header:'Día', dataKey:'d'}, {header:'Fecha', dataKey:'f'}, {header:'Entrada', dataKey:'in'}, {header:'Salida', dataKey:'out'}, {header:'Hrs Ord.', dataKey:'tot'}];
+    let y = 10; // Margen superior reducido
+
+    // --- HEADER ---
+    if(logoData) {
+        try { 
+            doc.addImage(logoData, 'PNG', 14, 6, 15, 15, undefined, 'FAST'); 
+        } catch(e){}
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14); // Un poco más pequeño
+    doc.setTextColor(...colors.primary);
+    doc.text('CONTROL DE ASISTENCIA', 108, y+4, {align:'center'});
+    
+    // Subtítulo
+    y += 9;
+    doc.setFontSize(9); 
+    doc.setTextColor(...colors.lightText);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Reporte Mensual de Actividades', 108, y, {align:'center'});
+
+    // --- INFO BOX ---
+    y += 6;
+    doc.setDrawColor(200); 
+    doc.setLineWidth(0.1); 
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14, y, 188, 14, 2, 2, 'FD'); // Caja más compacta
+    
+    const infoY = y + 6;
+    const infoY2 = y + 11; // Lineas más pegadas
+
+    doc.setFontSize(8);
+    doc.setTextColor(...colors.secondary);
+    
+    // Fila 1: Empleado y Periodo
+    doc.setFont('helvetica', 'bold'); doc.text('EMPLEADO:', 20, infoY);
+    doc.setFont('helvetica', 'normal'); doc.text(emp.nombre, 42, infoY);
+    
+    doc.setFont('helvetica', 'bold'); doc.text('PERIODO:', 130, infoY);
+    doc.setFont('helvetica', 'normal'); doc.text(`${meses[mes-1].toUpperCase()} ${ano}`, 148, infoY);
+
+    // Fila 2: Horario
+    doc.setFont('helvetica', 'bold'); doc.text('HORARIO:', 20, infoY2);
+    doc.setFont('helvetica', 'normal'); doc.text(`${hIn} - ${hOut}`, 42, infoY2);
+
+    y += 18; // Espacio antes de tabla
+
+    // --- TABLE COLUMNS ---
+    let cols = [
+        {header:'Día', dataKey:'d'}, 
+        {header:'Fecha', dataKey:'f'}, // Ancho ajustado abajo
+        {header:'Entrada', dataKey:'in'}, 
+        {header:'Salida', dataKey:'out'}, 
+        {header:'Hrs Ord.', dataKey:'tot'}
+    ];
+    
     if(opts.incluirHorasExtras) cols.push({header:'Extra', dataKey:'ex'});
-    if(opts.incluirTipoJornada) cols.push({header:'Jornada', dataKey:'jo'});
-    if(opts.incluirMotivoAusencia) cols.push({header:'Motivo', dataKey:'mo'});
+    if(opts.incluirMotivoAusencia) cols.push({header:'Motivo / Observación', dataKey:'mo'});
     cols.push({header:'Firma', dataKey:'fi'});
 
+    // --- TABLE DATA ---
     const rows = [];
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    
     for(let d=1; d<=dias; d++) {
         const date = new Date(ano, mes-1, d);
-        const dayName = days[date.getDay()];
-        const isWeekend = (date.getDay()===0 || date.getDay()===6);
+        const dayIdx = date.getDay();
+        const dayName = days[dayIdx];
+        const isWeekend = (dayIdx===0 || dayIdx===6);
         const fStr = `${ano}-${(mes).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-        const isHoliday = feriados.find(x => x.fecha === fStr);
+        const holiday = feriados.find(x => x.fecha === fStr);
         
         rows.push({
-            d: dayName.substring(0,3).toUpperCase(), f: d, in:'', out:'', tot:'', ex:'', jo:'', 
-            mo: isHoliday ? isHoliday.descripcion : '', fi:'',
-            isGray: (isWeekend || !!isHoliday)
+            d: dayName.substring(0,3).toUpperCase(), 
+            f: d, 
+            in:'', out:'', tot:'', ex:'', 
+            mo: holiday ? holiday.descripcion : '', 
+            fi:'',
+            isGray: (isWeekend || !!holiday),
+            isSunday: dayIdx === 0
         });
     }
 
+    // --- GENERATE TABLE ---
     doc.autoTable({
-        startY: y, columns: cols, body: rows,
+        startY: y, 
+        columns: cols, 
+        body: rows,
         theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 1, lineColor: [200], lineWidth: 0.1, valign: 'middle', halign: 'center', minCellHeight: 4 },
-        headStyles: { fillColor: [50], textColor: 255, fontStyle: 'bold', fontSize: 7, cellPadding: 2 },
-        columnStyles: { d: {cellWidth:10, fontStyle:'bold'}, f: {cellWidth:8}, fi: {cellWidth:20}, mo:{halign:'left'} },
-        didParseCell: (data) => {
-            if(data.section==='body' && rows[data.row.index].isGray) data.cell.styles.fillColor = [240];
+        styles: { 
+            fontSize: 7, // Reducido para asegurar espacio
+            font: 'helvetica', 
+            cellPadding: 1, // Compacto
+            lineColor: [220], 
+            lineWidth: 0.1, 
+            valign: 'middle', 
+            halign: 'center', 
+            textColor: colors.text,
+            minCellHeight: 4.2 // Altura controlada
         },
-        margin: {bottom:10}
+        headStyles: { 
+            fillColor: colors.primary, 
+            textColor: 255, 
+            fontStyle: 'bold', 
+            fontSize: 7.5, 
+            halign: 'center',
+            cellPadding: 2
+        },
+        columnStyles: { 
+            d: {cellWidth:12, fontStyle:'bold'}, 
+            f: {cellWidth:12}, // Ancho aumentado para "Fecha"
+            in: {cellWidth:20}, 
+            out: {cellWidth:20}, 
+            tot: {cellWidth:15},
+            ex: {cellWidth:12},
+            fi: {cellWidth:25}, 
+            mo: {halign:'left', cellWidth:'auto'} 
+        },
+        didParseCell: (data) => {
+            if(data.section==='body') {
+                const row = rows[data.row.index];
+                if(row.isGray) data.cell.styles.fillColor = [248, 250, 252];
+                if(row.isSunday) data.cell.styles.fillColor = [241, 245, 249];
+            }
+        },
+        margin: { left: 14, right: 14 }
     });
 
-    let fy = doc.lastAutoTable.finalY + 4;
-    if(doc.internal.pageSize.height - fy < 35) { /* Ajuste si falta espacio */ }
+    // --- FOOTER & SIGNATURES ---
+    // Compactar el pie de página
+    let finalY = doc.lastAutoTable.finalY + 4; // Menos espacio despues de tabla
     
-    doc.setDrawColor(150); doc.setLineWidth(0.2); doc.rect(14, fy, 186, 12);
-    doc.setFontSize(7); doc.setFont(undefined, 'bold'); doc.text('RESUMEN:', 16, fy+4);
-    doc.setFont(undefined, 'normal');
-    doc.text('Días Lab: ____', 16, fy+9); doc.text('Asistencias: ____', 40, fy+9);
-    doc.text('Faltas: ____', 70, fy+9); doc.text('Retardos: ____', 95, fy+9);
-    if(opts.incluirHorasExtras) doc.text('Total Extra: ____', 125, fy+9);
+    // Resumen Box
+    doc.setDrawColor(200); 
+    doc.setLineWidth(0.1);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(14, finalY, 188, 12, 2, 2, 'S'); // Caja más baja
 
-    const firmY = fy+22;
-    doc.setDrawColor(0); doc.setLineWidth(0.5);
-    doc.line(30, firmY, 80, firmY); doc.text('FIRMA EMPLEADO', 55, firmY+3, {align:'center'});
+    doc.setFontSize(7.5); 
+    doc.setFont('helvetica', 'bold'); 
+    doc.setTextColor(...colors.primary);
+    doc.text('RESUMEN MENSUAL', 18, finalY + 4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...colors.text);
+    const lineY = finalY + 8.5;
+    
+    doc.text('Días Lab: ____', 18, lineY); 
+    doc.text('Asistencias: ____', 60, lineY);
+    doc.text('Faltas: ____', 95, lineY); 
+    doc.text('Retardos: ____', 125, lineY);
+    if(opts.incluirHorasExtras) doc.text('Total Extra: ____', 155, lineY);
+
+    // Firmas
+    const firmaY = finalY + 24; // Subimos las firmas
+    
+    doc.setDrawColor(100); 
+    doc.setLineWidth(0.3);
+    
+    // Empleado
+    doc.line(30, firmaY, 80, firmaY); 
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FIRMA DEL EMPLEADO', 55, firmaY + 3.5, {align:'center'});
+
+    // Supervisor
     if(opts.incluirAprobacion) {
-        doc.line(130, firmY, 180, firmY); doc.text('SUPERVISOR', 155, firmY+3, {align:'center'});
+        doc.line(130, firmaY, 180, firmaY); 
+        doc.text('FIRMA DEL SUPERVISOR', 155, firmaY + 3.5, {align:'center'});
     }
 
-    doc.setFontSize(6); doc.setTextColor(150);
-    doc.text(`Generado: ${new Date().toLocaleDateString()}`, 195, doc.internal.pageSize.height-5, {align:'right'});
+    // Pie de página
+    doc.setFontSize(6); 
+    doc.setTextColor(180);
+    const footerY = doc.internal.pageSize.height - 6;
+    doc.text(`Generado el ${new Date().toLocaleDateString()}`, 108, footerY, {align:'center'});
     
     const safeName = emp.nombre.replace(/[^a-z0-9]/gi, '_');
     doc.save(`Asistencia_${safeName}_${meses[mes-1]}_${ano}.pdf`);

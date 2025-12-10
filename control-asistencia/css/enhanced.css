@@ -524,3 +524,52 @@ input[type="checkbox"]:checked::after {
 .btn-primary:hover {
   transform: translateZ(0);
 }
+
+/* === TIME SELECT STYLING === */
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.time-select {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  background: white;
+  color: var(--text);
+  transition: all 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.time-select:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.time-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.select-wrapper .select-icon {
+  position: absolute;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+  pointer-events: none;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .time-select {
+  background: var(--surface);
+  color: var(--text);
+}
