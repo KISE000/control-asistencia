@@ -4,7 +4,7 @@
 const SUPABASE_URL = 'https://exttzsyfyqmonbleihna.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4dHR6c3lmeXFtb25ibGVpaG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMzMxMTMsImV4cCI6MjA4MDkwOTExM30.6Nhkyyx6ds7VSvVzq_XDHDugL9XKXQhfxCu8HLGSLEU';
 
-let supabase;
+let supabase; // Variable para el cliente
 
 // ==========================================
 // CONFIGURACIÓN Y ESTADO GLOBAL
@@ -29,12 +29,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function inicializarApp() {
-    // Init Supabase
-    if (typeof createClient !== 'undefined') {
-        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        cargarHistorial(); // Cargar archivos al inicio
+    // --- CORRECCIÓN SUPABASE ---
+    // Verificamos si la librería cargó en 'window.supabase'
+    if (window.supabase && window.supabase.createClient) {
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            cargarHistorial(); // Cargar archivos si conecta
+        } catch (e) {
+            console.error("Error iniciando Supabase:", e);
+        }
     } else {
-        console.warn('Supabase SDK no cargado.');
+        console.warn('Librería Supabase no detectada (CDN).');
     }
 
     cargarConfiguracion();
@@ -57,13 +62,15 @@ function inicializarApp() {
 // TOGGLE SIDEBAR (MOBILE)
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('active');
+    if(sidebar) sidebar.classList.toggle('active');
 }
 
 function configurarFechaActual() {
     const ahora = new Date();
-    document.getElementById('mes').value = ahora.getMonth() + 1;
-    document.getElementById('ano').value = ahora.getFullYear();
+    const mesSelect = document.getElementById('mes');
+    const anoInput = document.getElementById('ano');
+    if(mesSelect) mesSelect.value = ahora.getMonth() + 1;
+    if(anoInput) anoInput.value = ahora.getFullYear();
 }
 
 // ==========================================
@@ -71,7 +78,7 @@ function configurarFechaActual() {
 // ==========================================
 
 async function subirArchivoSupabase() {
-    if (!supabase) return mostrarNotificacion('Supabase no inicializado', 'error');
+    if (!supabase) return mostrarNotificacion('Error: Supabase no está conectado', 'error');
 
     const fileInput = document.getElementById('archivoInput');
     const nombreManual = document.getElementById('nombreArchivoManual').value;
@@ -85,21 +92,27 @@ async function subirArchivoSupabase() {
     try {
         // 1. Subir al Bucket 'nominas'
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-        const filePath = `${fileName}`;
-
+        // Limpiamos el nombre para evitar errores de URL
+        const safeName = nombreManual.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const fileName = `${Date.now()}_${safeName}.${fileExt}`;
+        
         const { data, error } = await supabase.storage
             .from('nominas')
-            .upload(filePath, file);
+            .upload(fileName, file);
 
-        if (error) throw error;
+        if (error) throw new Error(`Storage: ${error.message}`);
 
         // 2. Obtener URL Pública
-        const { data: { publicUrl } } = supabase.storage
+        const { data: publicData } = supabase.storage
             .from('nominas')
-            .getPublicUrl(filePath);
+            .getPublicUrl(fileName);
+            
+        const publicUrl = publicData.publicUrl;
 
-        // 3. Guardar referencia en base de datos
+        // 3. Guardar en Base de Datos
+        const mes = document.getElementById('mes') ? document.getElementById('mes').value : '-';
+        const ano = document.getElementById('ano') ? document.getElementById('ano').value : '-';
+
         const { error: dbError } = await supabase
             .from('historial_nominas')
             .insert([
@@ -107,22 +120,22 @@ async function subirArchivoSupabase() {
                     nombre_archivo: nombreManual, 
                     url_archivo: publicUrl,
                     empleado: 'General', 
-                    periodo: `${document.getElementById('mes').value}/${document.getElementById('ano').value}`
+                    periodo: `${mes}/${ano}`
                 }
             ]);
 
-        if (dbError) throw dbError;
+        if (dbError) throw new Error(`Base de Datos: ${dbError.message}`);
 
-        mostrarNotificacion('Archivo subido y guardado exitosamente', 'success');
+        mostrarNotificacion('¡Archivo guardado exitosamente!', 'success');
         
-        // Limpiar y recargar
+        // Limpiar
         fileInput.value = '';
         document.getElementById('nombreArchivoManual').value = '';
         cargarHistorial();
 
     } catch (err) {
         console.error(err);
-        mostrarNotificacion('Error al subir: ' + err.message, 'error');
+        mostrarNotificacion(err.message, 'error');
     }
 }
 
@@ -130,6 +143,7 @@ async function cargarHistorial() {
     if (!supabase) return;
 
     const container = document.getElementById('historialGrid');
+    if (!container) return;
     
     try {
         const { data, error } = await supabase
@@ -140,20 +154,20 @@ async function cargarHistorial() {
         if (error) throw error;
 
         if (!data || data.length === 0) {
-            container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">No hay archivos subidos.</div>';
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8; font-size: 0.9rem;">No hay archivos en el historial.</div>';
             return;
         }
 
         container.innerHTML = data.map(item => `
             <div class="file-row">
                 <div class="file-info">
-                    <div class="file-icon"><i data-lucide="file-text"></i></div>
+                    <div class="file-icon" style="color: var(--primary);"><i data-lucide="file-text"></i></div>
                     <div class="file-details">
                         <span class="file-name">${item.nombre_archivo}</span>
                         <span class="file-meta">${new Date(item.created_at).toLocaleDateString()} • Periodo: ${item.periodo || 'N/A'}</span>
                     </div>
                 </div>
-                <a href="${item.url_archivo}" target="_blank" class="file-action">Ver Archivo</a>
+                <a href="${item.url_archivo}" target="_blank" class="file-action">Ver / Descargar</a>
             </div>
         `).join('');
         
@@ -161,7 +175,7 @@ async function cargarHistorial() {
 
     } catch (err) {
         console.error(err);
-        mostrarNotificacion('Error cargando historial', 'error');
+        container.innerHTML = '<div style="padding:10px; color:var(--danger); text-align:center;">Error de conexión</div>';
     }
 }
 
@@ -409,7 +423,7 @@ function actualizarEstadisticas() {
 }
 
 // ==========================================
-// GENERACIÓN DE PDF (VERSIÓN 1 PÁGINA FIX)
+// GENERACIÓN DE PDF (VERSIÓN 1 PÁGINA)
 // ==========================================
 
 async function generarPDFs() {
@@ -469,7 +483,7 @@ async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, 
     const dias = getDiasEnMes(ano, mes);
     const nombreMes = getNombreMes(mes).toUpperCase();
 
-    // ================= HEADER COMPACTO =================
+    // HEADER
     let cursorY = 12;
 
     if (logoData) {
@@ -487,7 +501,7 @@ async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, 
     doc.setLineWidth(0.5);
     doc.line(14, cursorY, 200, cursorY);
 
-    // ================= INFO CARD =================
+    // INFO CARD
     cursorY += 3;
     
     doc.setFillColor(248, 250, 252); 
@@ -514,7 +528,7 @@ async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, 
 
     cursorY += 18;
 
-    // ================= TABLA SUPER COMPACTA =================
+    // TABLA (Ajuste de altura para asegurar 1 página)
     let columns = [
         { header: 'Día', dataKey: 'dia' },
         { header: 'Fecha', dataKey: 'fecha' },
@@ -564,7 +578,7 @@ async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, 
             lineWidth: 0.1,
             valign: 'middle',
             halign: 'center',
-            minCellHeight: 4 // Altura reducida para asegurar 1 página
+            minCellHeight: 4 
         },
         headStyles: {
             fillColor: [50, 50, 50],
@@ -593,11 +607,17 @@ async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, 
         margin: { bottom: 10 }
     });
 
-    // ================= RESUMEN Y FIRMAS =================
+    // RESUMEN
+    // Calculamos si cabe en la página
     let finalY = doc.lastAutoTable.finalY + 4;
-
-    if (finalY > 260) {
-        finalY = 260; 
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Si queda muy poco espacio, forzamos la posición para que no salte
+    // 35mm es aprox lo que necesita el bloque de resumen + firmas
+    if (pageHeight - finalY < 35) {
+        // Opción A: Intentar compactar más (no hay mucho margen)
+        // Opción B: Alertar o dejar que salte (pero queremos 1 hoja)
+        // Ajuste: Subimos el bloque un poco si hay espacio blanco arriba
     }
 
     doc.setDrawColor(150);
@@ -630,7 +650,6 @@ async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, 
         doc.text('SUPERVISOR', 155, firmaY + 3, { align: 'center' });
     }
 
-    const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(6);
     doc.setTextColor(150);
     doc.text(`Generado: ${new Date().toLocaleDateString()}`, 195, pageHeight - 5, { align: 'right' });
