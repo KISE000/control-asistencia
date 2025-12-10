@@ -4,7 +4,7 @@
 const SUPABASE_URL = 'https://exttzsyfyqmonbleihna.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4dHR6c3lmeXFtb25ibGVpaG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMzMxMTMsImV4cCI6MjA4MDkwOTExM30.6Nhkyyx6ds7VSvVzq_XDHDugL9XKXQhfxCu8HLGSLEU';
 
-let supabase; // Variable para el cliente
+let supabase;
 
 // ==========================================
 // CONFIGURACIÓN Y ESTADO GLOBAL
@@ -20,38 +20,22 @@ let feriados = [];
 let logoData = null; 
 let nextId = 4;
 
-// ==========================================
-// INICIALIZACIÓN
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', () => {
     inicializarApp();
+    setupDragAndDrop();
 });
 
 function inicializarApp() {
-    // --- CORRECCIÓN SUPABASE ---
-    // Verificamos si la librería cargó en 'window.supabase'
     if (window.supabase && window.supabase.createClient) {
         try {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            cargarHistorial(); // Cargar archivos si conecta
-        } catch (e) {
-            console.error("Error iniciando Supabase:", e);
-        }
-    } else {
-        console.warn('Librería Supabase no detectada (CDN).');
-    }
+            if (supabase) cargarHistorial();
+        } catch (e) { console.error("Error Supabase:", e); }
+    } else { console.warn('Librería Supabase no detectada.'); }
 
     cargarConfiguracion();
-    
-    if(!localStorage.getItem('controlAsistencia')) {
-        configurarFechaActual();
-    }
-    
-    if (document.getElementById('empleadosGrid')) {
-        renderEmpleados();
-    }
-    
+    if(!localStorage.getItem('controlAsistencia')) configurarFechaActual();
+    if (document.getElementById('empleadosGrid')) renderEmpleados();
     renderFeriados();
     renderLogo();
     actualizarEstadisticas();
@@ -59,91 +43,143 @@ function inicializarApp() {
     if(window.lucide) lucide.createIcons();
 }
 
-// TOGGLE SIDEBAR (MOBILE)
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    if(sidebar) sidebar.classList.toggle('active');
+// ==========================================
+// DRAG & DROP LOGIC (MEJORADA)
+// ==========================================
+function setupDragAndDrop() {
+    const dropZone = document.getElementById('dropZone');
+    const input = document.getElementById('archivoInput');
+
+    if (!dropZone) return;
+
+    dropZone.addEventListener('click', () => input.click());
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('dragover');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('dragover');
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            input.files = files;
+            mostrarNombreArchivo();
+        }
+    });
 }
 
-function configurarFechaActual() {
-    const ahora = new Date();
-    const mesSelect = document.getElementById('mes');
-    const anoInput = document.getElementById('ano');
-    if(mesSelect) mesSelect.value = ahora.getMonth() + 1;
-    if(anoInput) anoInput.value = ahora.getFullYear();
+function mostrarNombreArchivo() {
+    const input = document.getElementById('archivoInput');
+    const preview = document.getElementById('filePreview');
+    const nameDisplay = document.getElementById('fileNameDisplay');
+    
+    if (input.files.length > 0) {
+        preview.style.display = 'inline-flex';
+        nameDisplay.textContent = input.files[0].name;
+    }
+}
+
+function limpiarSeleccionArchivo() {
+    const input = document.getElementById('archivoInput');
+    input.value = '';
+    document.getElementById('filePreview').style.display = 'none';
 }
 
 // ==========================================
-// SUPABASE: SUBIDA Y LISTADO
+// SUPABASE: SUBIDA, LISTADO Y BORRADO
 // ==========================================
 
 async function subirArchivoSupabase() {
-    if (!supabase) return mostrarNotificacion('Error: Supabase no está conectado', 'error');
+    if (!supabase) return showToast('Error de conexión', 'error');
 
     const fileInput = document.getElementById('archivoInput');
     const nombreManual = document.getElementById('nombreArchivoManual').value;
+    const btn = document.getElementById('btnSubir');
+    const btnText = btn.querySelector('.btn-text-content');
+    const btnLoader = btn.querySelector('.btn-loader');
+
     const file = fileInput.files[0];
 
-    if (!file) return mostrarNotificacion('Selecciona un archivo PDF o Imagen', 'warning');
-    if (!nombreManual) return mostrarNotificacion('Escribe un nombre para el archivo', 'warning');
+    if (!file) return showToast('Por favor selecciona un archivo', 'warning');
+    if (!nombreManual) return showToast('Escribe un nombre para el archivo', 'warning');
 
-    mostrarNotificacion('Subiendo archivo...', 'info');
+    // Loading State
+    btn.disabled = true;
+    if(btnText) btnText.style.display = 'none';
+    if(btnLoader) btnLoader.style.display = 'block';
 
     try {
-        // 1. Subir al Bucket 'nominas'
         const fileExt = file.name.split('.').pop();
-        // Limpiamos el nombre para evitar errores de URL
         const safeName = nombreManual.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         const fileName = `${Date.now()}_${safeName}.${fileExt}`;
         
-        const { data, error } = await supabase.storage
-            .from('nominas')
-            .upload(fileName, file);
-
+        const { error } = await supabase.storage.from('nominas').upload(fileName, file);
         if (error) throw new Error(`Storage: ${error.message}`);
 
-        // 2. Obtener URL Pública
-        const { data: publicData } = supabase.storage
-            .from('nominas')
-            .getPublicUrl(fileName);
-            
+        const { data: publicData } = supabase.storage.from('nominas').getPublicUrl(fileName);
         const publicUrl = publicData.publicUrl;
 
-        // 3. Guardar en Base de Datos
-        const mes = document.getElementById('mes') ? document.getElementById('mes').value : '-';
-        const ano = document.getElementById('ano') ? document.getElementById('ano').value : '-';
+        const mes = document.getElementById('mes').value;
+        const ano = document.getElementById('ano').value;
 
-        const { error: dbError } = await supabase
-            .from('historial_nominas')
-            .insert([
-                { 
-                    nombre_archivo: nombreManual, 
-                    url_archivo: publicUrl,
-                    empleado: 'General', 
-                    periodo: `${mes}/${ano}`
-                }
-            ]);
+        const { error: dbError } = await supabase.from('historial_nominas').insert([{ 
+            nombre_archivo: nombreManual, 
+            url_archivo: publicUrl,
+            empleado: 'General', 
+            periodo: `${mes}/${ano}`
+        }]);
 
-        if (dbError) throw new Error(`Base de Datos: ${dbError.message}`);
+        if (dbError) throw new Error(`DB: ${dbError.message}`);
 
-        mostrarNotificacion('¡Archivo guardado exitosamente!', 'success');
+        showToast('Archivo subido exitosamente', 'success');
         
-        // Limpiar
-        fileInput.value = '';
+        // Reset UI
+        limpiarSeleccionArchivo();
         document.getElementById('nombreArchivoManual').value = '';
         cargarHistorial();
 
     } catch (err) {
         console.error(err);
-        mostrarNotificacion(err.message, 'error');
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        if(btnText) btnText.style.display = 'flex';
+        if(btnLoader) btnLoader.style.display = 'none';
     }
 }
 
 async function cargarHistorial() {
     if (!supabase) return;
-
     const container = document.getElementById('historialGrid');
-    if (!container) return;
+    
+    // Skeleton mejorado
+    container.innerHTML = `
+        <div class="skeleton-row">
+            <div class="skeleton-icon"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                <div class="skeleton-line" style="width: 40%"></div>
+                <div class="skeleton-line" style="width: 20%"></div>
+            </div>
+        </div>
+        <div class="skeleton-row">
+            <div class="skeleton-icon"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                <div class="skeleton-line" style="width: 50%"></div>
+                <div class="skeleton-line" style="width: 30%"></div>
+            </div>
+        </div>
+    `;
     
     try {
         const { data, error } = await supabase
@@ -154,52 +190,147 @@ async function cargarHistorial() {
         if (error) throw error;
 
         if (!data || data.length === 0) {
-            container.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8; font-size: 0.9rem;">No hay archivos en el historial.</div>';
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                    <i data-lucide="folder-open" style="width:48px; height:48px; opacity:0.3; margin-bottom:10px;"></i>
+                    <p>No hay archivos en la nube</p>
+                </div>`;
+            lucide.createIcons();
             return;
         }
 
-        container.innerHTML = data.map(item => `
+        container.innerHTML = data.map(item => {
+            const fecha = new Date(item.created_at);
+            const tiempo = timeAgo(fecha);
+            const pathStorage = item.url_archivo.split('/').pop();
+            
+            const isPdf = item.url_archivo.toLowerCase().includes('.pdf');
+            const iconClass = isPdf ? 'icon-pdf' : 'icon-img';
+            const iconName = isPdf ? 'file-text' : 'image';
+
+            return `
             <div class="file-row">
                 <div class="file-info">
-                    <div class="file-icon" style="color: var(--primary);"><i data-lucide="file-text"></i></div>
+                    <div class="file-icon ${iconClass}">
+                        <i data-lucide="${iconName}"></i>
+                    </div>
                     <div class="file-details">
-                        <span class="file-name">${item.nombre_archivo}</span>
-                        <span class="file-meta">${new Date(item.created_at).toLocaleDateString()} • Periodo: ${item.periodo || 'N/A'}</span>
+                        <span class="file-name" title="${item.nombre_archivo}">${item.nombre_archivo}</span>
+                        <span class="file-meta">${tiempo} • ${item.periodo}</span>
                     </div>
                 </div>
-                <a href="${item.url_archivo}" target="_blank" class="file-action">Ver / Descargar</a>
-            </div>
-        `).join('');
+                <div class="file-actions">
+                    <a href="${item.url_archivo}" target="_blank" class="btn-view">
+                        <i data-lucide="eye" style="width:14px;"></i> Ver
+                    </a>
+                    <button class="btn-trash" onclick="borrarArchivo(${item.id}, '${pathStorage}')" title="Eliminar">
+                        <i data-lucide="trash-2" style="width:16px;"></i>
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
         
-        if(window.lucide) lucide.createIcons();
+        lucide.createIcons();
 
     } catch (err) {
         console.error(err);
-        container.innerHTML = '<div style="padding:10px; color:var(--danger); text-align:center;">Error de conexión</div>';
+        showToast('Error cargando historial', 'error');
     }
 }
 
+async function borrarArchivo(id, pathStorage) {
+    if (!confirm('¿Estás seguro de eliminar este archivo permanentemente?')) return;
+
+    try {
+        const { error: stErr } = await supabase.storage.from('nominas').remove([pathStorage]);
+        if (stErr) console.warn("Storage warning:", stErr);
+
+        const { error: dbErr } = await supabase.from('historial_nominas').delete().eq('id', id);
+        if (dbErr) throw dbErr;
+
+        showToast('Archivo eliminado correctamente', 'success');
+        cargarHistorial();
+
+    } catch (err) {
+        showToast('Error al eliminar: ' + err.message, 'error');
+    }
+}
 
 // ==========================================
-// GESTIÓN DE MARCA (LOGO)
+// UTILS: TOASTS & TIME
 // ==========================================
+
+function showToast(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = 'info';
+    if(type === 'success') icon = 'check-circle';
+    if(type === 'error') icon = 'alert-circle';
+    if(type === 'warning') icon = 'alert-triangle';
+
+    toast.innerHTML = `
+        <div class="toast-icon"><i data-lucide="${icon}"></i></div>
+        <div class="toast-content">${msg}</div>
+    `;
+
+    container.appendChild(toast);
+    if(window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s forwards ease-in';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Alias
+const mostrarNotificacion = showToast; 
+
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return "Hace " + Math.floor(interval) + " años";
+    interval = seconds / 2592000;
+    if (interval > 1) return "Hace " + Math.floor(interval) + " meses";
+    interval = seconds / 86400;
+    if (interval > 1) return "Hace " + Math.floor(interval) + " días";
+    interval = seconds / 3600;
+    if (interval > 1) return "Hace " + Math.floor(interval) + " h";
+    interval = seconds / 60;
+    if (interval > 1) return "Hace " + Math.floor(interval) + " min";
+    return "Hace un momento";
+}
+
+// ==========================================
+// LÓGICA LOCAL (MANTENIDA)
+// ==========================================
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if(sidebar) sidebar.classList.toggle('active');
+}
+
+function configurarFechaActual() {
+    const ahora = new Date();
+    document.getElementById('mes').value = ahora.getMonth() + 1;
+    document.getElementById('ano').value = ahora.getFullYear();
+}
+
+function actualizarCalendarioFeriados() {
+    // Placeholder por si queremos lógica futura de limpiar feriados al cambiar año
+    guardarConfiguracion();
+}
 
 function cargarLogo() {
     const input = document.getElementById('logoInput');
     const file = input.files[0];
-
     if (file) {
-        if (file.size > 500000) {
-            mostrarNotificacion('El logo es muy pesado. Máximo 500KB', 'warning');
-            return;
-        }
-
         const reader = new FileReader();
         reader.onload = function(e) {
             logoData = e.target.result;
             renderLogo();
             guardarConfiguracion();
-            mostrarNotificacion('Logo cargado correctamente', 'success');
         };
         reader.readAsDataURL(file);
     }
@@ -211,613 +342,301 @@ function renderLogo() {
     const btnEliminar = document.getElementById('btnEliminarLogo');
     
     if (!preview) return;
-
+    
     if (logoData) {
-        preview.src = logoData;
-        preview.style.display = 'block';
-        if(container.querySelector('.text-placeholder')) {
-            container.querySelector('.text-placeholder').style.display = 'none';
-        }
-        if(btnEliminar) btnEliminar.style.display = 'inline-flex';
+        preview.src = logoData; preview.style.display = 'block';
+        if(container.querySelector('.text-placeholder')) container.querySelector('.text-placeholder').style.display = 'none';
+        if(btnEliminar) btnEliminar.style.display = 'flex'; // Changed to flex to match center style
     } else {
-        preview.src = '';
-        preview.style.display = 'none';
-        if(container.querySelector('.text-placeholder')) {
-            container.querySelector('.text-placeholder').style.display = 'flex';
-        }
+        preview.src = ''; preview.style.display = 'none';
+        if(container.querySelector('.text-placeholder')) container.querySelector('.text-placeholder').style.display = 'flex';
         if(btnEliminar) btnEliminar.style.display = 'none';
     }
 }
 
 function eliminarLogo() {
-    logoData = null;
-    const input = document.getElementById('logoInput');
-    if(input) input.value = '';
-    renderLogo();
-    guardarConfiguracion();
+    logoData = null; document.getElementById('logoInput').value = '';
+    renderLogo(); guardarConfiguracion();
 }
 
-// ==========================================
-// GESTIÓN DE FERIADOS
-// ==========================================
-
 function agregarFeriado() {
-    const fechaInput = document.getElementById('fechaFeriado');
-    const descInput = document.getElementById('descFeriado');
-    
-    const fecha = fechaInput.value;
-    const descripcion = descInput.value.trim();
-
-    if (!fecha) {
-        mostrarNotificacion('Selecciona una fecha', 'warning');
-        return;
-    }
-
-    if (feriados.some(f => f.fecha === fecha)) {
-        mostrarNotificacion('Esa fecha ya está registrada', 'warning');
-        return;
-    }
-
-    feriados.push({ fecha, descripcion: descripcion || 'Feriado' });
+    const fecha = document.getElementById('fechaFeriado').value;
+    const desc = document.getElementById('descFeriado').value.trim();
+    if (!fecha) return showToast('Selecciona fecha', 'warning');
+    if (feriados.some(f => f.fecha === fecha)) return;
+    feriados.push({ fecha, descripcion: desc || 'Feriado' });
     feriados.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
-    fechaInput.value = '';
-    descInput.value = '';
-    
-    renderFeriados();
-    guardarConfiguracion();
+    document.getElementById('fechaFeriado').value = '';
+    document.getElementById('descFeriado').value = '';
+    renderFeriados(); guardarConfiguracion();
 }
 
 function eliminarFeriado(fecha) {
     feriados = feriados.filter(f => f.fecha !== fecha);
-    renderFeriados();
-    guardarConfiguracion();
+    renderFeriados(); guardarConfiguracion();
 }
 
 function renderFeriados() {
     const lista = document.getElementById('listaFeriados');
-    const msgEmpty = document.getElementById('emptyFeriadosMsg');
-    
     if (!lista) return;
-    
-    if (feriados.length === 0) {
-        lista.innerHTML = '';
-        if(msgEmpty) msgEmpty.style.display = 'block';
-        return;
-    }
-
-    if(msgEmpty) msgEmpty.style.display = 'none';
-
-    lista.innerHTML = feriados.map(f => `
-        <div class="feriado-tag">
-            <span>${formatearFechaCorta(f.fecha)}</span>
-            ${f.descripcion}
-            <button class="btn-remove-tag" onclick="eliminarFeriado('${f.fecha}')">&times;</button>
+    lista.innerHTML = feriados.length ? feriados.map(f => `
+        <div style="background:#eff6ff; color:var(--primary); padding:4px 10px; border-radius:12px; font-size:0.8rem; display:flex; align-items:center; gap:6px; border:1px solid var(--primary-light);">
+            <span style="font-weight:600;">${formatearFechaCorta(f.fecha)}</span> ${f.descripcion}
+            <button onclick="eliminarFeriado('${f.fecha}')" style="background:none; border:none; cursor:pointer; color:var(--primary); opacity:0.6; display:flex;">
+                <i data-lucide="x" style="width:14px;"></i>
+            </button>
         </div>
-    `).join('');
+    `).join('') : '';
+    
+    const msg = document.getElementById('emptyFeriadosMsg');
+    if(msg) msg.style.display = feriados.length ? 'none' : 'block';
+    
+    if(window.lucide) lucide.createIcons();
 }
-
-function actualizarCalendarioFeriados() {
-    // Placeholder
-}
-
-// ==========================================
-// GESTIÓN DE EMPLEADOS
-// ==========================================
 
 function renderEmpleados() {
     const grid = document.getElementById('empleadosGrid');
     if (!grid) return;
-    
     if (empleados.length === 0) {
         grid.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">
-                <p>No hay empleados registrados</p>
-            </div>
-        `;
+            <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+                <i data-lucide="users" style="width:48px; height:48px; opacity:0.2; margin-bottom:10px;"></i>
+                <p>Lista de empleados vacía</p>
+            </div>`;
         actualizarEstadisticas();
+        if(window.lucide) lucide.createIcons();
         return;
     }
-    
     grid.innerHTML = empleados.map(emp => `
         <div class="empleado-card">
             <div class="card-left">
-                <input type="checkbox" 
-                       class="card-checkbox" 
-                       ${emp.seleccionado ? 'checked' : ''} 
-                       onchange="toggleSeleccionEmpleado(${emp.id})"
-                       title="Seleccionar para PDF">
+                <input type="checkbox" class="card-checkbox" ${emp.seleccionado ? 'checked' : ''} onchange="toggleSeleccionEmpleado(${emp.id})">
                 <div class="empleado-nombre">${emp.nombre}</div>
             </div>
             <div class="card-actions">
-                <button class="btn-action-mini" onclick="editarNombre(${emp.id})">
-                    <i data-lucide="pencil" style="width: 14px;"></i>
+                <button class="btn-action-mini" onclick="editarNombre(${emp.id})" title="Editar">
+                    <i data-lucide="pencil" style="width:14px;"></i>
                 </button>
-                <button class="btn-action-mini btn-delete" onclick="eliminarEmpleado(${emp.id})">
-                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                <button class="btn-action-mini btn-delete" onclick="eliminarEmpleado(${emp.id})" title="Eliminar">
+                    <i data-lucide="trash-2" style="width:14px;"></i>
                 </button>
             </div>
         </div>
     `).join('');
-    
     if(window.lucide) lucide.createIcons();
     actualizarEstadisticas();
 }
 
 function agregarEmpleado() {
-    const input = document.getElementById('nuevoEmpleado');
-    const nombre = input.value.trim();
-    
-    if (!nombre) {
-        mostrarNotificacion('Ingresa un nombre', 'warning');
-        return;
-    }
-    
-    if (empleados.some(e => e.nombre.toLowerCase() === nombre.toLowerCase())) {
-        mostrarNotificacion('El empleado ya existe', 'warning');
-        return;
-    }
-    
-    empleados.push({id: nextId++, nombre, seleccionado: true});
-    input.value = '';
-    renderEmpleados();
-    guardarConfiguracion();
-    mostrarNotificacion('Empleado agregado', 'success');
+    const val = document.getElementById('nuevoEmpleado').value.trim();
+    if (!val) return;
+    empleados.push({id: nextId++, nombre: val, seleccionado: true});
+    document.getElementById('nuevoEmpleado').value = '';
+    renderEmpleados(); guardarConfiguracion();
 }
 
 function toggleSeleccionEmpleado(id) {
-    const emp = empleados.find(e => e.id === id);
-    if (emp) {
-        emp.seleccionado = !emp.seleccionado;
-        actualizarEstadisticas();
-        guardarConfiguracion();
-    }
+    const e = empleados.find(x => x.id === id); if(e) e.seleccionado = !e.seleccionado;
+    actualizarEstadisticas(); guardarConfiguracion();
 }
 
 function toggleSeleccionarTodos() {
-    const todosSeleccionados = empleados.every(e => e.seleccionado);
-    empleados.forEach(e => e.seleccionado = !todosSeleccionados);
-    
-    const btnText = document.getElementById('txtSeleccionarTodos');
-    if(btnText) btnText.textContent = !todosSeleccionados ? 'Seleccionar Todos' : 'Deseleccionar';
-    
-    renderEmpleados();
-    guardarConfiguracion();
+    const all = empleados.every(e => e.seleccionado);
+    empleados.forEach(e => e.seleccionado = !all);
+    renderEmpleados(); guardarConfiguracion();
 }
 
 function editarNombre(id) {
-    const emp = empleados.find(e => e.id === id);
-    const nuevoNombre = prompt('Nuevo nombre:', emp.nombre);
-    if (nuevoNombre && nuevoNombre.trim()) {
-        emp.nombre = nuevoNombre.trim();
-        renderEmpleados();
-        guardarConfiguracion();
-    }
+    const e = empleados.find(x => x.id === id);
+    const n = prompt('Nuevo nombre:', e.nombre);
+    if(n) { e.nombre = n; renderEmpleados(); guardarConfiguracion(); }
 }
 
 function eliminarEmpleado(id) {
-    if (confirm('¿Eliminar empleado?')) {
-        empleados = empleados.filter(e => e.id !== id);
-        renderEmpleados();
-        guardarConfiguracion();
-        mostrarNotificacion('Eliminado', 'success');
+    if(confirm('¿Eliminar empleado?')) { 
+        empleados = empleados.filter(x => x.id !== id); 
+        renderEmpleados(); guardarConfiguracion(); 
     }
 }
 
 function limpiarEmpleados() {
-    if (empleados.length === 0) return;
-    if (confirm('¿Borrar TODOS los empleados?')) {
-        empleados = [];
-        feriados = [];
-        renderEmpleados();
-        guardarConfiguracion();
-        mostrarNotificacion('Lista limpiada', 'success');
+    if(confirm('¿Estás seguro de borrar toda la lista?')) { 
+        empleados = []; feriados = []; 
+        renderEmpleados(); renderFeriados(); guardarConfiguracion(); 
     }
 }
 
 function actualizarEstadisticas() {
-    const elTotal = document.getElementById('totalEmpleados');
-    const elSel = document.getElementById('totalSeleccionados');
-    if(elTotal) elTotal.textContent = empleados.length;
-    if(elSel) elSel.textContent = empleados.filter(e => e.seleccionado).length;
+    document.getElementById('totalEmpleados').textContent = empleados.length;
+    document.getElementById('totalSeleccionados').textContent = empleados.filter(e => e.seleccionado).length;
 }
 
-// ==========================================
-// GENERACIÓN DE PDF (VERSIÓN 1 PÁGINA)
-// ==========================================
-
+// PDF LOGIC (Igual que antes pero optimizado para no romper nada)
 async function generarPDFs() {
-    const seleccionados = empleados.filter(e => e.seleccionado);
-
-    if (seleccionados.length === 0) {
-        mostrarNotificacion('Selecciona empleados primero', 'warning');
-        return;
-    }
+    const sels = empleados.filter(e => e.seleccionado);
+    if (!sels.length) return showToast('Selecciona al menos un empleado', 'warning');
+    
+    const btn = document.getElementById('btnGenerar');
+    btn.disabled = true; 
+    document.getElementById('progress').style.display = 'block';
 
     const mes = parseInt(document.getElementById('mes').value);
     const ano = parseInt(document.getElementById('ano').value);
-    const horaEstandar = document.getElementById('horaEstandar').value;
-    const horaSalida = document.getElementById('horaSalida').value;
-    
-    const opciones = {
+    const hIn = document.getElementById('horaEstandar').value;
+    const hOut = document.getElementById('horaSalida').value;
+    const opts = {
         incluirHorasExtras: document.getElementById('incluirHorasExtras').checked,
         incluirTipoJornada: document.getElementById('incluirTipoJornada').checked,
         incluirMotivoAusencia: document.getElementById('incluirMotivoAusencia').checked,
         incluirAprobacion: document.getElementById('incluirAprobacion').checked
     };
 
-    const btn = document.getElementById('btnGenerar');
-    const progress = document.getElementById('progress');
-    const pFill = document.getElementById('progressFill');
-    const pText = document.getElementById('progressText');
-    const pDetail = document.getElementById('progressDetail');
-
-    if(btn) btn.disabled = true;
-    if(progress) progress.style.display = 'block';
-
     try {
-        for (let i = 0; i < seleccionados.length; i++) {
-            const porcentaje = Math.round(((i + 1) / seleccionados.length) * 100);
-            if(pFill) pFill.style.width = porcentaje + '%';
-            if(pText) pText.textContent = porcentaje + '%';
-            if(pDetail) pDetail.textContent = `Generando ${i + 1}/${seleccionados.length}...`;
-
-            await generarPDFEmpleado(seleccionados[i], mes, ano, horaEstandar, horaSalida, opciones);
-            await new Promise(resolve => setTimeout(resolve, 150));
+        for(let i=0; i<sels.length; i++) {
+            const p = Math.round(((i+1)/sels.length)*100);
+            document.getElementById('progressFill').style.width = p+'%';
+            document.getElementById('progressText').textContent = p+'%';
+            await generarPDFEmpleado(sels[i], mes, ano, hIn, hOut, opts);
+            await new Promise(r => setTimeout(r, 100)); // Pequeña pausa visual
         }
-        mostrarNotificacion('Proceso completado', 'success');
-    } catch (error) {
-        console.error(error);
-        mostrarNotificacion('Error: ' + error.message, 'error');
-    } finally {
-        if(btn) btn.disabled = false;
-        if(progress) progress.style.display = 'none';
-        if(pFill) pFill.style.width = '0%';
+        showToast('Documentos generados correctamente', 'success');
+    } catch(e) { console.error(e); }
+    finally { 
+        btn.disabled = false; 
+        setTimeout(() => { document.getElementById('progress').style.display = 'none'; }, 2000);
     }
 }
 
-async function generarPDFEmpleado(empleado, mes, ano, horaEstandar, horaSalida, opciones) {
+async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'letter');
+    const dias = new Date(ano, mes, 0).getDate();
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     
-    const dias = getDiasEnMes(ano, mes);
-    const nombreMes = getNombreMes(mes).toUpperCase();
-
-    // HEADER
-    let cursorY = 12;
-
-    if (logoData) {
-        try {
-            doc.addImage(logoData, 'PNG', 14, 6, 15, 15, undefined, 'FAST');
-        } catch (e) {}
-    }
-
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('CONTROL DE ASISTENCIA', 108, cursorY, { align: 'center' });
+    let y = 12;
+    if(logoData) try { doc.addImage(logoData, 'PNG', 14, 6, 15, 15, undefined, 'FAST'); } catch(e){}
+    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    doc.text('CONTROL DE ASISTENCIA', 108, y, {align:'center'});
+    y+=8; doc.setDrawColor(150); doc.setLineWidth(0.5); doc.line(14, y, 200, y);
+    y+=3; doc.setFillColor(248, 250, 252); doc.setDrawColor(220); doc.roundedRect(14, y, 186, 14, 2, 2, 'FD');
     
-    cursorY += 8;
-    doc.setDrawColor(150);
-    doc.setLineWidth(0.5);
-    doc.line(14, cursorY, 200, cursorY);
+    const infoY = y+9; doc.setFontSize(9);
+    doc.setFont(undefined, 'bold'); doc.text('EMPLEADO:', 18, infoY);
+    doc.setFont(undefined, 'normal'); doc.text(emp.nombre, 40, infoY);
+    doc.setFont(undefined, 'bold'); doc.text('PERIODO:', 100, infoY);
+    doc.setFont(undefined, 'normal'); doc.text(`${meses[mes-1].toUpperCase()} ${ano}`, 118, infoY);
+    doc.setFont(undefined, 'bold'); doc.text('HORARIO:', 155, infoY);
+    doc.setFont(undefined, 'normal'); doc.text(`${hIn} - ${hOut}`, 173, infoY);
+    y+=18;
 
-    // INFO CARD
-    cursorY += 3;
-    
-    doc.setFillColor(248, 250, 252); 
-    doc.setDrawColor(220);
-    doc.roundedRect(14, cursorY, 186, 14, 2, 2, 'FD');
-
-    const infoY = cursorY + 9;
-    doc.setFontSize(9);
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('EMPLEADO:', 18, infoY);
-    doc.setFont(undefined, 'normal');
-    doc.text(empleado.nombre, 40, infoY);
-
-    doc.setFont(undefined, 'bold');
-    doc.text('PERIODO:', 100, infoY);
-    doc.setFont(undefined, 'normal');
-    doc.text(`${nombreMes} ${ano}`, 118, infoY);
-
-    doc.setFont(undefined, 'bold');
-    doc.text('HORARIO:', 155, infoY);
-    doc.setFont(undefined, 'normal');
-    doc.text(`${horaEstandar} - ${horaSalida}`, 173, infoY);
-
-    cursorY += 18;
-
-    // TABLA (Ajuste de altura para asegurar 1 página)
-    let columns = [
-        { header: 'Día', dataKey: 'dia' },
-        { header: 'Fecha', dataKey: 'fecha' },
-        { header: 'Entrada', dataKey: 'entrada' },
-        { header: 'Salida', dataKey: 'salida' },
-        { header: 'Hrs Ord.', dataKey: 'total' }
-    ];
-    
-    if (opciones.incluirHorasExtras) columns.push({ header: 'Extra', dataKey: 'extra' });
-    if (opciones.incluirTipoJornada) columns.push({ header: 'Jornada', dataKey: 'jornada' });
-    if (opciones.incluirMotivoAusencia) columns.push({ header: 'Motivo / Obs.', dataKey: 'motivo' });
-    
-    columns.push({ header: 'Firma', dataKey: 'firma' });
+    let cols = [{header:'Día', dataKey:'d'}, {header:'Fecha', dataKey:'f'}, {header:'Entrada', dataKey:'in'}, {header:'Salida', dataKey:'out'}, {header:'Hrs Ord.', dataKey:'tot'}];
+    if(opts.incluirHorasExtras) cols.push({header:'Extra', dataKey:'ex'});
+    if(opts.incluirTipoJornada) cols.push({header:'Jornada', dataKey:'jo'});
+    if(opts.incluirMotivoAusencia) cols.push({header:'Motivo', dataKey:'mo'});
+    cols.push({header:'Firma', dataKey:'fi'});
 
     const rows = [];
-    for (let d = 1; d <= dias; d++) {
-        const fechaStr = `${ano}-${mes.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-        const diaSemana = getDiaSemana(ano, mes, d);
-        const esFinSemana = esFinDeSemana(ano, mes, d);
-        const feriadoEncontrado = feriados.find(f => f.fecha === fechaStr);
-        const esDiaFeriado = !!feriadoEncontrado;
-
-        rows.push({ 
-            dia: diaSemana.substring(0, 3).toUpperCase(),
-            fecha: `${d}`,
-            entrada: '',
-            salida: '',
-            total: '',
-            extra: '',
-            jornada: '',
-            motivo: esDiaFeriado ? feriadoEncontrado.descripcion : '',
-            firma: '',
-            esFinSemana,
-            esFeriado: esDiaFeriado
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    for(let d=1; d<=dias; d++) {
+        const date = new Date(ano, mes-1, d);
+        const dayName = days[date.getDay()];
+        const isWeekend = (date.getDay()===0 || date.getDay()===6);
+        const fStr = `${ano}-${(mes).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+        const isHoliday = feriados.find(x => x.fecha === fStr);
+        
+        rows.push({
+            d: dayName.substring(0,3).toUpperCase(), f: d, in:'', out:'', tot:'', ex:'', jo:'', 
+            mo: isHoliday ? isHoliday.descripcion : '', fi:'',
+            isGray: (isWeekend || !!isHoliday)
         });
     }
 
     doc.autoTable({
-        startY: cursorY,
-        columns: columns,
-        body: rows,
+        startY: y, columns: cols, body: rows,
         theme: 'grid',
-        styles: {
-            fontSize: 7,
-            cellPadding: 1,
-            lineColor: [200, 200, 200],
-            lineWidth: 0.1,
-            valign: 'middle',
-            halign: 'center',
-            minCellHeight: 4 
+        styles: { fontSize: 7, cellPadding: 1, lineColor: [200], lineWidth: 0.1, valign: 'middle', halign: 'center', minCellHeight: 4 },
+        headStyles: { fillColor: [50], textColor: 255, fontStyle: 'bold', fontSize: 7, cellPadding: 2 },
+        columnStyles: { d: {cellWidth:10, fontStyle:'bold'}, f: {cellWidth:8}, fi: {cellWidth:20}, mo:{halign:'left'} },
+        didParseCell: (data) => {
+            if(data.section==='body' && rows[data.row.index].isGray) data.cell.styles.fillColor = [240];
         },
-        headStyles: {
-            fillColor: [50, 50, 50],
-            textColor: 255,
-            fontStyle: 'bold',
-            fontSize: 7,
-            cellPadding: 2
-        },
-        columnStyles: {
-            dia: { cellWidth: 10, fontStyle: 'bold' },
-            fecha: { cellWidth: 8 },
-            firma: { cellWidth: 20 },
-            motivo: { halign: 'left' }
-        },
-        didParseCell: function(data) {
-            if (data.section === 'body') {
-                const row = rows[data.row.index];
-                if (row.esFinSemana || row.esFeriado) {
-                    data.cell.styles.fillColor = [240, 240, 240];
-                    if (row.esFeriado) {
-                        data.cell.styles.fillColor = [220, 220, 220];
-                    }
-                }
-            }
-        },
-        margin: { bottom: 10 }
+        margin: {bottom:10}
     });
 
-    // RESUMEN
-    // Calculamos si cabe en la página
-    let finalY = doc.lastAutoTable.finalY + 4;
-    const pageHeight = doc.internal.pageSize.height;
+    let fy = doc.lastAutoTable.finalY + 4;
+    if(doc.internal.pageSize.height - fy < 35) { /* Ajuste si falta espacio */ }
     
-    // Si queda muy poco espacio, forzamos la posición para que no salte
-    // 35mm es aprox lo que necesita el bloque de resumen + firmas
-    if (pageHeight - finalY < 35) {
-        // Opción A: Intentar compactar más (no hay mucho margen)
-        // Opción B: Alertar o dejar que salte (pero queremos 1 hoja)
-        // Ajuste: Subimos el bloque un poco si hay espacio blanco arriba
-    }
-
-    doc.setDrawColor(150);
-    doc.setLineWidth(0.2);
-    doc.rect(14, finalY, 186, 12); 
-
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'bold');
-    doc.text('RESUMEN:', 16, finalY + 4);
-    
+    doc.setDrawColor(150); doc.setLineWidth(0.2); doc.rect(14, fy, 186, 12);
+    doc.setFontSize(7); doc.setFont(undefined, 'bold'); doc.text('RESUMEN:', 16, fy+4);
     doc.setFont(undefined, 'normal');
-    doc.text('Días Lab: ____', 16, finalY + 9);
-    doc.text('Asistencias: ____', 40, finalY + 9);
-    doc.text('Faltas: ____', 70, finalY + 9);
-    doc.text('Retardos: ____', 95, finalY + 9);
-    
-    if (opciones.incluirHorasExtras) {
-        doc.text('Total Extra: ____', 125, finalY + 9);
+    doc.text('Días Lab: ____', 16, fy+9); doc.text('Asistencias: ____', 40, fy+9);
+    doc.text('Faltas: ____', 70, fy+9); doc.text('Retardos: ____', 95, fy+9);
+    if(opts.incluirHorasExtras) doc.text('Total Extra: ____', 125, fy+9);
+
+    const firmY = fy+22;
+    doc.setDrawColor(0); doc.setLineWidth(0.5);
+    doc.line(30, firmY, 80, firmY); doc.text('FIRMA EMPLEADO', 55, firmY+3, {align:'center'});
+    if(opts.incluirAprobacion) {
+        doc.line(130, firmY, 180, firmY); doc.text('SUPERVISOR', 155, firmY+3, {align:'center'});
     }
 
-    const firmaY = finalY + 22; 
-    doc.setDrawColor(0);
-    doc.setLineWidth(0.5);
+    doc.setFontSize(6); doc.setTextColor(150);
+    doc.text(`Generado: ${new Date().toLocaleDateString()}`, 195, doc.internal.pageSize.height-5, {align:'right'});
     
-    doc.line(30, firmaY, 80, firmaY);
-    doc.text('FIRMA EMPLEADO', 55, firmaY + 3, { align: 'center' });
-
-    if (opciones.incluirAprobacion) {
-        doc.line(130, firmaY, 180, firmaY);
-        doc.text('SUPERVISOR', 155, firmaY + 3, { align: 'center' });
-    }
-
-    doc.setFontSize(6);
-    doc.setTextColor(150);
-    doc.text(`Generado: ${new Date().toLocaleDateString()}`, 195, pageHeight - 5, { align: 'right' });
-
-    const nombreLimpio = empleado.nombre.replace(/[^a-z0-9]/gi, '_');
-    doc.save(`Asistencia_${nombreLimpio}_${nombreMes}_${ano}.pdf`);
+    const safeName = emp.nombre.replace(/[^a-z0-9]/gi, '_');
+    doc.save(`Asistencia_${safeName}_${meses[mes-1]}_${ano}.pdf`);
 }
 
-// ==========================================
-// UTILIDADES
-// ==========================================
-
-function formatearFechaCorta(fechaStr) {
-    const partes = fechaStr.split('-');
-    return `${partes[2]}/${partes[1]}`;
-}
-
-function getDiasEnMes(ano, mes) {
-    return new Date(ano, mes, 0).getDate();
-}
-
-function getDiaSemana(ano, mes, dia) {
-    const fecha = new Date(ano, mes - 1, dia);
-    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    return dias[fecha.getDay()];
-}
-
-function esFinDeSemana(ano, mes, dia) {
-    const fecha = new Date(ano, mes - 1, dia);
-    const diaSemana = fecha.getDay();
-    return diaSemana === 0 || diaSemana === 6;
-}
-
-function getNombreMes(mes) {
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    return meses[mes - 1];
-}
-
-// ==========================================
-// PERSISTENCIA
-// ==========================================
-
+function formatearFechaCorta(s) { const p=s.split('-'); return `${p[2]}/${p[1]}`; }
 function guardarConfiguracion() {
-    const config = {
-        empleados,
-        feriados,
-        logoData,
-        nextId,
-        mes: document.getElementById('mes') ? document.getElementById('mes').value : 12,
-        ano: document.getElementById('ano') ? document.getElementById('ano').value : 2025,
-        horaEstandar: document.getElementById('horaEstandar') ? document.getElementById('horaEstandar').value : '09:00',
-        horaSalida: document.getElementById('horaSalida') ? document.getElementById('horaSalida').value : '18:00',
+    const c = { empleados, feriados, logoData, nextId, 
+        mes: document.getElementById('mes').value, ano: document.getElementById('ano').value,
+        horaEstandar: document.getElementById('horaEstandar').value, horaSalida: document.getElementById('horaSalida').value,
         opciones: {
-            incluirHorasExtras: document.getElementById('incluirHorasExtras') ? document.getElementById('incluirHorasExtras').checked : true,
-            incluirTipoJornada: document.getElementById('incluirTipoJornada') ? document.getElementById('incluirTipoJornada').checked : true,
-            incluirMotivoAusencia: document.getElementById('incluirMotivoAusencia') ? document.getElementById('incluirMotivoAusencia').checked : true,
-            incluirAprobacion: document.getElementById('incluirAprobacion') ? document.getElementById('incluirAprobacion').checked : true
+            incluirHorasExtras: document.getElementById('incluirHorasExtras').checked,
+            incluirTipoJornada: document.getElementById('incluirTipoJornada').checked,
+            incluirMotivoAusencia: document.getElementById('incluirMotivoAusencia').checked,
+            incluirAprobacion: document.getElementById('incluirAprobacion').checked
         }
     };
-    
-    try {
-        localStorage.setItem('controlAsistencia', JSON.stringify(config));
-    } catch (e) {
-        if (e.name === 'QuotaExceededError') {
-            mostrarNotificacion('Memoria llena (Logo pesado)', 'error');
-        }
-    }
+    try { localStorage.setItem('controlAsistencia', JSON.stringify(c)); } catch(e) { showToast('Memoria llena (Logo)', 'error'); }
 }
-
 function cargarConfiguracion() {
-    const configRaw = localStorage.getItem('controlAsistencia');
-    if (!configRaw) return;
-
+    const raw = localStorage.getItem('controlAsistencia'); if(!raw) return;
     try {
-        const data = JSON.parse(configRaw);
-        empleados = data.empleados || [];
-        empleados.forEach(e => { if(typeof e.seleccionado === 'undefined') e.seleccionado = true; });
-        
-        feriados = data.feriados || [];
-        logoData = data.logoData || null;
-        nextId = data.nextId || 4;
-
-        if (document.getElementById('mes') && data.mes) document.getElementById('mes').value = data.mes;
-        if (document.getElementById('ano') && data.ano) document.getElementById('ano').value = data.ano;
-        if (document.getElementById('horaEstandar') && data.horaEstandar) document.getElementById('horaEstandar').value = data.horaEstandar;
-        if (document.getElementById('horaSalida') && data.horaSalida) document.getElementById('horaSalida').value = data.horaSalida;
-        
-        if (data.opciones && document.getElementById('incluirHorasExtras')) {
-            document.getElementById('incluirHorasExtras').checked = data.opciones.incluirHorasExtras;
-            document.getElementById('incluirTipoJornada').checked = data.opciones.incluirTipoJornada;
-            document.getElementById('incluirMotivoAusencia').checked = data.opciones.incluirMotivoAusencia;
-            document.getElementById('incluirAprobacion').checked = data.opciones.incluirAprobacion;
+        const d = JSON.parse(raw);
+        empleados = d.empleados || []; feriados = d.feriados || []; logoData = d.logoData || null; nextId = d.nextId || 4;
+        if(d.mes) document.getElementById('mes').value = d.mes;
+        if(d.ano) document.getElementById('ano').value = d.ano;
+        if(d.horaEstandar) document.getElementById('horaEstandar').value = d.horaEstandar;
+        if(d.horaSalida) document.getElementById('horaSalida').value = d.horaSalida;
+        if(d.opciones) {
+            document.getElementById('incluirHorasExtras').checked = d.opciones.incluirHorasExtras;
+            document.getElementById('incluirTipoJornada').checked = d.opciones.incluirTipoJornada;
+            document.getElementById('incluirMotivoAusencia').checked = d.opciones.incluirMotivoAusencia;
+            document.getElementById('incluirAprobacion').checked = d.opciones.incluirAprobacion;
         }
-    } catch (e) { console.error('Error config:', e); }
+    } catch(e) { console.error(e); }
 }
-
 function guardarConfiguracionAuto() {
-    document.querySelectorAll('input, select').forEach(element => {
-        if(element.id !== 'nuevoEmpleado' && element.id !== 'fechaFeriado' && element.id !== 'descFeriado') {
-            element.addEventListener('change', guardarConfiguracion);
-        }
+    document.querySelectorAll('input, select').forEach(e => {
+        if(!['nuevoEmpleado','fechaFeriado','descFeriado','archivoInput','nombreArchivoManual'].includes(e.id)) e.addEventListener('change', guardarConfiguracion);
     });
 }
-
 function exportarConfiguracion() {
-    const config = localStorage.getItem('controlAsistencia');
-    const blob = new Blob([config], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `asistencia_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    mostrarNotificacion('Backup descargado', 'success');
+    const b = new Blob([localStorage.getItem('controlAsistencia')], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = `backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
+    showToast('Backup descargado', 'success');
 }
-
-function importarConfiguracion() {
-    const input = document.getElementById('importFile');
-    if(input) input.click();
-}
-
+function importarConfiguracion() { document.getElementById('importFile').click(); }
 function procesarImportacion() {
-    const file = document.getElementById('importFile').files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            JSON.parse(e.target.result);
-            localStorage.setItem('controlAsistencia', e.target.result);
-            location.reload();
-        } catch (error) {
-            mostrarNotificacion('Archivo inválido', 'error');
-        }
+    const f = document.getElementById('importFile').files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+        try { JSON.parse(e.target.result); localStorage.setItem('controlAsistencia', e.target.result); location.reload(); }
+        catch(err) { showToast('Archivo inválido', 'error'); }
     };
-    reader.readAsText(file);
+    r.readAsText(f);
 }
-
-// ==========================================
-// UI & NOTIFICACIONES
-// ==========================================
-
-function mostrarNotificacion(mensaje, tipo = 'info') {
-    const colores = { success: '#10b981', warning: '#f59e0b', error: '#ef4444', info: '#3b82f6' };
-    
-    const notif = document.createElement('div');
-    notif.style.cssText = `
-        position: fixed; top: 20px; right: 20px;
-        background: ${colores[tipo]}; color: white;
-        padding: 12px 20px; border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000; font-family: sans-serif; font-size: 14px;
-        animation: fadeIn 0.3s ease;
-    `;
-    notif.textContent = mensaje;
-    document.body.appendChild(notif);
-    
-    setTimeout(() => {
-        notif.style.opacity = '0';
-        setTimeout(() => notif.remove(), 300);
-    }, 3000);
-}
-
-function mostrarAyuda() {
-    alert('Asistencia v4.0 (Compacta)\n- Generación optimizada para 1 sola hoja.\n- Gestiona feriados y empleados desde el dashboard.');
-}
-
-// Estilos dinámicos para notificaciones
-const style = document.createElement('style');
-style.textContent = `@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }`;
-document.head.appendChild(style);
+function mostrarAyuda() { alert('Control de Asistencia PRO v2.2\n\nArrastra archivos para subirlos a la nube.'); }

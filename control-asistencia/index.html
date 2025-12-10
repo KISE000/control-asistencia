@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Asistencia | Dashboard</title>
+    <title>Control de Asistencia PRO | Dashboard</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/lucide@latest"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <link rel="stylesheet" href="css/styles.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     
+    <div id="toast-container" class="toast-container"></div>
+
     <nav class="topbar">
         <div class="topbar-inner">
             <div class="brand-area">
@@ -27,25 +28,25 @@
                 </button>
                 <div class="brand">
                     <div class="brand-icon">
-                        <i data-lucide="layout-dashboard"></i>
+                        <i data-lucide="layout-grid"></i>
                     </div>
                     <div class="brand-info">
-                        <h1>Control de Asistencia</h1>
+                        <h1>Control Asistencia</h1>
                     </div>
-                    <span class="badge">PRO</span>
+                    <span class="badge">PRO v2.2</span>
                 </div>
             </div>
 
             <div class="topbar-actions">
-                <button class="btn-ghost" onclick="exportarConfiguracion()">
-                    <i data-lucide="download-cloud"></i> <span class="desktop-only">Exportar</span>
+                <button class="btn-ghost" onclick="exportarConfiguracion()" title="Exportar Backup">
+                    <i data-lucide="download-cloud" style="width: 18px;"></i> <span class="desktop-only">Backup</span>
                 </button>
-                <button class="btn-ghost" onclick="importarConfiguracion()">
-                    <i data-lucide="upload-cloud"></i> <span class="desktop-only">Importar</span>
+                <button class="btn-ghost" onclick="importarConfiguracion()" title="Importar Backup">
+                    <i data-lucide="upload-cloud" style="width: 18px;"></i>
                 </button>
-                <div class="separator"></div>
+                <div class="separator" style="width:1px; height:20px; background:var(--border-subtle); margin:0 8px;"></div>
                 <button class="btn-icon-circle" onclick="mostrarAyuda()">
-                    <i data-lucide="help-circle"></i>
+                    <i data-lucide="help-circle" style="width: 20px;"></i>
                 </button>
             </div>
         </div>
@@ -57,21 +58,21 @@
             
             <div class="card">
                 <div class="card-header">
-                    <i data-lucide="building-2" class="icon-header"></i>
-                    <h3>Identidad Corporativa</h3>
+                    <i data-lucide="image" class="icon-header"></i>
+                    <h3>Identidad</h3>
                 </div>
                 <div class="card-body">
                     <div class="logo-uploader">
                         <div class="logo-preview-area" id="logoPreviewContainer" onclick="document.getElementById('logoInput').click()">
                             <img id="logoPreview" src="" style="display: none;">
                             <div class="text-placeholder">
-                                <div class="icon-bg"><i data-lucide="image-plus"></i></div>
-                                <span>Subir Logotipo</span>
+                                <i data-lucide="upload" style="color:var(--primary); width:24px;"></i>
+                                <span>Subir Logo Empresa</span>
                             </div>
                         </div>
                         <input type="file" id="logoInput" accept="image/*" onchange="cargarLogo()" style="display: none;">
-                        <button class="btn-xs btn-danger" onclick="eliminarLogo()" id="btnEliminarLogo" style="display: none; margin-top:10px;">
-                            <i data-lucide="trash-2" style="width: 14px;"></i> Eliminar
+                        <button class="btn-text text-danger" onclick="eliminarLogo()" id="btnEliminarLogo" style="display: none; margin-top:10px; width:100%; justify-content:center;">
+                            <i data-lucide="trash-2" style="width: 14px;"></i> Eliminar Logo
                         </button>
                     </div>
                 </div>
@@ -79,8 +80,8 @@
 
             <div class="card">
                 <div class="card-header">
-                    <i data-lucide="calendar-range" class="icon-header"></i>
-                    <h3>Periodo y Horarios</h3>
+                    <i data-lucide="calendar" class="icon-header"></i>
+                    <h3>Periodo & Horario</h3>
                 </div>
                 <div class="card-body">
                     <div class="form-row">
@@ -106,7 +107,7 @@
                         </div>
                         <div class="form-group">
                             <label>Año</label>
-                            <input type="number" id="ano" value="2025" min="2020" max="2050" onchange="actualizarCalendarioFeriados()">
+                            <input type="number" id="ano" value="2025" min="2020" max="2050">
                         </div>
                     </div>
                     
@@ -131,49 +132,40 @@
                     <h3>Días Inhábiles</h3>
                 </div>
                 <div class="card-body">
-                    <div class="input-group-append">
-                        <input type="date" id="fechaFeriado" class="input-sm">
-                        <input type="text" id="descFeriado" placeholder="Motivo" class="flex-grow">
-                        <button class="btn-icon-only" onclick="agregarFeriado()"><i data-lucide="plus"></i></button>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="date" id="fechaFeriado" style="flex:1;">
+                        <button class="btn-text" onclick="agregarFeriado()" style="padding: 0 12px;">
+                            <i data-lucide="plus"></i>
+                        </button>
                     </div>
-                    <div id="listaFeriados" class="tags-container"></div>
-                    <p class="helper-text" id="emptyFeriadosMsg" style="display:none; font-size:0.8rem; color:#94a3b8; margin-top:8px;">Sin fechas.</p>
+                    <input type="text" id="descFeriado" placeholder="Motivo (Opcional)" style="margin-bottom: 12px;">
+                    
+                    <div id="listaFeriados" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                    <p id="emptyFeriadosMsg" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 10px;">No hay feriados registrados.</p>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <i data-lucide="settings-2" class="icon-header"></i>
-                    <h3>Opciones PDF</h3>
+                    <i data-lucide="settings" class="icon-header"></i>
+                    <h3>Configuración PDF</h3>
                 </div>
-                <div class="card-body options-list">
+                <div class="card-body">
                     <label class="switch-control">
                         <span class="label-text">Horas Extras</span>
-                        <div class="switch-wrapper">
-                            <input type="checkbox" id="incluirHorasExtras" checked>
-                            <div class="slider"></div>
-                        </div>
+                        <div class="switch-wrapper"><input type="checkbox" id="incluirHorasExtras" checked><div class="slider"></div></div>
                     </label>
                     <label class="switch-control">
                         <span class="label-text">Tipo de Jornada</span>
-                        <div class="switch-wrapper">
-                            <input type="checkbox" id="incluirTipoJornada" checked>
-                            <div class="slider"></div>
-                        </div>
+                        <div class="switch-wrapper"><input type="checkbox" id="incluirTipoJornada" checked><div class="slider"></div></div>
                     </label>
                     <label class="switch-control">
                         <span class="label-text">Motivo Ausencia</span>
-                        <div class="switch-wrapper">
-                            <input type="checkbox" id="incluirMotivoAusencia" checked>
-                            <div class="slider"></div>
-                        </div>
+                        <div class="switch-wrapper"><input type="checkbox" id="incluirMotivoAusencia" checked><div class="slider"></div></div>
                     </label>
                     <label class="switch-control">
                         <span class="label-text">Firma Supervisor</span>
-                        <div class="switch-wrapper">
-                            <input type="checkbox" id="incluirAprobacion" checked>
-                            <div class="slider"></div>
-                        </div>
+                        <div class="switch-wrapper"><input type="checkbox" id="incluirAprobacion" checked><div class="slider"></div></div>
                     </label>
                 </div>
             </div>
@@ -185,39 +177,38 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon-wrapper bg-blue-soft">
-                        <i data-lucide="users" class="text-blue"></i>
+                        <i data-lucide="users" style="width: 24px;"></i>
                     </div>
                     <div class="stat-details">
-                        <span class="stat-label">Total Empleados</span>
+                        <span class="stat-label">Total Personal</span>
                         <span class="stat-number" id="totalEmpleados">0</span>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon-wrapper bg-green-soft">
-                        <i data-lucide="printer" class="text-green"></i>
+                        <i data-lucide="check-circle" style="width: 24px;"></i>
                     </div>
                     <div class="stat-details">
-                        <span class="stat-label">Listos para Imprimir</span>
+                        <span class="stat-label">Seleccionados</span>
                         <span class="stat-number" id="totalSeleccionados">0</span>
                     </div>
                 </div>
                 
                 <button class="btn-hero" id="btnGenerar" onclick="generarPDFs()">
-                    <span class="btn-content">
-                        <i data-lucide="file-down"></i>
+                    <div class="btn-content">
                         <span>Generar Documentos</span>
-                    </span>
+                    </div>
                     <div class="btn-shine"></div>
                 </button>
             </div>
 
-            <div class="progress-section" id="progress">
-                <div class="progress-header">
-                    <span id="progressDetail">Procesando...</span>
+            <div id="progress" style="display: none; background: white; border: 1px solid var(--border-subtle); padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; font-weight: 500;">
+                    <span id="progressDetail">Generando PDFs...</span>
                     <span id="progressText">0%</span>
                 </div>
-                <div class="progress-track">
-                    <div class="progress-bar" id="progressFill"></div>
+                <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div id="progressFill" style="height: 100%; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
                 </div>
             </div>
 
@@ -228,16 +219,16 @@
                             <i data-lucide="users-2"></i>
                         </div>
                         <div>
-                            <h3>Nómina de Personal</h3>
-                            <p class="subtitle">Gestiona y selecciona a los empleados</p>
+                            <h3>Nómina de Empleados</h3>
+                            <p class="subtitle">Administra tu lista de personal activo</p>
                         </div>
                     </div>
                     <div class="header-actions">
                         <button class="btn-text" onclick="toggleSeleccionarTodos()">
-                            <i data-lucide="check-square"></i> <span id="txtSeleccionarTodos" class="desktop-only">Seleccionar Todos</span>
+                            <i data-lucide="check-square" style="width: 16px;"></i> <span class="desktop-only">Todos</span>
                         </button>
                         <button class="btn-text text-danger" onclick="limpiarEmpleados()">
-                            <i data-lucide="trash-2"></i> <span class="desktop-only">Limpiar</span>
+                            <i data-lucide="trash-2" style="width: 16px;"></i> <span class="desktop-only">Vaciar</span>
                         </button>
                     </div>
                 </div>
@@ -245,15 +236,10 @@
                 <div class="search-bar-area">
                     <div class="input-with-icon">
                         <i data-lucide="search" class="search-icon"></i>
-                        <input 
-                            type="text" 
-                            id="nuevoEmpleado" 
-                            class="modern-input"
-                            placeholder="Nombre del empleado..." 
-                            onkeypress="if(event.key==='Enter') agregarEmpleado()">
+                        <input type="text" id="nuevoEmpleado" class="modern-input" placeholder="Nombre del empleado..." onkeypress="if(event.key==='Enter') agregarEmpleado()">
                     </div>
                     <button class="btn-primary" onclick="agregarEmpleado()">
-                        <i data-lucide="plus"></i> <span class="desktop-only">Agregar</span>
+                        <i data-lucide="plus" style="width: 18px;"></i> <span class="desktop-only">Agregar</span>
                     </button>
                 </div>
 
@@ -261,39 +247,55 @@
                     </div>
             </div>
 
-            <div class="card main-card" style="margin-top: 30px; min-height: auto;">
+            <div class="card main-card" style="margin-top: 32px;">
                 <div class="card-header-flex">
                     <div class="header-title">
-                        <div class="icon-box" style="color: var(--primary);">
-                            <i data-lucide="cloud-upload"></i>
+                        <div class="icon-box" style="color: var(--primary); background: var(--primary-fade);">
+                            <i data-lucide="cloud"></i>
                         </div>
                         <div>
-                            <h3>Repositorio de Archivos</h3>
-                            <p class="subtitle">Sube y consulta las hojas firmadas (Supabase)</p>
+                            <h3>Repositorio Digital</h3>
+                            <p class="subtitle">Sube y gestiona escaneos de asistencia</p>
                         </div>
                     </div>
                     <div class="header-actions">
                         <button class="btn-text" onclick="cargarHistorial()">
-                            <i data-lucide="refresh-cw"></i> <span class="desktop-only">Actualizar</span>
+                            <i data-lucide="refresh-cw" style="width: 16px;"></i> <span class="desktop-only">Refrescar</span>
                         </button>
                     </div>
                 </div>
                 
-                <div class="search-bar-area" style="background: white; flex-wrap: wrap;">
-                    <div class="input-group-append" style="margin-bottom: 0; flex-grow: 1; min-width: 250px;">
-                        <input type="text" id="nombreArchivoManual" placeholder="Nombre (ej: Melissa Dic 2025)" class="modern-input" style="height: 44px;">
-                        <input type="file" id="archivoInput" class="modern-input" style="height: 44px; padding-top: 8px;">
+                <div class="upload-container">
+                    <div class="drop-zone" id="dropZone">
+                        <i data-lucide="upload-cloud" class="drop-icon"></i>
+                        <div class="drop-content">
+                            <p class="drop-title">Arrastra tus archivos aquí</p>
+                            <p class="drop-subtitle">Soporta imágenes y PDF hasta 10MB</p>
+                        </div>
+                        <input type="file" id="archivoInput" class="file-input-hidden" onchange="mostrarNombreArchivo()">
                     </div>
-                    <button class="btn-primary" onclick="subirArchivoSupabase()">
-                        <i data-lucide="upload"></i> Subir Escaneo
-                    </button>
+                    
+                    <div class="upload-actions">
+                        <div class="input-with-icon" style="flex: 1;">
+                            <i data-lucide="file-text" class="search-icon"></i>
+                            <input type="text" id="nombreArchivoManual" placeholder="Nombre para guardar (Ej: Nomina Enero 2025)" class="modern-input">
+                        </div>
+                        <button class="btn-primary" id="btnSubir" onclick="subirArchivoSupabase()">
+                            <span class="btn-text-content" style="display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="arrow-up-circle" style="width: 18px;"></i> Subir
+                            </span>
+                            <div class="btn-loader" style="display: none;"></div>
+                        </button>
+                    </div>
+                    
+                    <div id="filePreview" class="file-preview-badge" style="display: none;">
+                        <i data-lucide="paperclip" style="width: 14px;"></i> <span id="fileNameDisplay"></span>
+                        <i data-lucide="x" class="close-preview" onclick="limpiarSeleccionArchivo()"></i>
+                    </div>
                 </div>
 
                 <div class="historial-container" id="historialGrid">
-                    <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-                        Cargando historial...
                     </div>
-                </div>
             </div>
 
         </main>
@@ -303,6 +305,7 @@
 
     <script src="js/app.js"></script>
     <script>
+        // Inicializar iconos al cargar
         lucide.createIcons();
     </script>
 </body>
