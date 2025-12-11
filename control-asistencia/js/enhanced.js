@@ -15,14 +15,19 @@ function toggleDarkMode() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
+    // Add transitioning class for smooth animation
+    document.body.classList.add('theme-transitioning');
+    
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     
-    // Animate the transition
-    document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+    // Remove transitioning class after animation
     setTimeout(() => {
-        document.body.style.transition = '';
-    }, 300);
+        document.body.classList.remove('theme-transitioning');
+    }, 400);
+    
+    // Log for feedback
+    console.log(`🌓 Theme changed to: ${newTheme}`);
 }
 
 /**

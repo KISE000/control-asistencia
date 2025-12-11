@@ -1,4 +1,4 @@
-/* VARIABLES & DESIGN SYSTEM (GLASS THEME) */
+/* VARIABLES & DESIGN SYSTEM - PROFESSIONAL DARK MODE */
 :root {
     /* Primary Colors */
     --primary: #6366f1;       
@@ -14,35 +14,94 @@
     --danger-bg: rgba(239, 68, 68, 0.1);
     --warning: #f59e0b;
     
-    /* Backgrounds & Glass */
+    /* Light Mode Colors */
     --bg-body: #f8fafc;
     --bg-input: rgba(255, 255, 255, 0.5);
-    
-    /* Glass Effect Variables */
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(255, 255, 255, 0.8);
     --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     --blur-strength: 16px;
-    
+    --border: #e2e8f0;
     --border-subtle: rgba(226, 232, 240, 0.6); 
     --text-main: #1e293b;
     --text-secondary: #475569;
     --text-muted: #94a3b8;
+    --text: #1e293b;
+    --surface-hover: #f1f5f9;
+    --surface-subtle: #f8fafc;
     
+    /* Design Tokens */
     --radius-sm: 0.5rem;
     --radius-md: 0.75rem;
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
-    
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Transition for theme change */
+    --theme-transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* DARK MODE - APPLE STYLE */
+[data-theme="dark"] {
+    --primary: #0a84ff; /* Apple System Blue Dark Mode */
+    --primary-hover: #0077ed;
+    --primary-light: rgba(10, 132, 255, 0.15);
+    --primary-glow: rgba(10, 132, 255, 0.3);
+    
+    --success: #30d158; /* Apple Success */
+    --success-bg: rgba(48, 209, 88, 0.15);
+    --danger: #ff453a; /* Apple Danger */
+    --danger-hover: #ff3b30;
+    --danger-bg: rgba(255, 69, 58, 0.15);
+    --warning: #ffd60a;
+    
+    /* Apple Dark Palette */
+    --bg-body: #000000; /* Pure Black for OLED feel */
+    --bg-input: #1c1c1e; /* Secondary System Background */
+    
+    /* Surfaces */
+    --glass-bg: rgba(28, 28, 30, 0.65); /* Apple-like glass */
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    --blur-strength: 40px; /* Stronger blur for Apple vibe */
+    
+    /* Borders & Surfaces */
+    --border: #38383a;
+    --border-subtle: rgba(84, 84, 88, 0.4); /* Separator Color */
+    --surface-hover: rgba(44, 44, 46, 0.8);
+    --surface-subtle: #1c1c1e;
+    
+    /* Text - SF Pro Colors */
+    --text-main: #ffffff;
+    --text-secondary: #ebebf5; /* Secondary Label Color */
+    --text-muted: #8e8e93; /* Tertiary Label Color */
+    --text: #ffffff;
+}
+
+/* Apply transitions to theme-changing elements */
+body,
+.card,
+.topbar,
+.btn-primary,
+.btn-hero,
+.btn-text,
+.btn-ghost,
+.modal-excel-content,
+input,
+select,
+textarea {
+    transition: var(--theme-transition);
 }
 
 /* RESET & BASE */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: var(--font-sans);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     color: var(--text-main);
     min-height: 100vh;
     display: flex;
@@ -50,11 +109,14 @@ body {
     font-size: 0.925rem;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    background: 
-        radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
-        linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+    background: #f5f5f7; /* Apple Light Gray */
+}
+
+/* Dark mode body background */
+[data-theme="dark"] body {
+    background: #000000;
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(20, 20, 20, 1) 0%, transparent 100%);
     background-attachment: fixed;
 }
 
@@ -66,3 +128,6 @@ a { text-decoration: none; color: inherit; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #475569; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #64748b; }

@@ -1,1107 +1,1730 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Control de Asistencia PRO | Dashboard</title>
-    
+
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%233b82f6' width='100' height='100' rx='20'/%3E%3Cpath fill='white' d='M30 50 L45 65 L70 35' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-    
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%233b82f6' width='100' height='100' rx='20'/%3E%3Cpath fill='white' d='M30 50 L45 65 L70 35' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- SheetJS para Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <link rel="stylesheet" href="css/theme.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/enhanced.css">
-    <link rel="stylesheet" href="css/mobile.css">
-    <link rel="stylesheet" href="css/timepicker.css">
-    
+
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/enhanced.css" />
+    <link rel="stylesheet" href="css/mobile.css" />
+    <link rel="stylesheet" href="css/timepicker.css" />
+
     <style>
-        /* Estilos para Modal Excel */
-        .modal-excel {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        
-        .modal-excel-content {
-            background: white;
-            border-radius: 16px;
-            width: 95%;
-            max-width: 1400px;
-            max-height: 90vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        
-        .modal-excel-header {
-            padding: 24px 32px;
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-excel-header h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .modal-excel-body {
-            padding: 24px 32px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        
-        .modal-excel-footer {
-            padding: 20px 32px;
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-        
-        .tabla-excel {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.875rem;
-        }
-        
-        .tabla-excel thead {
-            background: var(--primary-light);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        
-        .tabla-excel th {
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
-            white-space: nowrap;
-        }
-        
-        .tabla-excel td {
-            padding: 8px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        
-        .tabla-excel tbody tr:hover {
-            background: var(--surface-hover);
-        }
-        
-        .input-tabla {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.875rem;
-            font-family: inherit;
-        }
-        
-        .input-tabla:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
-        
-        .input-tabla:disabled {
-            background: var(--surface-subtle);
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        .btn-close-modal {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 8px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        
-        .btn-close-modal:hover {
-            background: var(--surface-hover);
-            color: var(--text);
-        }
-        
+      /* Estilos para Modal Excel */
+      .modal-excel {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-excel-content {
+        background: white;
+        border-radius: 16px;
+        width: 95%;
+        max-width: 1400px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      }
+
+      .modal-excel-header {
+        padding: 24px 32px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-excel-header h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .modal-excel-body {
+        padding: 24px 32px;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .modal-excel-footer {
+        padding: 20px 32px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .tabla-excel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      .tabla-excel thead {
+        background: var(--primary-light);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .tabla-excel th {
+        padding: 12px 8px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--primary);
+        border-bottom: 2px solid var(--primary);
+        white-space: nowrap;
+      }
+
+      .tabla-excel td {
+        padding: 8px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .tabla-excel tbody tr:hover {
+        background: var(--surface-hover);
+      }
+
+      .input-tabla {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-family: inherit;
+      }
+
+      .input-tabla:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+
+      .input-tabla:disabled {
+        background: var(--surface-subtle);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .btn-close-modal {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 8px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+
+      .btn-close-modal:hover {
+        background: var(--surface-hover);
+        color: var(--text);
+      }
+
+      .btn-menu-excel {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .btn-menu-excel .btn-hero {
+        grid-column: 1;
+      }
+
+      .btn-menu-excel .btn-secondary {
+        background: white;
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-menu-excel .btn-secondary:hover {
+        background: var(--surface-hover);
+        border-color: var(--primary);
+      }
+
+      @media (max-width: 768px) {
         .btn-menu-excel {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 12px;
-            align-items: stretch;
+          grid-template-columns: 1fr;
         }
-        
+
         .btn-menu-excel .btn-hero {
-            grid-column: 1;
+          grid-column: 1;
         }
-        
-        .btn-menu-excel .btn-secondary {
-            background: white;
-            color: var(--text);
-            border: 1px solid var(--border);
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-menu-excel .btn-secondary:hover {
-            background: var(--surface-hover);
-            border-color: var(--primary);
-        }
-        
-        @media (max-width: 768px) {
-            .btn-menu-excel {
-                grid-template-columns: 1fr;
-            }
-            
-            .btn-menu-excel .btn-hero {
-                grid-column: 1;
-            }
-        }
+      }
     </style>
-</head>
-<body>
-    
+  </head>
+  <body>
     <div id="toast-container" class="toast-container"></div>
 
     <!-- MODAL EXCEL -->
     <div class="modal-excel" id="modalExcel">
-        <div class="modal-excel-content">
-            <div class="modal-excel-header">
-                <h2>
-                    <i data-lucide="table" style="width: 28px; height: 28px; color: var(--primary);"></i>
-                    Editor de Asistencia - Excel
-                </h2>
-                <button class="btn-close-modal" onclick="cerrarModalExcel()">
-                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
-                </button>
-            </div>
-            
-            <div class="modal-excel-body">
-                <div id="tablaExcelContainer"></div>
-            </div>
-            
-            <div class="modal-excel-footer">
-                <button class="btn-text" onclick="cerrarModalExcel()">
-                    <i data-lucide="x"></i> Cancelar
-                </button>
-                <div style="flex: 1;"></div>
-                <button class="btn-primary" onclick="descargarExcelEditado()" style="background: #10b981;">
-                    <i data-lucide="download"></i> Descargar Excel
-                </button>
-                <button class="btn-primary" id="btnGuardarProgreso" onclick="guardarProgreso()" style="background: #0ea5e9;">
-                    <i data-lucide="save-all"></i> Guardar Progreso
-                </button>
-                <button class="btn-primary" id="btnGuardarExcel" onclick="guardarExcelSupabase()">
-                    <i data-lucide="cloud-upload"></i> Guardar en Nube
-                </button>
-            </div>
+      <div class="modal-excel-content">
+        <div class="modal-excel-header">
+          <h2>
+            <i
+              data-lucide="table"
+              style="width: 28px; height: 28px; color: var(--primary)"
+            ></i>
+            Editor de Asistencia - Excel
+          </h2>
+          <button class="btn-close-modal" onclick="cerrarModalExcel()">
+            <i data-lucide="x" style="width: 24px; height: 24px"></i>
+          </button>
         </div>
+
+        <div class="modal-excel-body">
+          <div id="tablaExcelContainer"></div>
+        </div>
+
+        <div class="modal-excel-footer">
+          <button class="btn-text" onclick="cerrarModalExcel()">
+            <i data-lucide="x"></i> Cancelar
+          </button>
+          <div style="flex: 1"></div>
+          <button
+            class="btn-primary"
+            onclick="descargarExcelEditado()"
+            style="background: #10b981"
+          >
+            <i data-lucide="download"></i> Descargar Excel
+          </button>
+          <button
+            class="btn-primary"
+            id="btnGuardarProgreso"
+            onclick="guardarProgreso()"
+            style="background: #0ea5e9"
+          >
+            <i data-lucide="save-all"></i> Guardar Progreso
+          </button>
+          <button
+            class="btn-primary"
+            id="btnGuardarExcel"
+            onclick="guardarExcelSupabase()"
+          >
+            <i data-lucide="cloud-upload"></i> Guardar en Nube
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL LOGIN / REGISTRO -->
-    <div class="modal-excel" id="modalLogin" style="display: none;">
-        <div class="modal-excel-content" style="max-width: 480px; animation: fadeInUp 0.3s ease;">
-            <div class="modal-excel-header" style="background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%); color: white; border-bottom: none;">
-                <h2 style="color: white;">
-                    <i data-lucide="lock-keyhole" style="width: 28px; height: 28px;"></i>
-                    <span id="authModalTitle">Iniciar Sesión</span>
-                </h2>
-            </div>
-            
-            <!-- TABS: Login / Registro -->
-            <div style="display: flex; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                <button 
-                    id="tabLogin" 
-                    class="auth-tab active"
-                    onclick="cambiarTabAuth('login')"
-                    style="flex: 1; padding: 14px; border: none; background: white; font-weight: 600; color: var(--primary); border-bottom: 3px solid var(--primary); cursor: pointer; transition: all 0.2s;">
-                    Iniciar Sesión
-                </button>
-                <button 
-                    id="tabRegistro"
-                    class="auth-tab"
-                    onclick="cambiarTabAuth('registro')"
-                    style="flex: 1; padding: 14px; border: none; background: transparent; font-weight: 500; color: var(--text-muted); border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;">
-                    Crear Cuenta
-                </button>
-            </div>
-            
-            <div class="modal-excel-body" style="padding: 32px;">
-                <!-- FORMULARIO DE LOGIN -->
-                <div id="formLogin" style="display: block;">
-                    <p style="color: var(--text-muted); margin-bottom: 24px; text-align: center; font-size: 0.95rem;">
-                        Ingresa tus credenciales para acceder
-                    </p>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 20px;">
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
-                                <i data-lucide="mail" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-                                Email
-                            </label>
-                            <input 
-                                type="email" 
-                                id="loginEmail" 
-                                placeholder="tu@email.com"
-                                autocomplete="email"
-                                style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s;"
-                                onkeypress="if(event.key==='Enter') loginSupabase()"
-                            >
-                        </div>
-                        
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
-                                <i data-lucide="key" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-                                Contraseña
-                            </label>
-                            <div style="position: relative;">
-                                <input 
-                                    type="password" 
-                                    id="loginPassword" 
-                                    placeholder="••••••••"
-                                    autocomplete="current-password"
-                                    style="width: 100%; padding: 12px 16px; padding-right: 45px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s;"
-                                    onkeypress="if(event.key==='Enter') loginSupabase()"
-                                >
-                                <button 
-                                    type="button"
-                                    onclick="togglePasswordVisibility('loginPassword', 'togglePasswordIcon')"
-                                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px;"
-                                >
-                                    <i data-lucide="eye" id="togglePasswordIcon" style="width: 20px; height: 20px;"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Opciones adicionales -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; color: var(--text);">
-                                <input 
-                                    type="checkbox" 
-                                    id="recordarSesion" 
-                                    style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);"
-                                >
-                                <span>Recordar sesión</span>
-                            </label>
-                            <a 
-                                href="#" 
-                                onclick="event.preventDefault(); mostrarRecuperarPassword();" 
-                                style="font-size: 0.875rem; color: var(--primary); text-decoration: none; font-weight: 500; transition: opacity 0.2s;"
-                                onmouseover="this.style.opacity='0.7'"
-                                onmouseout="this.style.opacity='1'"
-                            >
-                                ¿Olvidaste tu contraseña?
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- FORMULARIO DE REGISTRO -->
-                <div id="formRegistro" style="display: none;">
-                    <p style="color: var(--text-muted); margin-bottom: 24px; text-align: center; font-size: 0.95rem;">
-                        Crea tu cuenta para comenzar
-                    </p>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 20px;">
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
-                                <i data-lucide="user" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-                                Nombre Completo
-                            </label>
-                            <input 
-                                type="text" 
-                                id="registroNombre" 
-                                placeholder="Juan Pérez"
-                                autocomplete="name"
-                                style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s;"
-                            >
-                        </div>
-                        
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
-                                <i data-lucide="mail" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-                                Email
-                            </label>
-                            <input 
-                                type="email" 
-                                id="registroEmail" 
-                                placeholder="tu@email.com"
-                                autocomplete="email"
-                                style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s;"
-                            >
-                        </div>
-                        
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
-                                <i data-lucide="key" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-                                Contraseña
-                            </label>
-                            <div style="position: relative;">
-                                <input 
-                                    type="password" 
-                                    id="registroPassword" 
-                                    placeholder="Mínimo 6 caracteres"
-                                    autocomplete="new-password"
-                                    style="width: 100%; padding: 12px 16px; padding-right: 45px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s;"
-                                    onkeypress="if(event.key==='Enter') registrarSupabase()"
-                                >
-                                <button 
-                                    type="button"
-                                    onclick="togglePasswordVisibility('registroPassword', 'togglePasswordIcon2')"
-                                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px;"
-                                >
-                                    <i data-lucide="eye" id="togglePasswordIcon2" style="width: 20px; height: 20px;"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
-                                <i data-lucide="shield-check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-                                Confirmar Contraseña
-                            </label>
-                            <input 
-                                type="password" 
-                                id="registroPasswordConfirm" 
-                                placeholder="Repite tu contraseña"
-                                autocomplete="new-password"
-                                style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s;"
-                                onkeypress="if(event.key==='Enter') registrarSupabase()"
-                            >
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- MENSAJE DE ERROR -->
-                <div id="loginError" style="display: none; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #dc2626; font-size: 0.875rem; margin-top: 20px; display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="alert-circle" style="width: 18px; height: 18px;"></i>
-                    <span id="loginErrorText"></span>
-                </div>
-            </div>
-            
-            <div class="modal-excel-footer" style="padding: 20px 32px; background: var(--surface-subtle); border-top: 1px solid var(--border-subtle); flex-direction: column; gap: 12px;">
-                <!-- BOTÓN LOGIN -->
-                <button class="btn-primary" id="btnLogin" onclick="loginSupabase()" style="width: 100%; justify-content: center; padding: 14px; font-size: 1rem; display: block;">
-                    <span class="btn-text-content" style="display: flex; align-items: center; gap: 10px;">
-                        <i data-lucide="log-in" style="width: 20px;"></i>
-                        Iniciar Sesión
-                    </span>
-                    <div class="btn-loader" style="display: none;"></div>
-                </button>
-                
-                <!-- BOTÓN REGISTRO -->
-                <button class="btn-primary" id="btnRegistro" onclick="registrarSupabase()" style="width: 100%; justify-content: center; padding: 14px; font-size: 1rem; display: none;">
-                    <span class="btn-text-content" style="display: flex; align-items: center; gap: 10px;">
-                        <i data-lucide="user-plus" style="width: 20px;"></i>
-                        Crear Cuenta
-                    </span>
-                    <div class="btn-loader" style="display: none;"></div>
-                </button>
-            </div>
+    <div class="modal-excel" id="modalLogin" style="display: none">
+      <div
+        class="modal-excel-content"
+        style="max-width: 480px; animation: fadeInUp 0.3s ease"
+      >
+        <div
+          class="modal-excel-header"
+          style="
+            background: linear-gradient(
+              135deg,
+              var(--primary) 0%,
+              #2563eb 100%
+            );
+            color: white;
+            border-bottom: none;
+          "
+        >
+          <h2 style="color: white">
+            <i data-lucide="lock-keyhole" style="width: 28px; height: 28px"></i>
+            <span id="authModalTitle">Iniciar Sesión</span>
+          </h2>
         </div>
+
+        <!-- TABS: Login / Registro -->
+        <div
+          style="
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+          "
+        >
+          <button
+            id="tabLogin"
+            class="auth-tab active"
+            onclick="cambiarTabAuth('login')"
+            style="
+              flex: 1;
+              padding: 14px;
+              border: none;
+              background: white;
+              font-weight: 600;
+              color: var(--primary);
+              border-bottom: 3px solid var(--primary);
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+          >
+            Iniciar Sesión
+          </button>
+          <button
+            id="tabRegistro"
+            class="auth-tab"
+            onclick="cambiarTabAuth('registro')"
+            style="
+              flex: 1;
+              padding: 14px;
+              border: none;
+              background: transparent;
+              font-weight: 500;
+              color: var(--text-muted);
+              border-bottom: 3px solid transparent;
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+          >
+            Crear Cuenta
+          </button>
+        </div>
+
+        <div class="modal-excel-body" style="padding: 32px">
+          <!-- FORMULARIO DE LOGIN -->
+          <div id="formLogin" style="display: block">
+            <p
+              style="
+                color: var(--text-muted);
+                margin-bottom: 24px;
+                text-align: center;
+                font-size: 0.95rem;
+              "
+            >
+              Ingresa tus credenciales para acceder
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div class="form-group">
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 0.9rem;
+                  "
+                >
+                  <i
+                    data-lucide="mail"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      vertical-align: middle;
+                      margin-right: 6px;
+                    "
+                  ></i>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="loginEmail"
+                  placeholder="tu@email.com"
+                  autocomplete="email"
+                  style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 0.95rem;
+                    transition: all 0.2s;
+                  "
+                  onkeypress="if(event.key==='Enter') loginSupabase()"
+                />
+              </div>
+
+              <div class="form-group">
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 0.9rem;
+                  "
+                >
+                  <i
+                    data-lucide="key"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      vertical-align: middle;
+                      margin-right: 6px;
+                    "
+                  ></i>
+                  Contraseña
+                </label>
+                <div style="position: relative">
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    style="
+                      width: 100%;
+                      padding: 12px 16px;
+                      padding-right: 45px;
+                      border: 2px solid var(--border);
+                      border-radius: 8px;
+                      font-size: 0.95rem;
+                      transition: all 0.2s;
+                    "
+                    onkeypress="if(event.key==='Enter') loginSupabase()"
+                  />
+                  <button
+                    type="button"
+                    onclick="togglePasswordVisibility('loginPassword', 'togglePasswordIcon')"
+                    style="
+                      position: absolute;
+                      right: 12px;
+                      top: 50%;
+                      transform: translateY(-50%);
+                      background: none;
+                      border: none;
+                      cursor: pointer;
+                      color: var(--text-muted);
+                      padding: 4px;
+                    "
+                  >
+                    <i
+                      data-lucide="eye"
+                      id="togglePasswordIcon"
+                      style="width: 20px; height: 20px"
+                    ></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Opciones adicionales -->
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-top: 8px;
+                "
+              >
+                <label
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    cursor: pointer;
+                    font-size: 0.875rem;
+                    color: var(--text);
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    id="recordarSesion"
+                    style="
+                      width: 18px;
+                      height: 18px;
+                      cursor: pointer;
+                      accent-color: var(--primary);
+                    "
+                  />
+                  <span>Recordar sesión</span>
+                </label>
+                <a
+                  href="#"
+                  onclick="event.preventDefault(); mostrarRecuperarPassword();"
+                  style="
+                    font-size: 0.875rem;
+                    color: var(--primary);
+                    text-decoration: none;
+                    font-weight: 500;
+                    transition: opacity 0.2s;
+                  "
+                  onmouseover="this.style.opacity='0.7'"
+                  onmouseout="this.style.opacity='1'"
+                >
+                  ¿Olvidaste tu contraseña?
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- FORMULARIO DE REGISTRO -->
+          <div id="formRegistro" style="display: none">
+            <p
+              style="
+                color: var(--text-muted);
+                margin-bottom: 24px;
+                text-align: center;
+                font-size: 0.95rem;
+              "
+            >
+              Crea tu cuenta para comenzar
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div class="form-group">
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 0.9rem;
+                  "
+                >
+                  <i
+                    data-lucide="user"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      vertical-align: middle;
+                      margin-right: 6px;
+                    "
+                  ></i>
+                  Nombre Completo
+                </label>
+                <input
+                  type="text"
+                  id="registroNombre"
+                  placeholder="Juan Pérez"
+                  autocomplete="name"
+                  style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 0.95rem;
+                    transition: all 0.2s;
+                  "
+                />
+              </div>
+
+              <div class="form-group">
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 0.9rem;
+                  "
+                >
+                  <i
+                    data-lucide="mail"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      vertical-align: middle;
+                      margin-right: 6px;
+                    "
+                  ></i>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="registroEmail"
+                  placeholder="tu@email.com"
+                  autocomplete="email"
+                  style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 0.95rem;
+                    transition: all 0.2s;
+                  "
+                />
+              </div>
+
+              <div class="form-group">
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 0.9rem;
+                  "
+                >
+                  <i
+                    data-lucide="key"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      vertical-align: middle;
+                      margin-right: 6px;
+                    "
+                  ></i>
+                  Contraseña
+                </label>
+                <div style="position: relative">
+                  <input
+                    type="password"
+                    id="registroPassword"
+                    placeholder="Mínimo 6 caracteres"
+                    autocomplete="new-password"
+                    style="
+                      width: 100%;
+                      padding: 12px 16px;
+                      padding-right: 45px;
+                      border: 2px solid var(--border);
+                      border-radius: 8px;
+                      font-size: 0.95rem;
+                      transition: all 0.2s;
+                    "
+                    onkeypress="if(event.key==='Enter') registrarSupabase()"
+                  />
+                  <button
+                    type="button"
+                    onclick="togglePasswordVisibility('registroPassword', 'togglePasswordIcon2')"
+                    style="
+                      position: absolute;
+                      right: 12px;
+                      top: 50%;
+                      transform: translateY(-50%);
+                      background: none;
+                      border: none;
+                      cursor: pointer;
+                      color: var(--text-muted);
+                      padding: 4px;
+                    "
+                  >
+                    <i
+                      data-lucide="eye"
+                      id="togglePasswordIcon2"
+                      style="width: 20px; height: 20px"
+                    ></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 0.9rem;
+                  "
+                >
+                  <i
+                    data-lucide="shield-check"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      vertical-align: middle;
+                      margin-right: 6px;
+                    "
+                  ></i>
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="registroPasswordConfirm"
+                  placeholder="Repite tu contraseña"
+                  autocomplete="new-password"
+                  style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 0.95rem;
+                    transition: all 0.2s;
+                  "
+                  onkeypress="if(event.key==='Enter') registrarSupabase()"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- MENSAJE DE ERROR -->
+          <div
+            id="loginError"
+            style="
+              display: none;
+              padding: 12px;
+              background: #fef2f2;
+              border: 1px solid #fecaca;
+              border-radius: 8px;
+              color: #dc2626;
+              font-size: 0.875rem;
+              margin-top: 20px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <i data-lucide="alert-circle" style="width: 18px; height: 18px"></i>
+            <span id="loginErrorText"></span>
+          </div>
+        </div>
+
+        <div
+          class="modal-excel-footer"
+          style="
+            padding: 20px 32px;
+            background: var(--surface-subtle);
+            border-top: 1px solid var(--border-subtle);
+            flex-direction: column;
+            gap: 12px;
+          "
+        >
+          <!-- BOTÓN LOGIN -->
+          <button
+            class="btn-primary"
+            id="btnLogin"
+            onclick="loginSupabase()"
+            style="
+              width: 100%;
+              justify-content: center;
+              padding: 14px;
+              font-size: 1rem;
+              display: block;
+            "
+          >
+            <span
+              class="btn-text-content"
+              style="display: flex; align-items: center; gap: 10px"
+            >
+              <i data-lucide="log-in" style="width: 20px"></i>
+              Iniciar Sesión
+            </span>
+            <div class="btn-loader" style="display: none"></div>
+          </button>
+
+          <!-- BOTÓN REGISTRO -->
+          <button
+            class="btn-primary"
+            id="btnRegistro"
+            onclick="registrarSupabase()"
+            style="
+              width: 100%;
+              justify-content: center;
+              padding: 14px;
+              font-size: 1rem;
+              display: none;
+            "
+          >
+            <span
+              class="btn-text-content"
+              style="display: flex; align-items: center; gap: 10px"
+            >
+              <i data-lucide="user-plus" style="width: 20px"></i>
+              Crear Cuenta
+            </span>
+            <div class="btn-loader" style="display: none"></div>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL TIME PICKER -->
-    <div class="modal-excel" id="modalTimePicker" style="display: none;">
-        <div class="modal-excel-content" style="max-width: 380px; animation: fadeInUp 0.3s ease;">
-            <div class="modal-excel-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom: none;">
-                <h2 style="color: white;">
-                    <i data-lucide="clock" style="width: 28px; height: 28px;"></i>
-                    <span id="timePickerTitle">Seleccionar Hora</span>
-                </h2>
-                <button class="btn-close-modal" onclick="cerrarTimePicker()" style="color: white;">
-                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
-                </button>
-            </div>
-            
-            <div class="modal-excel-body" style="padding: 32px;">
-                <div class="time-picker-container">
-                    <div class="time-selectors">
-                        <!-- Selector de Horas -->
-                        <div class="time-selector-column">
-                            <div class="time-selector-scroll" id="hourSelector">
-                                <div class="time-option" data-value="01">01</div>
-                                <div class="time-option" data-value="02">02</div>
-                                <div class="time-option" data-value="03">03</div>
-                                <div class="time-option" data-value="04">04</div>
-                                <div class="time-option" data-value="05">05</div>
-                                <div class="time-option" data-value="06">06</div>
-                                <div class="time-option" data-value="07">07</div>
-                                <div class="time-option" data-value="08">08</div>
-                                <div class="time-option active" data-value="09">09</div>
-                                <div class="time-option" data-value="10">10</div>
-                                <div class="time-option" data-value="11">11</div>
-                                <div class="time-option" data-value="12">12</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Separador -->
-                        <div class="time-separator">:</div>
-                        
-                        <!-- Selector de Minutos -->
-                        <div class="time-selector-column">
-                            <div class="time-selector-scroll" id="minuteSelector">
-                                <div class="time-option active" data-value="00">00</div>
-                                <div class="time-option" data-value="01">01</div>
-                                <div class="time-option" data-value="02">02</div>
-                                <div class="time-option" data-value="03">03</div>
-                                <div class="time-option" data-value="04">04</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Selector AM/PM -->
-                        <div class="time-selector-column">
-                            <div class="time-selector-scroll" id="ampmSelector">
-                                <div class="time-option ampm active" data-value="a. m.">a. m.</div>
-                                <div class="time-option ampm" data-value="p. m.">p. m.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-excel-footer" style="padding: 20px 32px; background: var(--surface-subtle); border-top: 1px solid var(--border-subtle);">
-                <button class="btn-text" onclick="cerrarTimePicker()">
-                    <i data-lucide="x"></i> Cancelar
-                </button>
-                <button class="btn-primary" onclick="confirmarTiempo()">
-                    <i data-lucide="check"></i> Confirmar
-                </button>
-            </div>
+    <div class="modal-excel" id="modalTimePicker" style="display: none">
+      <div
+        class="modal-excel-content"
+        style="max-width: 380px; animation: fadeInUp 0.3s ease"
+      >
+        <div
+          class="modal-excel-header"
+          style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom: none;
+          "
+        >
+          <h2 style="color: white">
+            <i data-lucide="clock" style="width: 28px; height: 28px"></i>
+            <span id="timePickerTitle">Seleccionar Hora</span>
+          </h2>
+          <button
+            class="btn-close-modal"
+            onclick="cerrarTimePicker()"
+            style="color: white"
+          >
+            <i data-lucide="x" style="width: 24px; height: 24px"></i>
+          </button>
         </div>
+
+        <div class="modal-excel-body" style="padding: 32px">
+          <div class="time-picker-container">
+            <div class="time-selectors">
+              <!-- Selector de Horas -->
+              <div class="time-selector-column">
+                <div class="time-selector-scroll" id="hourSelector">
+                  <div class="time-option" data-value="01">01</div>
+                  <div class="time-option" data-value="02">02</div>
+                  <div class="time-option" data-value="03">03</div>
+                  <div class="time-option" data-value="04">04</div>
+                  <div class="time-option" data-value="05">05</div>
+                  <div class="time-option" data-value="06">06</div>
+                  <div class="time-option" data-value="07">07</div>
+                  <div class="time-option" data-value="08">08</div>
+                  <div class="time-option active" data-value="09">09</div>
+                  <div class="time-option" data-value="10">10</div>
+                  <div class="time-option" data-value="11">11</div>
+                  <div class="time-option" data-value="12">12</div>
+                </div>
+              </div>
+
+              <!-- Separador -->
+              <div class="time-separator">:</div>
+
+              <!-- Selector de Minutos -->
+              <div class="time-selector-column">
+                <div class="time-selector-scroll" id="minuteSelector">
+                  <div class="time-option active" data-value="00">00</div>
+                  <div class="time-option" data-value="01">01</div>
+                  <div class="time-option" data-value="02">02</div>
+                  <div class="time-option" data-value="03">03</div>
+                  <div class="time-option" data-value="04">04</div>
+                </div>
+              </div>
+
+              <!-- Selector AM/PM -->
+              <div class="time-selector-column">
+                <div class="time-selector-scroll" id="ampmSelector">
+                  <div class="time-option ampm active" data-value="a. m.">
+                    a. m.
+                  </div>
+                  <div class="time-option ampm" data-value="p. m.">p. m.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="modal-excel-footer"
+          style="
+            padding: 20px 32px;
+            background: var(--surface-subtle);
+            border-top: 1px solid var(--border-subtle);
+          "
+        >
+          <button class="btn-text" onclick="cerrarTimePicker()">
+            <i data-lucide="x"></i> Cancelar
+          </button>
+          <button class="btn-primary" onclick="confirmarTiempo()">
+            <i data-lucide="check"></i> Confirmar
+          </button>
+        </div>
+      </div>
     </div>
 
     <style>
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-        
-        #loginEmail:focus, #loginPassword:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        
-        .btn-loader {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+      }
+
+      #loginEmail:focus,
+      #loginPassword:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+
+      .btn-loader {
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+      }
+
+      /* Estilos para tabs de autenticación */
+      .auth-tab {
+        font-family: inherit;
+        transition: all 0.3s ease;
+      }
+
+      .auth-tab:hover {
+        opacity: 0.8;
+      }
+
+      /* Mejora de inputs en modal */
+      #loginEmail:focus,
+      #loginPassword:focus,
+      #registroNombre:focus,
+      #registroEmail:focus,
+      #registroPassword:focus,
+      #registroPasswordConfirm:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      }
+
+      /* Estilos del menú de usuario */
+      .btn-user-menu {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .btn-user-menu:hover {
+        background: var(--surface-hover);
+        border-color: var(--primary);
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), #2563eb);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .user-avatar-large {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), #2563eb);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .user-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 280px;
+        background: white;
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        animation: dropdownFadeIn 0.2s ease;
+      }
+
+      @keyframes dropdownFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-        
-        /* Estilos para tabs de autenticación */
-        .auth-tab {
-            font-family: inherit;
-            transition: all 0.3s ease;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        
-        .auth-tab:hover {
-            opacity: 0.8;
-        }
-        
-        /* Mejora de inputs en modal */
-        #loginEmail:focus, 
-        #loginPassword:focus,
-        #registroNombre:focus,
-        #registroEmail:focus,
-        #registroPassword:focus,
-        #registroPasswordConfirm:focus {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-        }
-        
-        /* Estilos del menú de usuario */
-        .btn-user-menu {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text);
-        }
-        
-        .btn-user-menu:hover {
-            background: var(--surface-hover);
-            border-color: var(--primary);
-        }
-        
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), #2563eb);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        
-        .user-avatar-large {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), #2563eb);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        
-        .user-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            width: 280px;
-            background: white;
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            animation: dropdownFadeIn 0.2s ease;
-        }
-        
-        @keyframes dropdownFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .user-dropdown-header {
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .user-info {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .user-email {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .user-status {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        
-        .user-dropdown-divider {
-            height: 1px;
-            background: var(--border-subtle);
-            margin: 0 8px;
-        }
-        
-        .user-dropdown-item {
-            width: 100%;
-            padding: 12px 16px;
-            border: none;
-            background: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            color: var(--text);
-            text-align: left;
-            font-family: inherit;
-        }
-        
-        .user-dropdown-item:hover {
-            background: var(--surface-hover);
-        }
-        
-        .user-dropdown-item i {
-            width: 18px;
-            height: 18px;
-        }
-        
-        /* Ocultar contenido cuando no hay sesión */
-        .content-locked {
-            filter: blur(8px);
-            pointer-events: none;
-            user-select: none;
-        }
+      }
+
+      .user-dropdown-header {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .user-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .user-email {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .user-status {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .user-dropdown-divider {
+        height: 1px;
+        background: var(--border-subtle);
+        margin: 0 8px;
+      }
+
+      .user-dropdown-item {
+        width: 100%;
+        padding: 12px 16px;
+        border: none;
+        background: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+        color: var(--text);
+        text-align: left;
+        font-family: inherit;
+      }
+
+      .user-dropdown-item:hover {
+        background: var(--surface-hover);
+      }
+
+      .user-dropdown-item i {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* Ocultar contenido cuando no hay sesión */
+      .content-locked {
+        filter: blur(8px);
+        pointer-events: none;
+        user-select: none;
+      }
     </style>
 
     <nav class="topbar">
-        <div class="topbar-inner">
-            <div class="brand-area">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                    <i data-lucide="menu"></i>
-                </button>
-                <div class="brand">
-                    <div class="brand-icon">
-                        <i data-lucide="layers"></i>
-                    </div>
-                    <div class="brand-info">
-                        <h1>Control Asistencia</h1>
-                    </div>
-                    <span class="badge">PRO v2.2</span>
-                </div>
+      <div class="topbar-inner">
+        <div class="brand-area">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="brand">
+            <div class="brand-icon">
+              <i data-lucide="layers"></i>
             </div>
-
-            <div class="topbar-actions">
-                <button class="btn-ghost" onclick="exportarConfiguracion()" title="Exportar Backup">
-                    <i data-lucide="download-cloud" style="width: 18px;"></i> <span class="desktop-only">Backup</span>
-                </button>
-                <button class="btn-ghost" onclick="importarConfiguracion()" title="Importar Backup">
-                    <i data-lucide="upload-cloud" style="width: 18px;"></i>
-                </button>
-                
-                <!-- DARK MODE TOGGLE -->
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Cambiar tema" aria-label="Toggle dark mode"></button>
-                
-                <div class="separator" style="width:1px; height:24px; background:var(--border-subtle); margin:0 8px;"></div>
-                
-                <!-- MENÚ DE USUARIO -->
-                <div class="user-menu-container" style="position: relative;">
-                    <button class="btn-user-menu" onclick="toggleUserMenu()" id="btnUserMenu">
-                        <div class="user-avatar">
-                            <i data-lucide="user" style="width: 18px; height: 18px;"></i>
-                        </div>
-                        <span class="user-name desktop-only" id="userNameDisplay">Usuario</span>
-                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
-                    </button>
-                    
-                    <div class="user-dropdown" id="userDropdown" style="display: none;">
-                        <div class="user-dropdown-header">
-                            <div class="user-avatar-large">
-                                <i data-lucide="user" style="width: 24px; height: 24px;"></i>
-                            </div>
-                            <div class="user-info">
-                                <div class="user-email" id="userEmailDisplay">email@example.com</div>
-                                <div class="user-status">Sesión activa</div>
-                            </div>
-                        </div>
-                        <div class="user-dropdown-divider"></div>
-                        <button class="user-dropdown-item" onclick="logoutSupabase()">
-                            <i data-lucide="log-out"></i>
-                            <span>Cerrar Sesión</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <button class="btn-icon-circle" onclick="mostrarAyuda()">
-                    <i data-lucide="help-circle" style="width: 22px;"></i>
-                </button>
+            <div class="brand-info">
+              <h1>Control Asistencia</h1>
             </div>
+            <span class="badge">PRO v2.2</span>
+          </div>
         </div>
+
+        <div class="topbar-actions">
+          <button
+            class="btn-ghost"
+            onclick="exportarConfiguracion()"
+            title="Exportar Backup"
+          >
+            <i data-lucide="download-cloud" style="width: 18px"></i>
+            <span class="desktop-only">Backup</span>
+          </button>
+          <button
+            class="btn-ghost"
+            onclick="importarConfiguracion()"
+            title="Importar Backup"
+          >
+            <i data-lucide="upload-cloud" style="width: 18px"></i>
+          </button>
+
+          <!-- SPECTACULAR DARK MODE TOGGLE -->
+            <!-- PROFESSIONAL MINIMALIST TOGGLE -->
+            <!-- SIMPLE ICON TOGGLE -->
+            <button
+              class="theme-toggle-simple"
+              onclick="toggleDarkMode()"
+              title="Cambiar tema"
+              aria-label="Toggle dark mode"
+            >
+              <i data-lucide="sun" class="icon-sun"></i>
+              <i data-lucide="moon" class="icon-moon"></i>
+              <span style="margin-left: 6px; font-weight: 500;">Tema</span>
+            </button>
+
+          <div
+            class="separator"
+            style="
+              width: 1px;
+              height: 24px;
+              background: var(--border-subtle);
+              margin: 0 8px;
+            "
+          ></div>
+
+          <!-- MENÚ DE USUARIO -->
+          <div class="user-menu-container" style="position: relative">
+            <button
+              class="btn-user-menu"
+              onclick="toggleUserMenu()"
+              id="btnUserMenu"
+            >
+              <div class="user-avatar">
+                <i data-lucide="user" style="width: 18px; height: 18px"></i>
+              </div>
+              <span class="user-name desktop-only" id="userNameDisplay"
+                >Usuario</span
+              >
+              <i
+                data-lucide="chevron-down"
+                style="width: 16px; height: 16px"
+              ></i>
+            </button>
+
+            <div class="user-dropdown" id="userDropdown" style="display: none">
+              <div class="user-dropdown-header">
+                <div class="user-avatar-large">
+                  <i data-lucide="user" style="width: 24px; height: 24px"></i>
+                </div>
+                <div class="user-info">
+                  <div class="user-email" id="userEmailDisplay">
+                    email@example.com
+                  </div>
+                  <div class="user-status">Sesión activa</div>
+                </div>
+              </div>
+              <div class="user-dropdown-divider"></div>
+              <button class="user-dropdown-item" onclick="logoutSupabase()">
+                <i data-lucide="log-out"></i>
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-icon-circle" onclick="mostrarAyuda()">
+            <i data-lucide="help-circle" style="width: 22px"></i>
+          </button>
+        </div>
+      </div>
     </nav>
 
     <div class="dashboard-container">
-        
-        <aside class="config-sidebar" id="sidebar">
-            
-            <div class="card">
-                <div class="card-header">
-                    <i data-lucide="image" class="icon-header"></i>
-                    <h3>Identidad</h3>
+      <aside class="config-sidebar" id="sidebar">
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="image" class="icon-header"></i>
+            <h3>Identidad</h3>
+          </div>
+          <div class="card-body">
+            <div class="logo-uploader">
+              <div
+                class="logo-preview-area"
+                id="logoPreviewContainer"
+                onclick="document.getElementById('logoInput').click()"
+              >
+                <img id="logoPreview" src="" style="display: none" />
+                <div class="text-placeholder">
+                  <i
+                    data-lucide="upload-cloud"
+                    style="
+                      color: var(--primary);
+                      width: 28px;
+                      margin-bottom: 4px;
+                    "
+                  ></i>
+                  <span>Subir Logo Empresa</span>
                 </div>
-                <div class="card-body">
-                    <div class="logo-uploader">
-                        <div class="logo-preview-area" id="logoPreviewContainer" onclick="document.getElementById('logoInput').click()">
-                            <img id="logoPreview" src="" style="display: none;">
-                            <div class="text-placeholder">
-                                <i data-lucide="upload-cloud" style="color:var(--primary); width:28px; margin-bottom:4px;"></i>
-                                <span>Subir Logo Empresa</span>
-                            </div>
-                        </div>
-                        <input type="file" id="logoInput" accept="image/*" onchange="cargarLogo()" style="display: none;">
-                        <button class="btn-text text-danger" onclick="eliminarLogo()" id="btnEliminarLogo" style="display: none; margin-top:12px; width:100%; justify-content:center;">
-                            <i data-lucide="trash-2" style="width: 16px;"></i> Eliminar Logo
-                        </button>
-                    </div>
+              </div>
+              <input
+                type="file"
+                id="logoInput"
+                accept="image/*"
+                onchange="cargarLogo()"
+                style="display: none"
+              />
+              <button
+                class="btn-text text-danger"
+                onclick="eliminarLogo()"
+                id="btnEliminarLogo"
+                style="
+                  display: none;
+                  margin-top: 12px;
+                  width: 100%;
+                  justify-content: center;
+                "
+              >
+                <i data-lucide="trash-2" style="width: 16px"></i> Eliminar Logo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="calendar-days" class="icon-header"></i>
+            <h3>Periodo & Horario</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Mes</label>
+                <div class="select-wrapper">
+                  <select id="mes" onchange="actualizarCalendarioFeriados()">
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="select-icon"></i>
                 </div>
+              </div>
+              <div class="form-group">
+                <label>Año</label>
+                <input
+                  type="number"
+                  id="ano"
+                  value="2025"
+                  min="2020"
+                  max="2050"
+                />
+              </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <i data-lucide="calendar-days" class="icon-header"></i>
-                    <h3>Periodo & Horario</h3>
-                </div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Mes</label>
-                            <div class="select-wrapper">
-                                <select id="mes" onchange="actualizarCalendarioFeriados()">
-                                    <option value="1">Enero</option>
-                                    <option value="2">Febrero</option>
-                                    <option value="3">Marzo</option>
-                                    <option value="4">Abril</option>
-                                    <option value="5">Mayo</option>
-                                    <option value="6">Junio</option>
-                                    <option value="7">Julio</option>
-                                    <option value="8">Agosto</option>
-                                    <option value="9">Septiembre</option>
-                                    <option value="10">Octubre</option>
-                                    <option value="11">Noviembre</option>
-                                    <option value="12">Diciembre</option>
-                                </select>
-                                <i data-lucide="chevron-down" class="select-icon"></i>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Año</label>
-                            <input type="number" id="ano" value="2025" min="2020" max="2050">
-                        </div>
-                    </div>
-                    
-                    <div class="form-divider"></div>
+            <div class="form-divider"></div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Entrada</label>
-                            <input type="text" id="horaEstandar" value="09:00 a. m." class="time-input-native" readonly onclick="abrirTimePicker('horaEstandar', 'Hora de Entrada')" style="cursor: pointer;">
-                        </div>
-                        <div class="form-group">
-                            <label>Salida</label>
-                            <input type="text" id="horaSalida" value="06:00 p. m." class="time-input-native" readonly onclick="abrirTimePicker('horaSalida', 'Hora de Salida')" style="cursor: pointer;">
-                        </div>
-                    </div>
-                </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Entrada</label>
+                <input
+                  type="text"
+                  id="horaEstandar"
+                  value="09:00 a. m."
+                  class="time-input-native"
+                  readonly
+                  onclick="abrirTimePicker('horaEstandar', 'Hora de Entrada')"
+                  style="cursor: pointer"
+                />
+              </div>
+              <div class="form-group">
+                <label>Salida</label>
+                <input
+                  type="text"
+                  id="horaSalida"
+                  value="06:00 p. m."
+                  class="time-input-native"
+                  readonly
+                  onclick="abrirTimePicker('horaSalida', 'Hora de Salida')"
+                  style="cursor: pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="calendar-off" class="icon-header"></i>
+            <h3>Días Inhábiles</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; gap: 10px; margin-bottom: 16px">
+              <input type="date" id="fechaFeriado" style="flex: 1" />
+              <button
+                class="btn-text"
+                onclick="agregarFeriado()"
+                style="padding: 0 14px"
+              >
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
+            <input
+              type="text"
+              id="descFeriado"
+              placeholder="Motivo (Opcional)"
+              style="margin-bottom: 16px"
+            />
+
+            <div
+              id="listaFeriados"
+              style="display: flex; flex-wrap: wrap; gap: 8px"
+            ></div>
+            <p
+              id="emptyFeriadosMsg"
+              style="
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                text-align: center;
+                margin-top: 10px;
+              "
+            >
+              No hay feriados registrados.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="sliders" class="icon-header"></i>
+            <h3>Configuración PDF</h3>
+          </div>
+          <div class="card-body">
+            <label class="switch-control">
+              <span class="label-text">Horas Extras</span>
+              <div class="switch-wrapper">
+                <input type="checkbox" id="incluirHorasExtras" checked />
+                <div class="slider"></div>
+              </div>
+            </label>
+            <label class="switch-control">
+              <span class="label-text">Tipo de Jornada</span>
+              <div class="switch-wrapper">
+                <input type="checkbox" id="incluirTipoJornada" checked />
+                <div class="slider"></div>
+              </div>
+            </label>
+            <label class="switch-control">
+              <span class="label-text">Motivo Ausencia</span>
+              <div class="switch-wrapper">
+                <input type="checkbox" id="incluirMotivoAusencia" checked />
+                <div class="slider"></div>
+              </div>
+            </label>
+            <label class="switch-control">
+              <span class="label-text">Firma Supervisor</span>
+              <div class="switch-wrapper">
+                <input type="checkbox" id="incluirAprobacion" checked />
+                <div class="slider"></div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+      </aside>
+
+      <main class="main-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper bg-blue-soft">
+              <i data-lucide="users" style="width: 26px"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Total Personal</span>
+              <span class="stat-number" id="totalEmpleados">0</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrapper bg-green-soft">
+              <i data-lucide="check-circle-2" style="width: 26px"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Seleccionados</span>
+              <span class="stat-number" id="totalSeleccionados">0</span>
+            </div>
+          </div>
+
+          <!-- BOTONES ACTUALIZADOS CON EXCEL -->
+          <div class="btn-menu-excel">
+            <button class="btn-hero" id="btnGenerar" onclick="generarPDFs()">
+              <div class="btn-content">
+                <i data-lucide="file-check-2"></i>
+                <span>Generar PDF</span>
+              </div>
+              <div class="btn-shine"></div>
+            </button>
+
+            <button class="btn-secondary" onclick="generarExcel()">
+              <i data-lucide="file-spreadsheet" style="width: 20px"></i>
+              <span>Excel</span>
+            </button>
+
+            <button class="btn-secondary" onclick="abrirEditorExcel()">
+              <i data-lucide="table" style="width: 20px"></i>
+              <span>Editar</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="progress"
+          style="
+            display: none;
+            background: white;
+            border: 1px solid var(--border-subtle);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+          "
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+              font-size: 0.95rem;
+              font-weight: 600;
+            "
+          >
+            <span id="progressDetail">Generando PDFs...</span>
+            <span id="progressText">0%</span>
+          </div>
+          <div
+            style="
+              height: 10px;
+              background: #e2e8f0;
+              border-radius: 6px;
+              overflow: hidden;
+            "
+          >
+            <div
+              id="progressFill"
+              style="
+                height: 100%;
+                background: var(--primary);
+                width: 0%;
+                transition: width 0.3s;
+              "
+            ></div>
+          </div>
+        </div>
+
+        <div class="card main-card">
+          <div class="card-header-flex">
+            <div class="header-title">
+              <div class="icon-box">
+                <i data-lucide="users-2"></i>
+              </div>
+              <div>
+                <h3>Nómina de Empleados</h3>
+                <p class="subtitle">Administra tu lista de personal activo</p>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="btn-text" onclick="toggleSeleccionarTodos()">
+                <i data-lucide="check-square" style="width: 16px"></i>
+                <span class="desktop-only">Todos</span>
+              </button>
+              <button class="btn-text text-danger" onclick="limpiarEmpleados()">
+                <i data-lucide="trash-2" style="width: 16px"></i>
+                <span class="desktop-only">Vaciar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="search-bar-area">
+            <div class="input-with-icon">
+              <i data-lucide="search" class="search-icon"></i>
+              <input
+                type="text"
+                id="nuevoEmpleado"
+                class="modern-input"
+                placeholder="Nombre del empleado..."
+                onkeypress="if(event.key==='Enter') agregarEmpleado()"
+              />
+            </div>
+            <button class="btn-primary" onclick="agregarEmpleado()">
+              <i data-lucide="plus" style="width: 20px"></i>
+              <span class="desktop-only">Agregar</span>
+            </button>
+          </div>
+
+          <div class="empleados-grid-container" id="empleadosGrid"></div>
+        </div>
+
+        <!-- NUEVA SECCIÓN: REGISTROS EN LA NUBE -->
+        <div class="card main-card" style="margin-top: 32px">
+          <div class="card-header-flex">
+            <div class="header-title">
+              <div class="icon-box" style="color: #3b82f6; background: #dbeafe">
+                <i data-lucide="database"></i>
+              </div>
+              <div>
+                <h3>Registros en la Nube</h3>
+                <p class="subtitle">
+                  Consulta y descarga tus datos guardados en Supabase
+                </p>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="btn-text" onclick="limpiarFiltrosRegistros()">
+                <i data-lucide="x" style="width: 16px"></i>
+                <span class="desktop-only">Limpiar</span>
+              </button>
+              <button class="btn-text" onclick="cargarRegistrosAsistencia()">
+                <i data-lucide="refresh-cw" style="width: 16px"></i>
+                <span class="desktop-only">Refrescar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filtros -->
+          <div class="search-bar-area" style="gap: 12px; flex-wrap: wrap">
+            <div class="input-with-icon" style="flex: 1; min-width: 200px">
+              <i data-lucide="user" class="search-icon"></i>
+              <select
+                id="filtroEmpleado"
+                class="modern-input"
+                style="padding-left: 40px"
+              >
+                <option value="">Todos los empleados</option>
+              </select>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <i data-lucide="calendar-off" class="icon-header"></i>
-                    <h3>Días Inhábiles</h3>
-                </div>
-                <div class="card-body">
-                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                        <input type="date" id="fechaFeriado" style="flex:1;">
-                        <button class="btn-text" onclick="agregarFeriado()" style="padding: 0 14px;">
-                            <i data-lucide="plus"></i>
-                        </button>
-                    </div>
-                    <input type="text" id="descFeriado" placeholder="Motivo (Opcional)" style="margin-bottom: 16px;">
-                    
-                    <div id="listaFeriados" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                    <p id="emptyFeriadosMsg" style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 10px;">No hay feriados registrados.</p>
-                </div>
+            <!-- Grupo 2: Fechas -->
+            <div class="filter-group-date">
+              <div class="select-wrapper" style="width: 200px">
+                <select id="filtroMes" class="modern-input">
+                  <option value="">Todos los meses</option>
+                  <option value="1">Enero</option>
+                  <option value="2">Febrero</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Mayo</option>
+                  <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+                <i data-lucide="chevron-down" class="select-icon"></i>
+              </div>
+
+              <input
+                type="number"
+                id="filtroAno"
+                placeholder="Año"
+                class="modern-input"
+                style="width: 120px"
+                value="2025"
+                min="2020"
+                max="2050"
+              />
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <i data-lucide="sliders" class="icon-header"></i>
-                    <h3>Configuración PDF</h3>
-                </div>
-                <div class="card-body">
-                    <label class="switch-control">
-                        <span class="label-text">Horas Extras</span>
-                        <div class="switch-wrapper"><input type="checkbox" id="incluirHorasExtras" checked><div class="slider"></div></div>
-                    </label>
-                    <label class="switch-control">
-                        <span class="label-text">Tipo de Jornada</span>
-                        <div class="switch-wrapper"><input type="checkbox" id="incluirTipoJornada" checked><div class="slider"></div></div>
-                    </label>
-                    <label class="switch-control">
-                        <span class="label-text">Motivo Ausencia</span>
-                        <div class="switch-wrapper"><input type="checkbox" id="incluirMotivoAusencia" checked><div class="slider"></div></div>
-                    </label>
-                    <label class="switch-control">
-                        <span class="label-text">Firma Supervisor</span>
-                        <div class="switch-wrapper"><input type="checkbox" id="incluirAprobacion" checked><div class="slider"></div></div>
-                    </label>
-                </div>
+            <button
+              class="btn-primary"
+              onclick="cargarRegistrosAsistencia()"
+              style="white-space: nowrap"
+            >
+              <i data-lucide="cloud-download" style="width: 20px"></i> Cargar
+              Datos
+            </button>
+
+            <button
+              class="btn-primary"
+              id="btnDescargarRegistros"
+              onclick="descargarRegistrosExcel()"
+              style="white-space: nowrap; background: #10b981"
+            >
+              <i data-lucide="download" style="width: 20px"></i>
+              <span class="desktop-only">Descargar Excel</span>
+            </button>
+          </div>
+
+          <!-- Badge de conteo -->
+          <div style="padding: 0 24px 16px">
+            <div
+              id="badgeConteoRegistros"
+              style="
+                display: none;
+                padding: 8px 16px;
+                background: #dbeafe;
+                border-radius: 8px;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9rem;
+                color: #1e40af;
+                font-weight: 600;
+              "
+            >
+              <i data-lucide="database" style="width: 16px"></i>
+              <span id="textoConteoRegistros">0 registros encontrados</span>
+            </div>
+          </div>
+
+          <!-- Tabla de registros -->
+          <div style="overflow-x: auto; padding: 0 24px 24px">
+            <div id="registrosTableContainer"></div>
+          </div>
+        </div>
+
+        <div class="card main-card" style="margin-top: 32px">
+          <div class="card-header-flex">
+            <div class="header-title">
+              <div
+                class="icon-box"
+                style="color: var(--primary); background: var(--primary-light)"
+              >
+                <i data-lucide="cloud"></i>
+              </div>
+              <div>
+                <h3>Repositorio Digital</h3>
+                <p class="subtitle">Sube y gestiona escaneos de asistencia</p>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="btn-text" onclick="cargarHistorial()">
+                <i data-lucide="refresh-cw" style="width: 16px"></i>
+                <span class="desktop-only">Refrescar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="upload-container">
+            <div class="drop-zone" id="dropZone">
+              <i data-lucide="upload-cloud" class="drop-icon"></i>
+              <div class="drop-content">
+                <p class="drop-title">Arrastra tus archivos aquí</p>
+                <p class="drop-subtitle">Soporta imágenes y PDF hasta 10MB</p>
+              </div>
+              <input
+                type="file"
+                id="archivoInput"
+                class="file-input-hidden"
+                onchange="mostrarNombreArchivo()"
+              />
             </div>
 
-        </aside>
+            <div class="upload-actions">
+              <div class="input-with-icon" style="flex: 1">
+                <i data-lucide="file-text" class="search-icon"></i>
+                <input
+                  type="text"
+                  id="nombreArchivoManual"
+                  placeholder="Nombre para guardar (Ej: Nomina Enero 2025)"
+                  class="modern-input"
+                />
+              </div>
+              <button
+                class="btn-primary"
+                id="btnSubir"
+                onclick="subirArchivoSupabase()"
+              >
+                <span
+                  class="btn-text-content"
+                  style="display: flex; align-items: center; gap: 8px"
+                >
+                  <i data-lucide="arrow-up-circle" style="width: 20px"></i>
+                  Subir
+                </span>
+                <div class="btn-loader" style="display: none"></div>
+              </button>
+            </div>
 
-        <main class="main-content">
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon-wrapper bg-blue-soft">
-                        <i data-lucide="users" style="width: 26px;"></i>
-                    </div>
-                    <div class="stat-details">
-                        <span class="stat-label">Total Personal</span>
-                        <span class="stat-number" id="totalEmpleados">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon-wrapper bg-green-soft">
-                        <i data-lucide="check-circle-2" style="width: 26px;"></i>
-                    </div>
-                    <div class="stat-details">
-                        <span class="stat-label">Seleccionados</span>
-                        <span class="stat-number" id="totalSeleccionados">0</span>
-                    </div>
+            <div
+              id="filePreview"
+              class="file-preview-badge"
+              style="display: none"
+            >
+              <i data-lucide="paperclip" style="width: 16px"></i>
+              <span id="fileNameDisplay"></span>
+              <i
+                data-lucide="x"
+                class="close-preview"
+                onclick="limpiarSeleccionArchivo()"
+              ></i>
+            </div>
+          </div>
+
+          <div class="historial-container" id="historialGrid"></div>
+        </div>
+
+        <!-- MENU SISTEMA MÓVIL - Al final de la página -->
+        <div class="card mobile-only" style="margin-top: 32px; border-top: 4px solid var(--border-subtle);">
+            <div class="card-header">
+                <i data-lucide="settings-2" class="icon-header"></i>
+                <h3>Sistema</h3>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <button class="btn-text" onclick="exportarConfiguracion()" style="justify-content: center;">
+                        <i data-lucide="download-cloud"></i> Backup
+                    </button>
+                    <button class="btn-text" onclick="importarConfiguracion()" style="justify-content: center;">
+                        <i data-lucide="upload-cloud"></i> Restaurar
+                    </button>
                 </div>
                 
-                <!-- BOTONES ACTUALIZADOS CON EXCEL -->
-                <div class="btn-menu-excel">
-                    <button class="btn-hero" id="btnGenerar" onclick="generarPDFs()">
-                        <div class="btn-content">
-                            <i data-lucide="file-check-2"></i>
-                            <span>Generar PDF</span>
-                        </div>
-                        <div class="btn-shine"></div>
+                <button class="btn-text" onclick="mostrarAyuda()" style="justify-content: center;">
+                    <i data-lucide="help-circle"></i> Ayuda & Soporte
+                </button>
+
+                <div style="height: 1px; background: var(--border-subtle); margin: 4px 0;"></div>
+
+                <div style="background: #fef2f2; border-radius: 12px; padding: 16px; border: 1px solid #fecaca;">
+                    <button class="btn-primary" onclick="logoutSupabase()" style="width: 100%; background: #ef4444; color: white; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                        <i data-lucide="log-out"></i> Cerrar Sesión
                     </button>
-                    
-                    <button class="btn-secondary" onclick="generarExcel()">
-                        <i data-lucide="file-spreadsheet" style="width: 20px;"></i>
-                        <span>Excel</span>
-                    </button>
-                    
-                    <button class="btn-secondary" onclick="abrirEditorExcel()">
-                        <i data-lucide="table" style="width: 20px;"></i>
-                        <span>Editar</span>
-                    </button>
+                    <p style="text-align: center; font-size: 0.8rem; color: #ef4444; margin-top: 10px; margin-bottom: 0; font-weight: 500;">
+                        <i data-lucide="user" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+                        <span id="userEmailMobile">usuario@sistema.com</span>
+                    </p>
                 </div>
             </div>
+        </div>
 
-            <div id="progress" style="display: none; background: white; border: 1px solid var(--border-subtle); padding: 24px; border-radius: 12px; margin-bottom: 32px; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; font-weight: 600;">
-                    <span id="progressDetail">Generando PDFs...</span>
-                    <span id="progressText">0%</span>
-                </div>
-                <div style="height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden;">
-                    <div id="progressFill" style="height: 100%; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
-                </div>
-            </div>
-
-            <div class="card main-card">
-                <div class="card-header-flex">
-                    <div class="header-title">
-                        <div class="icon-box">
-                            <i data-lucide="users-2"></i>
-                        </div>
-                        <div>
-                            <h3>Nómina de Empleados</h3>
-                            <p class="subtitle">Administra tu lista de personal activo</p>
-                        </div>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn-text" onclick="toggleSeleccionarTodos()">
-                            <i data-lucide="check-square" style="width: 16px;"></i> <span class="desktop-only">Todos</span>
-                        </button>
-                        <button class="btn-text text-danger" onclick="limpiarEmpleados()">
-                            <i data-lucide="trash-2" style="width: 16px;"></i> <span class="desktop-only">Vaciar</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="search-bar-area">
-                    <div class="input-with-icon">
-                        <i data-lucide="search" class="search-icon"></i>
-                        <input type="text" id="nuevoEmpleado" class="modern-input" placeholder="Nombre del empleado..." onkeypress="if(event.key==='Enter') agregarEmpleado()">
-                    </div>
-                    <button class="btn-primary" onclick="agregarEmpleado()">
-                        <i data-lucide="plus" style="width: 20px;"></i> <span class="desktop-only">Agregar</span>
-                    </button>
-                </div>
-
-                <div class="empleados-grid-container" id="empleadosGrid">
-                </div>
-            </div>
-
-            <!-- NUEVA SECCIÓN: REGISTROS EN LA NUBE -->
-            <div class="card main-card" style="margin-top: 32px;">
-                <div class="card-header-flex">
-                    <div class="header-title">
-                        <div class="icon-box" style="color: #3b82f6; background: #dbeafe;">
-                            <i data-lucide="database"></i>
-                        </div>
-                        <div>
-                            <h3>Registros en la Nube</h3>
-                            <p class="subtitle">Consulta y descarga tus datos guardados en Supabase</p>
-                        </div>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn-text" onclick="limpiarFiltrosRegistros()">
-                            <i data-lucide="x" style="width: 16px;"></i> <span class="desktop-only">Limpiar</span>
-                        </button>
-                        <button class="btn-text" onclick="cargarRegistrosAsistencia()">
-                            <i data-lucide="refresh-cw" style="width: 16px;"></i> <span class="desktop-only">Refrescar</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Filtros -->
-                <div class="search-bar-area" style="gap: 12px; flex-wrap: wrap;">
-                    <div class="input-with-icon" style="flex: 1; min-width: 200px;">
-                        <i data-lucide="user" class="search-icon"></i>
-                        <select id="filtroEmpleado" class="modern-input" style="padding-left: 40px;">
-                            <option value="">Todos los empleados</option>
-                        </select>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <div class="select-wrapper" style="min-width: 140px;">
-                            <select id="filtroMes" class="modern-input">
-                                <option value="">Todos los meses</option>
-                                <option value="1">Enero</option>
-                                <option value="2">Febrero</option>
-                                <option value="3">Marzo</option>
-                                <option value="4">Abril</option>
-                                <option value="5">Mayo</option>
-                                <option value="6">Junio</option>
-                                <option value="7">Julio</option>
-                                <option value="8">Agosto</option>
-                                <option value="9">Septiembre</option>
-                                <option value="10">Octubre</option>
-                                <option value="11">Noviembre</option>
-                                <option value="12">Diciembre</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="select-icon"></i>
-                        </div>
-                        
-                        <input type="number" id="filtroAno" placeholder="Año" class="modern-input" style="width: 100px;" value="2025" min="2020" max="2050">
-                    </div>
-                    
-                    <button class="btn-primary" onclick="cargarRegistrosAsistencia()" style="white-space: nowrap;">
-                        <i data-lucide="cloud-download" style="width: 20px;"></i> Cargar Datos
-                    </button>
-                    
-                    <button class="btn-primary" id="btnDescargarRegistros" onclick="descargarRegistrosExcel()" style="white-space: nowrap; background: #10b981;">
-                        <i data-lucide="download" style="width: 20px;"></i> <span class="desktop-only">Descargar Excel</span>
-                    </button>
-                </div>
-                
-                <!-- Badge de conteo -->
-                <div style="padding: 0 24px 16px;">
-                    <div id="badgeConteoRegistros" style="display: none; padding: 8px 16px; background: #dbeafe; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #1e40af; font-weight: 600;">
-                        <i data-lucide="database" style="width: 16px;"></i>
-                        <span id="textoConteoRegistros">0 registros encontrados</span>
-                    </div>
-                </div>
-                
-                <!-- Tabla de registros -->
-                <div style="overflow-x: auto; padding: 0 24px 24px;">
-                    <div id="registrosTableContainer"></div>
-                </div>
-            </div>
-
-
-            <div class="card main-card" style="margin-top: 32px;">
-                <div class="card-header-flex">
-                    <div class="header-title">
-                        <div class="icon-box" style="color: var(--primary); background: var(--primary-light);">
-                            <i data-lucide="cloud"></i>
-                        </div>
-                        <div>
-                            <h3>Repositorio Digital</h3>
-                            <p class="subtitle">Sube y gestiona escaneos de asistencia</p>
-                        </div>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn-text" onclick="cargarHistorial()">
-                            <i data-lucide="refresh-cw" style="width: 16px;"></i> <span class="desktop-only">Refrescar</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="upload-container">
-                    <div class="drop-zone" id="dropZone">
-                        <i data-lucide="upload-cloud" class="drop-icon"></i>
-                        <div class="drop-content">
-                            <p class="drop-title">Arrastra tus archivos aquí</p>
-                            <p class="drop-subtitle">Soporta imágenes y PDF hasta 10MB</p>
-                        </div>
-                        <input type="file" id="archivoInput" class="file-input-hidden" onchange="mostrarNombreArchivo()">
-                    </div>
-                    
-                    <div class="upload-actions">
-                        <div class="input-with-icon" style="flex: 1;">
-                            <i data-lucide="file-text" class="search-icon"></i>
-                            <input type="text" id="nombreArchivoManual" placeholder="Nombre para guardar (Ej: Nomina Enero 2025)" class="modern-input">
-                        </div>
-                        <button class="btn-primary" id="btnSubir" onclick="subirArchivoSupabase()">
-                            <span class="btn-text-content" style="display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="arrow-up-circle" style="width: 20px;"></i> Subir
-                            </span>
-                            <div class="btn-loader" style="display: none;"></div>
-                        </button>
-                    </div>
-                    
-                    <div id="filePreview" class="file-preview-badge" style="display: none;">
-                        <i data-lucide="paperclip" style="width: 16px;"></i> <span id="fileNameDisplay"></span>
-                        <i data-lucide="x" class="close-preview" onclick="limpiarSeleccionArchivo()"></i>
-                    </div>
-                </div>
-
-                <div class="historial-container" id="historialGrid">
-                </div>
-            </div>
-
-        </main>
+      </main>
     </div>
 
-    <input type="file" id="importFile" style="display: none;" accept=".json" onchange="procesarImportacion()">
+    <input
+      type="file"
+      id="importFile"
+      style="display: none"
+      accept=".json"
+      onchange="procesarImportacion()"
+    />
 
     <script src="js/config.js"></script>
     <script src="js/ui.js"></script>
@@ -1113,8 +1736,8 @@
     <script src="js/timepicker.js"></script>
     <script src="js/app.js"></script>
     <script>
-        // Inicializar iconos al cargar por si acaso
-        lucide.createIcons();
+      // Inicializar iconos al cargar por si acaso
+      lucide.createIcons();
     </script>
-</body>
+  </body>
 </html>
