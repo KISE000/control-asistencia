@@ -168,22 +168,74 @@ function abrirModalLogin() {
 }
 
 /**
- * Mostrar diálogo de recuperar contraseña
+ * Mostrar modal de recuperar contraseña
  */
-async function mostrarRecuperarPassword() {
-    const email = prompt('Ingresa tu email para recuperar tu contraseña:');
+function mostrarRecuperarPassword() {
+    const modal = document.getElementById('modalRecuperarPassword');
+    if (modal) {
+        // Limpiar campos previos
+        document.getElementById('recuperarEmail').value = '';
+        ocultarInfoRecuperar();
+        
+        // Pre-llenar con el email del login si existe
+        const emailLogin = document.getElementById('loginEmail').value;
+        if (emailLogin) {
+            document.getElementById('recuperarEmail').value = emailLogin;
+        }
+        
+        modal.style.display = 'flex';
+        
+        // Focus en el input
+        setTimeout(() => {
+            document.getElementById('recuperarEmail')?.focus();
+        }, 100);
+        
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+/**
+ * Cerrar modal de recuperar contraseña
+ */
+function cerrarRecuperarPassword() {
+    const modal = document.getElementById('modalRecuperarPassword');
+    if (modal) {
+        modal.style.display = 'none';
+        ocultarInfoRecuperar();
+    }
+}
+
+/**
+ * Enviar email de recuperación de contraseña
+ */
+async function enviarRecuperacionPassword() {
+    const email = document.getElementById('recuperarEmail').value.trim();
     
-    if (!email) return;
+    // Validaciones
+    if (!email) {
+        mostrarInfoRecuperar('Por favor ingresa tu correo electrónico', 'error');
+        return;
+    }
     
     if (!email.includes('@')) {
-        showToast('❌ Email inválido', 'error');
+        mostrarInfoRecuperar('Correo electrónico inválido', 'error');
         return;
     }
     
     if (!supabase) {
-        showToast('❌ Error: Conexión no disponible', 'error');
+        mostrarInfoRecuperar('Error: Conexión no disponible', 'error');
         return;
     }
+    
+    // UI Loading
+    const btn = document.getElementById('btnEnviarRecuperacion');
+    const btnTextContent = btn.querySelector('.btn-text-content');
+    const btnLoader = btn.querySelector('.btn-loader');
+    
+    btn.disabled = true;
+    btnTextContent.style.display = 'none';
+    btnLoader.style.display = 'block';
+    ocultarInfoRecuperar();
     
     try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -192,11 +244,60 @@ async function mostrarRecuperarPassword() {
         
         if (error) throw error;
         
-        showToast('📧 Email de recuperación enviado. Revisa tu bandeja de entrada.', 'success');
+        mostrarInfoRecuperar('✅ Email enviado! Revisa tu bandeja de entrada.', 'success');
+        
+        // Cerrar modal después de 3 segundos
+        setTimeout(() => {
+            cerrarRecuperarPassword();
+            showToast('📧 Revisa tu correo para restablecer tu contraseña', 'success');
+        }, 3000);
         
     } catch (error) {
         console.error('Error recuperando contraseña:', error);
-        showToast('❌ Error al enviar email de recuperación', 'error');
+        mostrarInfoRecuperar('Error al enviar el correo. Intenta nuevamente.', 'error');
+    } finally {
+        // Restaurar botón
+        btn.disabled = false;
+        btnTextContent.style.display = 'flex';
+        btnLoader.style.display = 'none';
+    }
+}
+
+/**
+ * Mostrar mensaje en modal de recuperar
+ */
+function mostrarInfoRecuperar(mensaje, tipo = 'error') {
+    const infoDiv = document.getElementById('recuperarInfo');
+    const infoText = document.getElementById('recuperarInfoText');
+    const infoIcon = document.getElementById('recuperarInfoIcon');
+    
+    if (infoDiv && infoText && infoIcon) {
+        infoText.textContent = mensaje;
+        
+        if (tipo === 'success') {
+            infoDiv.style.background = '#ecfdf5';
+            infoDiv.style.border = '1px solid #a7f3d0';
+            infoDiv.style.color = '#065f46';
+            infoIcon.setAttribute('data-lucide', 'check-circle');
+        } else {
+            infoDiv.style.background = '#fef2f2';
+            infoDiv.style.border = '1px solid #fecaca';
+            infoDiv.style.color = '#dc2626';
+            infoIcon.setAttribute('data-lucide', 'alert-circle');
+        }
+        
+        infoDiv.style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+/**
+ * Ocultar mensaje en modal de recuperar
+ */
+function ocultarInfoRecuperar() {
+    const infoDiv = document.getElementById('recuperarInfo');
+    if (infoDiv) {
+        infoDiv.style.display = 'none';
     }
 }
 

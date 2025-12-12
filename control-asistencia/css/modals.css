@@ -1,0 +1,362 @@
+/* Estilos para Modal Excel, Login y TimePicker */
+.modal-excel {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-excel-content {
+  background: white;
+  border-radius: 16px;
+  width: 95%;
+  max-width: 1400px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-excel-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-excel-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-hero .btn-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+.modal-excel-body {
+  padding: 24px 32px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-excel-footer {
+  padding: 20px 32px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.tabla-excel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tabla-excel thead {
+  background: var(--primary-light);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabla-excel th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  white-space: nowrap;
+}
+
+.tabla-excel td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tabla-excel tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.input-tabla {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.input-tabla:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.input-tabla:disabled {
+  background: var(--surface-subtle);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.btn-menu-excel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.btn-menu-excel .btn-secondary {
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-menu-excel .btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .btn-menu-excel {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-menu-excel .btn-hero {
+    grid-column: 1;
+  }
+}
+
+/* --- Estilos Adicionales (Animaciones y Menú Usuario) --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#loginEmail:focus,
+#loginPassword:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.btn-loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para tabs de autenticación */
+.auth-tab {
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.auth-tab:hover {
+  opacity: 0.8;
+}
+
+/* Mejora de inputs en modal */
+#loginEmail:focus,
+#loginPassword:focus,
+#registroNombre:focus,
+#registroEmail:focus,
+#registroPassword:focus,
+#registroPasswordConfirm:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+/* Estilos del menú de usuario */
+.btn-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.btn-user-menu:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.user-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: white;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-dropdown-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-email {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-status {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0 8px;
+}
+
+.user-dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+}
+
+.user-dropdown-item:hover {
+  background: var(--surface-hover);
+}
+
+.user-dropdown-item i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Ocultar contenido cuando no hay sesión */
+.content-locked {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+

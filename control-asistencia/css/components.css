@@ -909,3 +909,27 @@ input:checked + .slider:before {
     opacity: 0;
   }
 }
+
+/* === PLACEHOLDER STYLES === */
+/* Ensure placeholders look like suggestions, not actual values */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.6 !important;
+  font-style: italic;
+  font-weight: 400;
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder {
+  opacity: 0.4 !important;
+}
+
+/* Special styling for email and password placeholders */
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.5 !important;
+  font-style: italic;
+  letter-spacing: normal;
+}
