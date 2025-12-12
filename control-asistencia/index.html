@@ -823,6 +823,103 @@
       </div>
     </div>
 
+    <!-- MODAL CONFIRMAR CIERRE DE SESIÓN -->
+    <div class="modal-excel" id="modalConfirmarLogout" style="display: none">
+      <div
+        class="modal-excel-content"
+        style="max-width: 420px; animation: fadeInUp 0.3s ease"
+      >
+        <div
+          class="modal-excel-header"
+          style="
+            background: linear-gradient(
+              135deg,
+              #ef4444 0%,
+              #dc2626 100%
+            );
+            color: white;
+            border-bottom: none;
+          "
+        >
+          <h2 style="color: white">
+            <i data-lucide="log-out" style="width: 28px; height: 28px"></i>
+            <span>Cerrar Sesión</span>
+          </h2>
+        </div>
+
+        <div class="modal-excel-body" style="padding: 32px; text-align: center">
+          <div style="margin-bottom: 20px">
+            <i
+              data-lucide="alert-triangle"
+              style="
+                width: 64px;
+                height: 64px;
+                color: #f59e0b;
+                margin: 0 auto 16px;
+                display: block;
+              "
+            ></i>
+          </div>
+          
+          <h3
+            style="
+              font-size: 1.25rem;
+              font-weight: 700;
+              color: var(--text);
+              margin-bottom: 12px;
+            "
+          >
+            ¿Estás seguro?
+          </h3>
+          
+          <p
+            style="
+              color: var(--text-muted);
+              font-size: 0.95rem;
+              line-height: 1.6;
+              margin-bottom: 0;
+            "
+          >
+            Tu sesión se cerrará y tendrás que volver a iniciar sesión para
+            acceder al sistema.
+          </p>
+        </div>
+
+        <div
+          class="modal-excel-footer"
+          style="
+            padding: 20px 32px;
+            background: var(--surface-subtle);
+            border-top: 1px solid var(--border-subtle);
+            gap: 12px;
+          "
+        >
+          <button
+            class="btn-text"
+            onclick="cerrarModalLogout()"
+            style="flex: 1"
+          >
+            <i data-lucide="x"></i> Cancelar
+          </button>
+          <button
+            class="btn-primary"
+            id="btnConfirmarLogout"
+            onclick="confirmarLogout()"
+            style="
+              flex: 1;
+              justify-content: center;
+              background: #ef4444;
+            "
+            onmouseover="this.style.background='#dc2626'"
+            onmouseout="this.style.background='#ef4444'"
+          >
+            <i data-lucide="log-out" style="width: 20px"></i>
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </div>
+
     <nav class="topbar">
       <div class="topbar-inner">
         <div class="brand-area">

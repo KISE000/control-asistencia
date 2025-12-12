@@ -608,19 +608,40 @@ function toggleContentLock(locked) {
 }
 
 /**
- * Cerrar sesión mejorado
+ * Mostrar modal de confirmación de cierre de sesión
  */
-async function logoutSupabase() {
+function logoutSupabase() {
+    const modal = document.getElementById('modalConfirmarLogout');
+    if (modal) {
+        // Cerrar dropdown de usuario primero
+        const dropdown = document.getElementById('userDropdown');
+        if (dropdown) dropdown.style.display = 'none';
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+/**
+ * Cerrar modal de confirmación de logout
+ */
+function cerrarModalLogout() {
+    const modal = document.getElementById('modalConfirmarLogout');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Confirmar y ejecutar cierre de sesión
+ */
+async function confirmarLogout() {
     if (!supabase) return;
     
-    // Confirmar
-    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-        return;
-    }
-    
-    // Cerrar dropdown
-    const dropdown = document.getElementById('userDropdown');
-    if (dropdown) dropdown.style.display = 'none';
+    // Cerrar modal
+    cerrarModalLogout();
     
     try {
         const { error } = await supabase.auth.signOut();
@@ -628,7 +649,7 @@ async function logoutSupabase() {
         if (error) throw error;
         
         localStorage.removeItem('supabaseSession');
-        showToast('👋 Sesión cerrada', 'success');
+        showToast('👋 Sesión cerrada correctamente', 'success');
         
         // Bloquear contenido y mostrar login
         toggleContentLock(true);
@@ -638,7 +659,7 @@ async function logoutSupabase() {
         
     } catch (error) {
         console.error('Error al cerrar sesión:', error);
-        showToast('Error al cerrar sesión', 'error');
+        showToast('❌ Error al cerrar sesión', 'error');
     }
 }
 
