@@ -82,7 +82,7 @@ function abrirTimePicker(inputId, title) {
             setearValorSelector('ampmSelector', ampm);
         } else {
             // Default si no matchea: 09:00 a. m.
-            setearValorSelector('hourSelector', '09');
+            setearValorSelector('hourSelector', '10');
             setearValorSelector('minuteSelector', '00');
             setearValorSelector('ampmSelector', 'a. m.');
         }

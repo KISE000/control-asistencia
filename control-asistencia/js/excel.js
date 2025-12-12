@@ -15,41 +15,8 @@ function aplicarEstilosYFormulasExcel(ws, opts = {}) {
     const tableHeaderRow = opts.tableHeaderRow || 0;
     const dataStartRow = opts.tableDataStartRow || (tableHeaderRow + 1);
 
-    // === COLORES Y ESTILOS "APPLE-LIKE" ===
-    const styles = {
-        header: {
-            fill: { fgColor: { rgb: "333333" } }, // Gris oscuro elegante
-            font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12, name: "Calibri" },
-            alignment: { horizontal: "center", vertical: "center" },
-            border: {
-                top: { style: "medium", color: { rgb: "FFFFFF" } },
-                bottom: { style: "medium", color: { rgb: "FFFFFF" } },
-                left: { style: "medium", color: { rgb: "FFFFFF" } },
-                right: { style: "medium", color: { rgb: "FFFFFF" } }
-            }
-        },
-        cellBase: {
-            font: { color: { rgb: "333333" }, sz: 11, name: "Calibri" },
-            alignment: { horizontal: "left", vertical: "center" },
-            border: {
-                top: { style: "thin", color: { rgb: "E5E7EB" } }, // Gris muy suave
-                bottom: { style: "thin", color: { rgb: "E5E7EB" } },
-                left: { style: "thin", color: { rgb: "E5E7EB" } },
-                right: { style: "thin", color: { rgb: "E5E7EB" } }
-            }
-        },
-        altRow: { fgColor: { rgb: "F9FAFB" } }, // Gris casi blanco
-        status: {
-            feriado: { fill: { fgColor: { rgb: "FFF7ED" } }, font: { color: { rgb: "C2410C" } } }, // Naranja
-            ausente: { fill: { fgColor: { rgb: "FEF2F2" } }, font: { color: { rgb: "DC2626" } } }, // Rojo
-            presente: { fill: { fgColor: { rgb: "FFFFFF" } }, font: { color: { rgb: "333333" } } }
-        },
-        totals: {
-            fill: { fgColor: { rgb: "F3F4F6" } },
-            font: { bold: true, color: { rgb: "111827" }, sz: 11, name: "Calibri" },
-            border: { top: { style: "double", color: { rgb: "9CA3AF" } } }
-        }
-    };
+    // === COLORES Y ESTILOS "APPLE-LIKE" (Desde Theme) ===
+    const styles = ExcelTheme.styles;
 
     // 1. Estilos para Encabezados de Tabla
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -60,9 +27,9 @@ function aplicarEstilosYFormulasExcel(ws, opts = {}) {
 
     // 2. Estilos para Datos y Fórmulas
     for (let R = dataStartRow; R <= range.e.r; ++R) {
-        const estadoCell = ws[XLSX.utils.encode_cell({ r: R, c: 3 })]; // Columna D (Estado)
+        const estadoCell = ws[XLSX.utils.encode_cell({ r: R, c: 2 })]; // Columna C (Estado)
         const estado = estadoCell ? estadoCell.v : '';
-        const isFeriado = estado === 'Feriado';
+        const isFeriado = ['Feriado', 'Feriado Nacional'].includes(estado); // Ampliado para incluir Feriado Nacional
         const isAusente = ['Ausente', 'Incapacidad', 'Permiso'].includes(estado);
 
         // Color de fondo base (Alternado o por estado)
@@ -91,7 +58,7 @@ function aplicarEstilosYFormulasExcel(ws, opts = {}) {
                 fill: { fgColor: { rgb: bgColor } },
                 font: { color: { rgb: fontColor }, sz: 11, name: "Calibri" },
                 alignment: {
-                    horizontal: (C >= 1 && C <= 2) || (C >= 4 && C <= 7) ? "center" : "left",
+                    horizontal: (C >= 1 && C <= 7) ? "center" : "left",
                     vertical: "center",
                     wrapText: C === 8
                 },
@@ -100,68 +67,117 @@ function aplicarEstilosYFormulasExcel(ws, opts = {}) {
 
             // Formatos Específicos
             if (C === 1) ws[cellAddress].z = "dd/mm/yyyy"; // Fecha
-            if (C === 6 || C === 7) ws[cellAddress].z = "0.00";
+            if (C >= 5 && C <= 7) ws[cellAddress].z = "0.00"; // Almuerzo, Hrs, Extras
         }
 
         // Fórmulas
         if (!isFeriado && !isAusente) {
-            const horaEntradaCell = XLSX.utils.encode_cell({ r: R, c: 4 }); // E
-            const horaSalidaCell = XLSX.utils.encode_cell({ r: R, c: 5 });  // F
+            const horaEntradaCell = XLSX.utils.encode_cell({ r: R, c: 3 }); // D
+            const horaSalidaCell = XLSX.utils.encode_cell({ r: R, c: 4 });  // E
+            const almuerzoCell = XLSX.utils.encode_cell({ r: R, c: 5 });    // F
             const horasTrabajadasCell = XLSX.utils.encode_cell({ r: R, c: 6 }); // G
             const horasExtraCell = XLSX.utils.encode_cell({ r: R, c: 7 });     // H
 
-            ws[horasTrabajadasCell].f = `IF(AND(${horaEntradaCell}<>"",${horaSalidaCell}<>""), ROUND((${horaSalidaCell}-${horaEntradaCell})*24, 2), 0)`;
+            // Fórmula ajustada: (Salida - Entrada) * 24 - Almuerzo
+            // Usamos MAX(0, ...) para evitar negativos
+            ws[horasTrabajadasCell].f = `IF(AND(${horaEntradaCell}<>"",${horaSalidaCell}<>""), MAX(0, ROUND(((${horaSalidaCell}-${horaEntradaCell})*24)-${almuerzoCell}, 2)), 0)`;
             ws[horasExtraCell].f = `IF(${horasTrabajadasCell}>8, ${horasTrabajadasCell}-8, 0)`;
         }
     }
 
-    // 3. Fila de Totales
-    const totalRow = range.e.r + 2;
+    // 3. Fila de Totales - Footer Sólido y Profesional
+    const totalRowIndex = range.e.r + 1; // La fila de totales va una fila después del último dato
 
-    // Etiqueta TOTALES
-    const labelCell = XLSX.utils.encode_cell({ r: totalRow, c: 0 });
-    ws[labelCell] = { v: "TOTALES DEL MES", t: 's' };
-    ws[labelCell].s = {
+    // Etiqueta TOTALES (A-E)
+    const totalLabelCell = XLSX.utils.encode_cell({ r: totalRowIndex, c: 0 });
+    ws[totalLabelCell] = { v: "TOTALES DEL MES", t: 's' };
+
+    // Merge de "TOTALES DEL MES" (Columnas A - E)
+    if(!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: totalRowIndex, c: 0 }, e: { r: totalRowIndex, c: 5 } }); // A-F
+
+    // Estilo Label Footer
+    ws[totalLabelCell].s = {
         ...styles.totals,
-        alignment: { horizontal: "right", vertical: "center" }
+        alignment: { horizontal: "right", vertical: "center" } // Alineado a la derecha pegado a números
     };
 
-    // Merge para etiqueta
-    if (!ws['!merges']) ws['!merges'] = [];
-    ws['!merges'].push({ s: { r: totalRow, c: 0 }, e: { r: totalRow, c: 5 } });
+    // Aplicar estilo a TODAS las celdas del footer (A-I)
+    for (let c = 0; c <= 8; c++) {
+        const cellAddr = XLSX.utils.encode_cell({ r: totalRowIndex, c: c });
+        if(!ws[cellAddr]) ws[cellAddr] = { v: "", t: "s" }; // Crear celda si no existe
+        ws[cellAddr].s = styles.totals;
+    }
 
     // Sumatorias
-    const startSum = dataStartRow;
-    const endSum = range.e.r + 1; // Ajuste por índice
+    const startSum = dataStartRow + 1;
+    const endSum = range.e.r + 1;
 
-    // Total H.Trabajadas
-    const cellG = XLSX.utils.encode_cell({ r: totalRow, c: 6 });
-    ws[cellG] = { f: `SUM(G${startSum}:G${endSum})`, t: 'n', z: '0.00' };
-    ws[cellG].s = { ...styles.totals, alignment: { horizontal: "center" } };
+    // Total H.Trabajadas (Col G)
+    const cellF = XLSX.utils.encode_cell({ r: totalRowIndex, c: 6 });
+    ws[cellF] = { f: `SUM(G${startSum}:G${endSum})`, t: 'n', z: '0.00' };
+    ws[cellF].s = styles.totals;
 
-    // Total H.Extra
-    const cellH = XLSX.utils.encode_cell({ r: totalRow, c: 7 });
-    ws[cellH] = { f: `SUM(H${startSum}:H${endSum})`, t: 'n', z: '0.00' };
-    ws[cellH].s = { ...styles.totals, alignment: { horizontal: "center" }, font: { ...styles.totals.font, color: { rgb: "C2410C" } } };
+    // Total H.Extra (Col H) - Texto naranja claro para destacar sobre fondo oscuro
+    const cellG = XLSX.utils.encode_cell({ r: totalRowIndex, c: 7 });
+    ws[cellG] = { f: `SUM(H${startSum}:H${endSum})`, t: 'n', z: '0.00' };
+    ws[cellG].s = {
+        ...styles.totals,
+        font: { ...styles.totals.font, color: { rgb: "FDBA74" } } // Orange 300 para resaltar
+    };
 
     // Actualizar Rango
-    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRow + 1, c: 8 } });
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRowIndex + 1, c: 8 } });
 
-    // Anchos de Columna
+
+    // Anchos de Columna (Ajustados para reporte corporativo)
     ws['!cols'] = [
-        { wch: 12 }, // Día Sem
+        { wch: 10 }, // Día Sem
         { wch: 14 }, // Fecha
-        { wch: 6 },  // Día Num
-        { wch: 15 }, // Estado
-        { wch: 12 }, // Ent
-        { wch: 12 }, // Sal
+        { wch: 16 }, // Estado
+        { wch: 14 }, // Ent
+        { wch: 14 }, // Sal
+        { wch: 10 }, // Almuerzo
         { wch: 12 }, // H.Trab
         { wch: 12 }, // H.Ext
-        { wch: 40 }  // Obs
+        { wch: 45 }  // Obs (Más espacio)
     ];
 
+    // 4. AutoFiltro y Validaciones
+    // Aplicar filtro automático a los encabezados
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: tableHeaderRow, c: 0 }, e: { r: range.e.r, c: range.e.c } }) };
+
+    // Validación de Datos para Observaciones (Columna H -> Index 7)
+    // Lista de opciones comunes
+    const opcionesObservacion = '"Sin Novedad,Vacaciones,Incapacidad,Permiso,Retardo,Falta Injustificada"';
+
+    // Rango de celdas de observaciones (desde dataStartRow hasta final)
+    const rangeObs = { s: { r: dataStartRow, c: 8 }, e: { r: range.e.r, c: 8 } };
+
+    // Aplicar validación a cada celda del rango
+    if(!ws['!dataValidation']) ws['!dataValidation'] = [];
+
+    for(let R = rangeObs.s.r; R <= rangeObs.e.r; ++R) {
+        ws['!dataValidation'].push({
+            sqref: XLSX.utils.encode_cell({r: R, c: 8}),
+            type: 'list',
+            operator: 'equal',
+            formula1: opcionesObservacion,
+            showDropDown: true
+        });
+    }
+
+    // 5. Borde Exterior Grueso (Contorno de Tabla)
+    const rangeTable = XLSX.utils.encode_range({ s: { r: tableHeaderRow, c: 0 }, e: { r: range.e.r, c: 8 } });
+
+    // Iterar para aplicar bordes exteriores (Top/Bottom/Left/Right del bloque)
+    // Nota: xlsx-js-style aplica bordes por celda.
+    // Una opción rápida es asegurar que todas las celdas tengan borde (ya hecho en Styles)
+    // y solo reforzar el contorno, pero esto requeriría iterar de nuevo.
+    // Dado que ya tenemos bordes internos definidos en 'styles.cellBase', el "Grid" ya debería verse.
+
     ws['!freeze'] = { xSplit: 0, ySplit: tableHeaderRow + 1 };
-    ws['!sheetView'] = { showGridLines: false };
+    ws['!sheetView'] = { showGridLines: false }; // Ocultamos lineas de grid de Excel para que resalten nuestros bordes
 }
 
 /**
@@ -176,10 +192,10 @@ async function generarExcel() {
     const mes = parseInt(document.getElementById('mes').value);
     const ano = parseInt(document.getElementById('ano').value);
     const nombreMes = obtenerNombreMes(mes);
-    
-    const horaEstandar = document.getElementById('horaEstandar').value || "09:00";
-    const horaSalida = document.getElementById('horaSalida').value || "18:00";
-    
+
+    const horaEstandar = document.getElementById('horaEstandar').value || "10:00";
+    const horaSalida = document.getElementById('horaSalida').value || "19:00";
+
     const wb = XLSX.utils.book_new();
 
     seleccionados.forEach(emp => {
@@ -188,20 +204,24 @@ async function generarExcel() {
         const diasMes = new Date(ano, mes, 0).getDate();
 
         for (let dia = 1; dia <= diasMes; dia++) {
-            const currDate = new Date(ano, mes - 1, dia);
+            // Usar mediodía (12:00) para evitar problemas de zona horaria
+            const currDate = new Date(ano, mes - 1, dia, 12, 0, 0);
             const fechaStr = currDate.toISOString().split('T')[0]; // YYYY-MM-DD
             const esFeriado = feriados.some(f => f.fecha === fechaStr);
-            
-            // Lógica simple de estado (se puede refinar)
+
+            // Corrección manual de días para evitar errores de local
+            const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+            const nombreDia = diasSemana[currDate.getDay()]; // 0=DOM, 1=LUN...
+
             let estado = esFeriado ? 'Feriado' : 'Presente';
-            
+
             datos.push({
-                'Dia': currDate.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase().replace('.', ''),
+                'Dia': nombreDia,
                 'Fecha': fechaStr,
-                '#': dia,
                 'Estado': estado,
                 'Entrada': esFeriado ? '' : horaEstandar,
                 'Salida': esFeriado ? '' : horaSalida,
+                'Almuerzo': esFeriado ? 0 : 1, // Nuevo: Almuerzo default 1
                 'Hrs': '',   // Fórmula
                 'Extras': '', // Fórmula
                 'Observaciones': esFeriado ? (feriados.find(f => f.fecha === fechaStr)?.descripcion || 'Feriado') : ''
@@ -213,59 +233,42 @@ async function generarExcel() {
         const ws = XLSX.utils.json_to_sheet(datos, { origin: "A6" });
 
         // 3. Agregar Encabezados Corporativos (Filas 1-5)
+        // NOTA: Separamos Etiquetas (Col A) de Valores (Col B)
         XLSX.utils.sheet_add_aoa(ws, [
             ["REPORTE DE ASISTENCIA MENSUAL"], // A1
-            [`Empleado: ${emp.nombre.toUpperCase()}`], // A2
-            [`Periodo: ${nombreMes} ${ano}`], // A3
-            [`Fecha Emisión: ${new Date().toLocaleDateString()}`], // A4
-            [""] // A5 (Espaciador)
+            ["EMPLEADO:", emp.nombre.toUpperCase()], // A2, B2
+            ["PERIODO:", `${nombreMes} ${ano}`], // A3, B3
+            ["EMISIÓN:", new Date().toLocaleDateString()], // A4, B4
+            [""] // A5
         ], { origin: "A1" });
 
         // Merge del Título Principal (A1:I1)
         if(!ws['!merges']) ws['!merges'] = [];
         ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } });
-        
-        // === ESTILO TÍTULO PRINCIPAL - PREMIUM ===
-        const tituloCell = ws['A1'];
-        if(tituloCell) {
-            tituloCell.s = {
-                font: { bold: true, sz: 18, color: { rgb: "FFFFFF" }, name: "Calibri" },
-                fill: { fgColor: { rgb: "1F2937" } }, // Gris oscuro profesional
-                alignment: { horizontal: "center", vertical: "center" },
-                border: {
-                    top: { style: "medium", color: { rgb: "1F2937" } },
-                    bottom: { style: "medium", color: { rgb: "3B82F6" } }, // Línea azul decorativa
-                    left: { style: "medium", color: { rgb: "1F2937" } },
-                    right: { style: "medium", color: { rgb: "1F2937" } }
-                }
-            };
-        }
-        
-        // === ESTILO INFO EMPLEADO (A2-A4) - ELEGANTE ===
-        const infoStyle = {
-            font: { bold: true, sz: 11, color: { rgb: "1F2937" }, name: "Calibri" },
-            fill: { fgColor: { rgb: "F8FAFC" } }, // Gris muy claro
-            alignment: { horizontal: "left", vertical: "center" },
-            border: {
-                left: { style: "thin", color: { rgb: "E2E8F0" } },
-                right: { style: "thin", color: { rgb: "E2E8F0" } },
-                top: { style: "thin", color: { rgb: "E2E8F0" } },
-                bottom: { style: "thin", color: { rgb: "E2E8F0" } }
-            }
-        };
-        
-        ['A2', 'A3', 'A4'].forEach(ref => {
-            if(ws[ref]) {
-                ws[ref].s = infoStyle;
-            }
-        });
-        
-        // Merge info para mejor presentación (A2:C2, A3:C3, A4:C4)
-        ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }); // A2:C2
-        ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 2 } }); // A3:C3
-        ws['!merges'].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 2 } }); // A4:C4
 
-        // 4. Aplicar Estilos a la Tabla
+        // === ESTILO TÍTULO PRINCIPAL - Aplicar a todas las celdas del merge ===
+        for(let c = 0; c <= 8; c++) {
+            const cellAddr = XLSX.utils.encode_cell({c: c, r: 0});
+            if(!ws[cellAddr]) ws[cellAddr] = { v: "", t: "s" };
+            ws[cellAddr].s = ExcelTheme.styles.mainTitle;
+        }
+
+        // === ESTILO INFO EMPLEADO (Separado Label/Value) ===
+        // Filas de info: 1, 2, 3 (Indices: 1, 2, 3 correspondientes a filas 2,3,4)
+        [1, 2, 3].forEach(r => {
+            // Aplicar Estilo Etiqueta (Col A)
+            const cellLabel = XLSX.utils.encode_cell({c: 0, r: r});
+            if(ws[cellLabel]) ws[cellLabel].s = ExcelTheme.styles.infoLabel;
+
+            // Merge Valores (Col B hasta I)
+            ws['!merges'].push({ s: { r: r, c: 1 }, e: { r: r, c: 8 } });
+
+            // Aplicar estilo al valor (solo celda inicial es suficiente sin bordes)
+            const cellValue = XLSX.utils.encode_cell({c: 1, r: r});
+            if(ws[cellValue]) ws[cellValue].s = ExcelTheme.styles.infoValue;
+        });
+
+        // === APLICAR ESTILOS PROFESIONALES A LA TABLA ===    
         // La tabla comienza con HEADERS en Fila 6 (Index 5)
         // Los datos comienzan en Fila 7 (Index 6)
         aplicarEstilosYFormulasExcel(ws, { 
@@ -273,6 +276,19 @@ async function generarExcel() {
             tableDataStartRow: 6 
         });
 
+        // === DEFINIR COMO "TABLA EXCEL" REAL PARA FILTROS NATIVOS ===
+        // Esto agrega la funcionalidad de "Insertar Tabla" que pidió el usuario
+        const rangeDatos = XLSX.utils.decode_range(ws['!ref']);
+        ws['!tbl'] = {
+            ref: XLSX.utils.encode_range({s: {r: 5, c: 0}, e: {r: rangeDatos.e.r, c: 8}}), // A6:I...
+            columns: [
+                {name: "Dia"}, {name: "Fecha"}, {name: "Estado"},
+                {name: "Entrada"}, {name: "Salida"}, 
+                {name: "Almuerzo"}, {name: "Hrs"},
+                {name: "Extras"}, {name: "Observaciones"}
+            ]
+        };
+        
         const nombreHoja = emp.nombre.substring(0, 30).replace(/[:\/?*\[\]\\]/g, "");
         XLSX.utils.book_append_sheet(wb, ws, nombreHoja || "Empleado");
     });
@@ -307,8 +323,8 @@ async function abrirEditorExcel() {
     const mes = parseInt(document.getElementById('mes').value);
     const ano = parseInt(document.getElementById('ano').value);
     const diasMes = new Date(ano, mes, 0).getDate();
-    const horaEstandar = document.getElementById('horaEstandar').value || "09:00 a. m.";
-    const horaSalida = document.getElementById('horaSalida').value || "06:00 p. m.";
+    const horaEstandar = document.getElementById('horaEstandar').value || "10:00 a. m.";
+    const horaSalida = document.getElementById('horaSalida').value || "07:00 p. m.";
     const periodo = `${obtenerNombreMes(mes)}_${ano}`;
 
     // Mostrar loader
@@ -331,7 +347,9 @@ async function abrirEditorExcel() {
 
         seleccionados.forEach(emp => {
             for (let dia = 1; dia <= diasMes; dia++) {
-                const fecha = new Date(ano, mes - 1, dia);
+                const fecha = new Date(ano, mes - 1, dia, 12, 0, 0);
+                const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+                const nombreDia = diasSemana[fecha.getDay()];
                 const fechaStr = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 
                 // Buscar si ya existe registro para este empleado y fecha
@@ -347,7 +365,15 @@ async function abrirEditorExcel() {
                 // Datos default
                 let horaEntradaDef = esFeriado ? '' : horaEstandar;
                 let horaSalidaDef = esFeriado ? '' : horaSalida;
-                let horasTrabajadasDef = (horaSalida && horaEstandar) ? calcularDiferenciaHoras(horaEstandar, horaSalida) : 8;
+                
+                // Calcular duración teórica inicial
+                let duracionTeorica = 0;
+                if (horaEntradaDef && horaSalidaDef && !esFeriado) {
+                    duracionTeorica = parseFloat(calcularDiferenciaHorasAMPM(horaEntradaDef, horaSalidaDef));
+                }
+
+                let almuerzoDef = 1; // Default 1 hora de almuerzo
+                let horasTrabajadasDef = Math.max(0, duracionTeorica - almuerzoDef);
                 let horasExtraDef = 0;
                 let obsDef = esFeriado ? `Feriado: ${feriados.find(f => f.fecha === fechaStr)?.descripcion || ''}` : '';
                 let completadoDef = false;
@@ -362,6 +388,16 @@ async function abrirEditorExcel() {
                     
                     horasTrabajadasDef = registroExistente.horas_trabajadas || 0;
                     horasExtraDef = registroExistente.horas_extra || 0;
+
+                    // INFERIR ALMUERZO: Duración Real - Horas Trabajadas Guardadas
+                    if (horaEntradaDef && horaSalidaDef) {
+                        const duracionReal = parseFloat(calcularDiferenciaHorasAMPM(horaEntradaDef, horaSalidaDef));
+                        // Si la diferencia es positiva, asumimos que es el almuerzo. Si es 0 o negativo, ponemos 0.
+                        let dif = duracionReal - horasTrabajadasDef;
+                        almuerzoDef = dif > 0 ? parseFloat(dif.toFixed(1)) : 0;
+                    } else {
+                        almuerzoDef = 0;
+                    }
                     
                     // Recuperar 'completado' desde observaciones (hack con tag [✓])
                     let obsRaw = registroExistente.observaciones || '';
@@ -383,10 +419,12 @@ async function abrirEditorExcel() {
                     estado: estado,
                     horaEntrada: horaEntradaDef,
                     horaSalida: horaSalidaDef,
+                    almuerzo: almuerzoDef,
                     horasTrabajadas: horasTrabajadasDef,
                     horasExtra: horasExtraDef,
                     observaciones: obsDef,
-                    completado: completadoDef
+                    completado: completadoDef,
+                    saved: !!registroExistente // Flag para indicar si ya estaba guardado en BD
                 });
             }
         });
@@ -560,6 +598,12 @@ function renderTablaExcel() {
         `;
     });
     
+    // === TOOLBAR DE ACCIONES MASIVAS ===
+    html += `
+        <div style="flex: 1;"></div>
+
+    `;
+
     html += '</div>'; // Fin tabs header
     
     // 3. Contenido de las pestañas
@@ -582,6 +626,7 @@ function renderTablaExcel() {
                                 <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 140px;">Estado</th>
                                 <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 120px;">Hora Entrada</th>
                                 <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 120px;">Hora Salida</th>
+                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 80px;">Almuerzo</th>
                                 <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 90px;">Hrs Trab.</th>
                                 <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 90px;">Hrs Extra</th>
                                 <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 200px;">Observaciones</th>
@@ -633,7 +678,9 @@ function renderTablaExcel() {
 
             html += `
                 <tr data-idx="${idx}" style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9; border-left: ${borderLeft};">
-                    <td style="padding: 10px 16px; color: #334155; font-variant-numeric: tabular-nums;">${fila.fecha.split('-').slice(1).join('/')}</td>
+                    <td style="padding: 10px 16px; color: #334155; font-variant-numeric: tabular-nums;">
+                        ${formatFechaConDiaUI(fila.fecha)}
+                    </td>
                     <td style="padding: 10px 16px;">
                         <select class="input-tabla" onchange="actualizarCeldaExcel(${idx}, 'estado', this.value)" 
                             style="width: 100%; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; ${esFeriado ? 'color: #ea580c; font-weight: 600;' : ''}">
@@ -653,17 +700,21 @@ function renderTablaExcel() {
                         ${inputSalida}
                     </td>
                     <td style="padding: 10px 16px;">
-                        <input type="number" class="input-tabla" value="${fila.horasTrabajadas}" 
-                            onchange="actualizarCeldaExcel(${idx}, 'horasTrabajadas', this.value)" 
-                            min="0" max="24" step="0.5" 
+                        <input type="number" class="input-tabla" value="${fila.almuerzo}" 
+                            onchange="actualizarCeldaExcel(${idx}, 'almuerzo', this.value)" 
+                            min="0" max="4" step="0.5" 
                             ${esFeriado ? 'disabled' : ''} 
                             style="width: 100%; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; ${esFeriado ? 'background: #f1f5f9;' : ''}">
                     </td>
                     <td style="padding: 10px 16px;">
+                        <input type="number" class="input-tabla" value="${fila.horasTrabajadas}" 
+                            disabled
+                            style="width: 100%; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; color: #475569; font-weight: 500;">
+                    </td>
+                    <td style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.horasExtra}" 
-                            onchange="actualizarCeldaExcel(${idx}, 'horasExtra', this.value)" 
-                            min="0" max="12" step="0.5"
-                            style="width: 100%; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; ${fila.horasExtra > 0 ? 'color: #ea580c; font-weight: bold; background: #fff7ed;' : ''}">
+                            readonly
+                            style="width: 100%; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; color: ${fila.horasExtra > 0 ? '#ea580c' : '#94a3b8'}; font-weight: ${fila.horasExtra > 0 ? 'bold' : 'normal'};">
                     </td>
                     <td style="padding: 10px 16px;">
                         <input type="text" class="input-tabla" value="${fila.observaciones}" 
@@ -800,24 +851,178 @@ function actualizarCeldaExcel(idx, campo, valor) {
     if (datosAsistenciaExcel[idx]) {
         datosAsistenciaExcel[idx][campo] = valor;
 
-        if (campo === 'horaEntrada' || campo === 'horaSalida') {
-            // Calcular diferencia (soportando formato AM/PM)
-            const horas = calcularDiferenciaHorasAMPM(datosAsistenciaExcel[idx].horaEntrada, datosAsistenciaExcel[idx].horaSalida);
-            datosAsistenciaExcel[idx].horasTrabajadas = horas;
+        // Recalcular si cambian horas o almuerzo
+        if (campo === 'horaEntrada' || campo === 'horaSalida' || campo === 'almuerzo') {
+            const entrada = datosAsistenciaExcel[idx].horaEntrada;
+            const salida = datosAsistenciaExcel[idx].horaSalida;
+            const almuerzo = parseFloat(datosAsistenciaExcel[idx].almuerzo) || 0;
 
+            let horasTrab = 0;
+            let horasExtra = 0;
+
+            if (entrada && salida) {
+                // 1. Calcular duración total
+                const duracion = parseFloat(calcularDiferenciaHorasAMPM(entrada, salida));
+                
+                // 2. Restar almuerzo (asegurar no negativo)
+                horasTrab = Math.max(0, duracion - almuerzo);
+                
+                // 3. Round a 2 decimales
+                horasTrab = parseFloat(horasTrab.toFixed(2));
+
+                // 4. Calcular Extras (Base de 8 horas)
+                // Usamos lógica REAL: Horas Trabajadas es el TOTAL neto. Extras es el exceso sobre 8.
+                if (horasTrab > 8) {
+                    horasExtra = parseFloat((horasTrab - 8).toFixed(2));
+                }
+            }
+
+            datosAsistenciaExcel[idx].horasTrabajadas = horasTrab;
+            datosAsistenciaExcel[idx].horasExtra = horasExtra;
+
+            // Actualizar DOM
             const rowElement = document.querySelector(`tr[data-idx="${idx}"]`);
             if (rowElement) {
-                const inputHrsTrabajadas = rowElement.querySelector('input[type="number"][onchange*="horasTrabajadas"]');
-                if (inputHrsTrabajadas) inputHrsTrabajadas.value = horas;
+                const tds = rowElement.querySelectorAll('td');
+                // Indices Correctos:
+                // 0: Fecha, 1: Estado, 2: Entrada, 3: Salida, 4: Almuerzo, 5: Trab, 6: Extra, 7: Obs, 8: Accion
+                
+                if (tds[5] && tds[5].querySelector('input')) tds[5].querySelector('input').value = horasTrab;
+                if (tds[6] && tds[6].querySelector('input')) {
+                     const inputExtra = tds[6].querySelector('input');
+                     inputExtra.value = horasExtra;
+                     // Update styles
+                     if (horasExtra > 0) {
+                         inputExtra.style.color = '#ea580c';
+                         inputExtra.style.fontWeight = 'bold';
+                         inputExtra.style.background = '#fff7ed';
+                     } else {
+                         inputExtra.style.color = '#94a3b8';
+                         inputExtra.style.fontWeight = 'normal';
+                         inputExtra.style.background = '#f8fafc';
+                     }
+                }
             }
         }
 
-        if (campo === 'estado' && valor !== 'Presente') {
-            datosAsistenciaExcel[idx].horasTrabajadas = 0;
+        if (campo === 'estado') {
             const rowElement = document.querySelector(`tr[data-idx="${idx}"]`);
-            if (rowElement) {
-                const inputHrsTrabajadas = rowElement.querySelector('input[type="number"][onchange*="horasTrabajadas"]');
-                if (inputHrsTrabajadas) inputHrsTrabajadas.value = 0;
+            const tds = rowElement ? rowElement.querySelectorAll('td') : [];
+            const inputEntrada = tds[2]?.querySelector('input');
+            const inputSalida = tds[3]?.querySelector('input');
+            const inputAlmuerzo = tds[4]?.querySelector('input');
+            const inputTrab = tds[5]?.querySelector('input');
+            const inputExtra = tds[6]?.querySelector('input');
+
+            if (valor === 'Presente') {
+                // 1. Restaurar valores por defecto si están vacíos
+                const horaEstandarDef = document.getElementById('horaEstandar').value || "10:00 a. m.";
+                const horaSalidaDef = document.getElementById('horaSalida').value || "07:00 p. m.";
+
+                let huboCambios = false;
+
+                if (!datosAsistenciaExcel[idx].horaEntrada) {
+                     datosAsistenciaExcel[idx].horaEntrada = horaEstandarDef;
+                     if(inputEntrada) inputEntrada.value = horaEstandarDef;
+                     huboCambios = true;
+                }
+                if (!datosAsistenciaExcel[idx].horaSalida) {
+                     datosAsistenciaExcel[idx].horaSalida = horaSalidaDef;
+                     if(inputSalida) inputSalida.value = horaSalidaDef;
+                     huboCambios = true;
+                }
+                // Resetear almuerzo a 1 si estaba en 0
+                if (parseFloat(datosAsistenciaExcel[idx].almuerzo) === 0) {
+                    datosAsistenciaExcel[idx].almuerzo = 1;
+                    if(inputAlmuerzo) inputAlmuerzo.value = 1;
+                    huboCambios = true;
+                }
+
+                // 2. Habilitar inputs
+                if(inputEntrada) { 
+                    inputEntrada.disabled = false; 
+                    inputEntrada.style.background = 'white'; 
+                    inputEntrada.style.color = 'inherit';
+                }
+                if(inputSalida) { 
+                    inputSalida.disabled = false; 
+                    inputSalida.style.background = 'white'; 
+                    inputSalida.style.color = 'inherit';
+                }
+                if(inputAlmuerzo) { 
+                    inputAlmuerzo.disabled = false; 
+                    inputAlmuerzo.style.background = 'white'; 
+                }
+                
+                // 3. Forzar recálculo si hubo restauración de horas
+                if (huboCambios) {
+                    const entrada = datosAsistenciaExcel[idx].horaEntrada;
+                    const salida = datosAsistenciaExcel[idx].horaSalida;
+                    const almuerzo = parseFloat(datosAsistenciaExcel[idx].almuerzo) || 0;
+                    
+                    if (entrada && salida) {
+                        const duracion = parseFloat(calcularDiferenciaHorasAMPM(entrada, salida));
+                        let horasTrab = Math.max(0, duracion - almuerzo);
+                        horasTrab = parseFloat(horasTrab.toFixed(2));
+                        
+                        let horasExtra = 0;
+                        if (horasTrab > 8) {
+                            horasExtra = parseFloat((horasTrab - 8).toFixed(2));
+                        }
+                        
+                        datosAsistenciaExcel[idx].horasTrabajadas = horasTrab;
+                        datosAsistenciaExcel[idx].horasExtra = horasExtra;
+                        
+                        if(inputTrab) inputTrab.value = horasTrab;
+                        if(inputExtra) {
+                            inputExtra.value = horasExtra;
+                            if (horasExtra > 0) {
+                                inputExtra.style.color = '#ea580c';
+                                inputExtra.style.fontWeight = 'bold';
+                                inputExtra.style.background = '#fff7ed';
+                            } else {
+                                inputExtra.style.color = '#94a3b8';
+                                inputExtra.style.fontWeight = 'normal';
+                                inputExtra.style.background = '#f8fafc';
+                            }
+                        }
+                    }
+                }
+
+            } else {
+                // Lógica para NO Presente (Ausente, Permiso, etc.)
+                // 1. Limpiar datos en modelo
+                datosAsistenciaExcel[idx].horaEntrada = '';
+                datosAsistenciaExcel[idx].horaSalida = '';
+                datosAsistenciaExcel[idx].almuerzo = 0;
+                datosAsistenciaExcel[idx].horasTrabajadas = 0;
+                datosAsistenciaExcel[idx].horasExtra = 0;
+
+                // 2. Actualizar DOM y deshabilitar
+                if(inputEntrada) { 
+                    inputEntrada.value = ''; 
+                    inputEntrada.disabled = true; 
+                    inputEntrada.style.background = '#f1f5f9'; 
+                    inputEntrada.style.color = '#94a3b8';
+                }
+                if(inputSalida) { 
+                    inputSalida.value = ''; 
+                    inputSalida.disabled = true; 
+                    inputSalida.style.background = '#f1f5f9'; 
+                    inputSalida.style.color = '#94a3b8';
+                }
+                if(inputAlmuerzo) { 
+                    inputAlmuerzo.value = 0; 
+                    inputAlmuerzo.disabled = true; 
+                    inputAlmuerzo.style.background = '#f1f5f9'; 
+                }
+                if(inputTrab) inputTrab.value = 0;
+                if(inputExtra) {
+                    inputExtra.value = 0;
+                    inputExtra.style.color = '#94a3b8';
+                    inputExtra.style.fontWeight = 'normal';
+                    inputExtra.style.background = '#f8fafc';
+                }
             }
         }
     }
@@ -897,60 +1102,109 @@ async function guardarProgreso() {
  * Guarda los datos editados en Supabase con validación de autenticación
  * @param {boolean} keepOpen - Si es true, mantiene el modal abierto (guardado parcial)
  */
+/**
+ * Guarda los datos editados en Supabase con validación de autenticación
+ * @param {boolean} keepOpen - Si es true, mantiene el modal abierto (guardado parcial)
+ */
 async function guardarExcelSupabase(keepOpen = false) {
     // Verificar que Supabase existe
     if (!supabase) {
         return showToast('❌ Error: Conexión a base de datos no disponible', 'error');
     }
 
-    // Identificar botón a usar para loading state
     const btnId = keepOpen ? 'btnGuardarProgreso' : 'btnGuardarExcel';
     const btn = document.getElementById(btnId);
-    if (!btn) return; // Seguridad
+    if (!btn) return;
 
     const originalContent = btn.innerHTML;
+    
+    // Solo poner loading si NO es una verificación que podría pausarse
+    // Pero como verificamos asíncronamente, mejor poner loading visual "Verificando..."
     btn.disabled = true;
-    btn.innerHTML = '<div class="btn-loader"></div> Guardando...';
+    btn.innerHTML = '<div class="btn-loader"></div> Verificando...';
 
     try {
-        // Verificar autenticación
+        // 1. Verificar sesión rápida
         const { data: { session }, error: authError } = await supabase.auth.getSession();
-        
-        if (authError) {
-            throw new Error('Error al verificar sesión: ' + authError.message);
-        }
-        
-        if (!session) {
-            btn.disabled = false;
-            btn.innerHTML = originalContent;
-            if (window.lucide) lucide.createIcons();
-            
-            showToast('🔐 Debes iniciar sesión primero', 'warning');
-            setTimeout(() => {
-                abrirModalLogin();
-            }, 500);
-            return;
+        if (authError || !session) {
+             throw new Error('Debes iniciar sesión para guardar');
         }
 
         const mes = parseInt(document.getElementById('mes').value);
         const ano = parseInt(document.getElementById('ano').value);
         const periodo = `${obtenerNombreMes(mes)}_${ano}`;
 
-        // Validar que hay datos
         if (datosAsistenciaExcel.length === 0) {
             throw new Error('No hay datos para guardar');
         }
 
+        // 2. Verificar existencia de datos (solo si es guardado final)
+        if (!keepOpen) {
+            const empleadosIds = [...new Set(datosAsistenciaExcel.map(d => d.empleadoId))];
+            
+            const { count, error: countError } = await supabase
+                .from('asistencias')
+                .select('*', { count: 'exact', head: true })
+                .in('empleado_id', empleadosIds)
+                .eq('periodo', periodo);
+            
+            if (count > 0) {
+                // Restaurar UI para mostrar modal
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                if (window.lucide) lucide.createIcons();
+
+                mostrarModalConfirmacion(
+                    '⚠️ Datos Existentes', 
+                    `Se encontraron ${count} registros previos para este periodo. \n¿Deseas sobrescribirlos?`,
+                    () => {
+                        ejecutarGuardado(keepOpen); // Confirmado
+                    }
+                );
+                return; // Salir y esperar confirmación
+            }
+        }
+
+        // Si no hay conflicto o es guardado parcial, proceder
+        await ejecutarGuardado(keepOpen);
+
+    } catch (error) {
+        console.error('Error pre-guardado:', error);
+        let msg = error.message;
+        if (msg.includes('sesión')) msg = '🔒 ' + msg;
+        showToast(msg, 'error');
+        
+        // Restaurar botón error
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+/**
+ * Ejecuta la lógica real de guardado (Upsert)
+ */
+async function ejecutarGuardado(keepOpen) {
+    const btnId = keepOpen ? 'btnGuardarProgreso' : 'btnGuardarExcel';
+    const btn = document.getElementById(btnId);
+    const originalContent = keepOpen ? '<i data-lucide="save-all"></i> Guardar Progreso' : '<i data-lucide="cloud-upload"></i> Guardar en Nube';
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="btn-loader"></div> Guardando...';
+    }
+
+    try {
+        const mes = parseInt(document.getElementById('mes').value);
+        const ano = parseInt(document.getElementById('ano').value);
+        const periodo = `${obtenerNombreMes(mes)}_${ano}`;
+
         // Preparar registros
-        // 1. Convertir horas a formato 24h para la DB (Postgres TIME)
-        // 2. Empaquetar estado 'completado' dentro de observaciones con tag [✓] para persistencia sin cambiar schema
         const registros = datosAsistenciaExcel.map(d => {
             let obsFinal = d.observaciones || '';
-            // Si está completado, agregar tag si no existe
             if (d.completado && !obsFinal.includes('[✓]')) {
                 obsFinal = `${obsFinal} [✓]`.trim();
             } else if (!d.completado) {
-                // Limpiar tag si existe (desmarcado)
                 obsFinal = obsFinal.replace('[✓]', '').trim();
             }
 
@@ -966,47 +1220,33 @@ async function guardarExcelSupabase(keepOpen = false) {
                 observaciones: obsFinal,
                 periodo: periodo,
                 periodo_etiqueta: periodo
-                // Removido 'completado' directo columna para evitar error de schema
             };
         });
 
-        console.log('📤 Intentando guardar', registros.length, 'registros...');
+        console.log('📤 Enviando', registros.length, 'registros a Supabase...');
 
-        // Upsert
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('asistencias')
             .upsert(registros, { onConflict: 'empleado_id,fecha' });
 
-        if (error) {
-            console.error('❌ Error de Supabase:', error);
-            throw new Error(`Error de base de datos: ${error.message}`);
-        }
+        if (error) throw error;
 
-        console.log('✅ Datos guardados correctamente');
-        
         if (keepOpen) {
-            showToast('✅ Progreso guardado correctamente', 'success');
+            showToast('✅ Progreso guardado', 'success');
         } else {
-            showToast('✅ Datos guardados exitosamente en la nube', 'success');
+            showToast('✅ Datos guardados en la nube', 'success');
             cerrarModalExcel();
         }
 
     } catch (error) {
-        console.error('❌ Error guardando en Supabase:', error);
-        
-        let mensajeError = 'Error al guardar en la nube';
-        if (error.message.includes('sesión')) {
-            mensajeError = '🔒 Debes iniciar sesión para guardar';
-        } else {
-            mensajeError = error.message;
-        }
-        
-        showToast(mensajeError, 'error');
-        
+        console.error('❌ Error guardando:', error);
+        showToast('Error al guardar: ' + error.message, 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
-        if (window.lucide) lucide.createIcons();
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            if (window.lucide) lucide.createIcons();
+        }
     }
 }
 
@@ -1033,17 +1273,27 @@ function descargarExcelEditado() {
             const datosEmpleado = datosAsistenciaExcel.filter(d => d.empleado === nombreEmpleado);
             
             // Preparar datos para Excel
-            const datosExport = datosEmpleado.map(d => ({
-                'Dia': new Date(d.fecha).toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase().replace('.', ''),
-                'Fecha': d.fecha,
-                '#': d.dia,
-                'Estado': d.estado,
-                'Entrada': d.horaEntrada,
-                'Salida': d.horaSalida,
-                'Hrs': parseFloat(d.horasTrabajadas) || 0,
-                'Extras': parseFloat(d.horasExtra) || 0,
-                'Observaciones': d.observaciones
-            }));
+            // Preparar datos para Excel
+            const datosExport = datosEmpleado.map(d => {
+                // Corrección de día (Usar mediodía para evitar timezone shift)
+                const parts = d.fecha.split('-');
+                const fechaSafe = new Date(parts[0], parts[1]-1, parts[2], 12, 0, 0); 
+                const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+                const nombreDia = diasSemana[fechaSafe.getDay()];
+
+                return {
+                    'Dia': nombreDia,
+                    'Fecha': d.fecha,
+                    'Estado': d.estado,
+                    'Entrada': d.horaEntrada,
+                    'Salida': d.horaSalida,
+                    'Almuerzo': parseFloat(d.almuerzo) || 0,
+                    // No restar 1 si ya se restó en el cálculo de horasTrabajadas en el editor
+                    'Hrs': parseFloat(d.horasTrabajadas) || 0,
+                    'Extras': parseFloat(d.horasExtra) || 0,
+                    'Observaciones': d.observaciones
+                };
+            });
 
             // Crear hoja con datos en A6
             const ws = XLSX.utils.json_to_sheet(datosExport, { origin: "A6" });
@@ -1051,10 +1301,10 @@ function descargarExcelEditado() {
             // === HEADER PROFESIONAL Y VISUAL ===
             XLSX.utils.sheet_add_aoa(ws, [
                 ["REPORTE DE ASISTENCIA MENSUAL"], // A1
-                [`Empleado: ${nombreEmpleado.toUpperCase()}`], // A2
-                [`Periodo: ${nombreMes} ${ano}`], // A3
-                [`Fecha de Emisión: ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`], // A4
-                [""] // A5 (Espaciador)
+                ["EMPLEADO:", nombreEmpleado.toUpperCase()], // A2, B2
+                ["PERIODO:", `${nombreMes} ${ano}`], // A3, B3
+                ["EMISIÓN:", new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })], // A4, B4
+                [""] // A5
             ], { origin: "A1" });
 
             // === MERGE Y ESTILOS DEL HEADER ===
@@ -1063,47 +1313,40 @@ function descargarExcelEditado() {
             // Merge título principal (A1:I1)
             ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } });
             
-            // Estilo Título Principal (A1) - Oscuro y Premium
-            if (ws['A1']) {
-                ws['A1'].s = {
-                    font: { bold: true, sz: 18, color: { rgb: "FFFFFF" }, name: "Calibri" },
-                    fill: { fgColor: { rgb: "1F2937" } }, // Gris oscuro profesional
-                    alignment: { horizontal: "center", vertical: "center" },
-                    border: {
-                        bottom: { style: "medium", color: { rgb: "3B82F6" } }
-                    }
-                };
-            }
+            // Estilo Título Principal (A1)
+            if (ws['A1']) ws['A1'].s = ExcelTheme.styles.mainTitle;
             
-            // Estilos para info del empleado (A2-A4) - Elegante
-            const infoStyle = {
-                font: { bold: true, sz: 11, color: { rgb: "1F2937" }, name: "Calibri" },
-                fill: { fgColor: { rgb: "F8FAFC" } },
-                alignment: { horizontal: "left", vertical: "center" },
-                border: {
-                    left: { style: "thin", color: { rgb: "E2E8F0" } },
-                    right: { style: "thin", color: { rgb: "E2E8F0" } },
-                    top: { style: "thin", color: { rgb: "E2E8F0" } },
-                    bottom: { style: "thin", color: { rgb: "E2E8F0" } }
-                }
-            };
-            
-            ['A2', 'A3', 'A4'].forEach(ref => {
-                if (ws[ref]) {
-                    ws[ref].s = infoStyle;
-                }
+            // Estilos Info (Rows 1-3 -> Excel 2-4)
+            [1, 2, 3].forEach(r => {
+                // Label
+                const cellLabel = XLSX.utils.encode_cell({c: 0, r: r});
+                if(ws[cellLabel]) ws[cellLabel].s = ExcelTheme.styles.infoLabel;
+
+                // Merge Value (B-I)
+                ws['!merges'].push({ s: { r: r, c: 1 }, e: { r: r, c: 8 } });
+                
+                // Value Style
+                const cellValue = XLSX.utils.encode_cell({c: 1, r: r});
+                if(ws[cellValue]) ws[cellValue].s = ExcelTheme.styles.infoValue;
             });
-            
-            // Merge info (A2:C2, A3:C3, A4:C4) para que se vea mejor
-            ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }); // A2:C2
-            ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 2 } }); // A3:C3
-            ws['!merges'].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 2 } }); // A4:C4
 
             // === APLICAR ESTILOS PROFESIONALES A LA TABLA ===
             aplicarEstilosYFormulasExcel(ws, { 
                 tableHeaderRow: 5, 
                 tableDataStartRow: 6 
             });
+
+            // === DEFINIR COMO "TABLA EXCEL" REAL (TABLE OBJECT) ===
+            const rangeTable = XLSX.utils.decode_range(ws['!ref']);
+            ws['!tbl'] = {
+                ref: XLSX.utils.encode_range({s: {r: 5, c: 0}, e: {r: rangeTable.e.r, c: 8}}),
+                columns: [
+                    {name: "Dia"}, {name: "Fecha"}, {name: "Estado"},
+                    {name: "Entrada"}, {name: "Salida"}, 
+                    {name: "Almuerzo"}, {name: "Hrs"},
+                    {name: "Extras"}, {name: "Observaciones"}
+                ]
+            };
 
             // Nombre de la hoja (sin caracteres inválidos)
             const nombreHoja = nombreEmpleado.substring(0, 30).replace(/[:\/?*\[\]\\]/g, "");
@@ -1183,4 +1426,78 @@ function completarDia(idx) {
             }
         }
     }
+}
+
+/**
+ * Formatea fecha YYYY-MM-DD a "Lun 01/01"
+ */
+function formatFechaConDiaUI(fechaStr) {
+    if (!fechaStr) return '';
+    const [y, m, d] = fechaStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d, 12, 0, 0);
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    return `<span style="color: ${(date.getDay()===0||date.getDay()===6)?'#f59e0b':'#94a3b8'}; font-size: 0.75em; text-transform: uppercase; margin-right: 6px; font-weight: 700;">${dias[date.getDay()]}</span> ${d}/${m}`;
+}
+
+/**
+ * Rellena horario estándar
+ */
+function rellenarHorarioMasivo(empleadoId) {
+    if (!confirm('¿Deseas rellenar automáticamente los días vacíos con horario estándar (10am - 7pm)?')) return;
+    let cambios = 0;
+    const entrada = document.getElementById('horaEstandar')?.value || "10:00 a. m.";
+    const salida = document.getElementById('horaSalida')?.value || "07:00 p. m.";
+    datosAsistenciaExcel.forEach(d => {
+        if ((d.empleadoId === empleadoId || empleadoId === 'todos') && d.estado === 'Presente' && !d.horaEntrada) {
+            d.horaEntrada = entrada; d.horaSalida = salida; d.almuerzo = 1;
+            actualizarCeldaExcel(d.globalIdx, 'horaEntrada', entrada); // Recalculate handled by update
+            const dur = parseFloat(calcularDiferenciaHorasAMPM(entrada, salida));
+            d.horasTrabajadas = parseFloat(Math.max(0, dur - 1).toFixed(2));
+            d.horasExtra = d.horasTrabajadas > 8 ? parseFloat((d.horasTrabajadas - 8).toFixed(2)) : 0;
+            cambios++;
+        }
+    });
+    if(cambios>0) { showToast(`✅ Se rellenaron ${cambios} días`, 'success'); mostrarExcel(); }
+    else showToast('No hubo cambios', 'info');
+}
+
+/**
+ * Limpiar horario
+ */
+function limpiarHorarioMasivo(empleadoId) {
+    if (!confirm('⚠️ ¿Limpiar TODO el horario de este empleado?')) return;
+    let cambios = 0;
+    datosAsistenciaExcel.forEach(d => {
+        if (d.empleadoId === empleadoId) {
+            d.horaEntrada = ''; d.horaSalida = ''; d.almuerzo = 0; d.horasTrabajadas = 0; d.horasExtra = 0; d.observaciones = ''; d.completado = false;
+            cambios++;
+        }
+    });
+    showToast(`🧹 Limpiados ${cambios} registros`, 'success');
+    mostrarExcel();
+}
+
+/**
+ * === MODAL CONFIRMACION ===
+ */
+let onConfirmCallback = null;
+
+function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
+    document.getElementById('modalConfirmTitulo').innerText = titulo;
+    document.getElementById('modalConfirmMensaje').innerText = mensaje;
+    onConfirmCallback = onConfirm;
+    
+    // Configurar botón
+    const btn = document.getElementById('btnModalConfirmAction');
+    btn.onclick = () => {
+        if (onConfirmCallback) onConfirmCallback();
+        cerrarModalConfirmacion();
+    };
+
+    document.getElementById('modalConfirmacion').style.display = 'flex';
+}
+
+function cerrarModalConfirmacion() {
+    document.getElementById('modalConfirmacion').style.display = 'none';
+    onConfirmCallback = null;
 }

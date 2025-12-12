@@ -245,8 +245,9 @@ async function cargarRegistrosAsistencia() {
         
         if (filtroMes && filtroAno) {
             const mesStr = String(filtroMes).padStart(2, '0');
+            const lastDay = new Date(filtroAno, filtroMes, 0).getDate();
             const inicioPeriodo = `${filtroAno}-${mesStr}-01`;
-            const finPeriodo = `${filtroAno}-${mesStr}-31`;
+            const finPeriodo = `${filtroAno}-${mesStr}-${lastDay}`;
             query = query.gte('fecha', inicioPeriodo).lte('fecha', finPeriodo);
         } else if (filtroAno) {
             query = query.gte('fecha', `${filtroAno}-01-01`).lte('fecha', `${filtroAno}-12-31`);
@@ -298,9 +299,9 @@ function renderTablaRegistros(registros) {
     if (!registros || registros.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-                <i data-lucide="inbox" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px;"></i>
-                <p style="font-weight: 600;">No se encontraron registros</p>
-                <p style="font-size: 0.9rem;">Intenta con otros filtros o guarda datos primero</p>
+                <i data-lucide="calendar-x" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px;"></i>
+                <p style="font-weight: 600;">Sin datos registrados</p>
+                <p style="font-size: 0.9rem;">No hay asistencias para este período</p>
             </div>
         `;
         if (window.lucide) lucide.createIcons();
@@ -399,7 +400,7 @@ function actualizarDropdownEmpleados(registros) {
     const empleadosUnicos = [...new Set(registros.map(r => ({ 
         id: r.empleado_id, 
         nombre: r.empleado_nombre 
-    }).filter(e => e.id && e.nombre)))];
+    })).filter(e => e.id && e.nombre))];
     
     // Eliminar duplicados por ID
     const empleadosMap = new Map();
@@ -442,17 +443,38 @@ function limpiarFiltrosRegistros() {
 }
 
 /**
- * Descarga los registros actuales como archivo Excel
+ * Descarga los registros actuales como archivo Excel con formato PROFESIONAL
+ * Coincide con el formato de "Generar Excel" del editor.
  */
-function descargarRegistrosExcel() {
+async function descargarRegistrosExcel() {
     if (!registrosAsistenciaGlobal || registrosAsistenciaGlobal.length === 0) {
         showToast('⚠️ No hay registros para descargar. Carga datos primero.', 'warning');
+        return;
+    }
+    
+    // Verificar dependencias
+    if (typeof XLSX === 'undefined' || typeof ExcelTheme === 'undefined') {
+        showToast('❌ Librerías de Excel no cargadas. Recarga la página.', 'error');
         return;
     }
     
     try {
         const wb = XLSX.utils.book_new();
         
+        // --- PREPARAR DATOS COMUNES ---
+        const filtroMes = document.getElementById('filtroMes').value;
+        const filtroAno = document.getElementById('filtroAno').value;
+        let nombreMes = 'General';
+        let ano = filtroAno || new Date().getFullYear();
+        
+        if (filtroMes) {
+            // Intentar obtener nombre del mes
+            try {
+                const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                nombreMes = meses[parseInt(filtroMes) - 1] || 'General';
+            } catch (e) { nombreMes = 'General'; }
+        }
+
         // Agrupar por empleado
         const empleadosUnicos = [...new Set(registrosAsistenciaGlobal.map(r => r.empleado_nombre))];
         
@@ -461,53 +483,213 @@ function descargarRegistrosExcel() {
                 .filter(r => r.empleado_nombre === nombreEmpleado)
                 .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
             
-            // Preparar datos para Excel
-            const datosExport = datosEmpleado.map(d => {
+            // 1. Preparar Datos de la Tabla (Formato Editor)
+            const datos = datosEmpleado.map(d => {
                 const fecha = new Date(d.fecha + 'T00:00:00');
+                const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+                const nombreDia = diasSemana[fecha.getDay()];
+                
+                // Formatear Horas (De 24h a 12h si es necesario, o mantener si ya está)
+                let ent = d.hora_entrada || '';
+                let sal = d.hora_salida || '';
+
+                // Calcular Almuerzo
+                // Almuerzo = (Salida - Entrada) - HrsTrabajadas
+                // Necesitamos convertir a decimal
+                // Si no hay función global, hacemos cálculo básico aproximado
+                let almuerzo = 0;
+                let hrsTrab = parseFloat(d.horas_trabajadas) || 0;
+                
+                if (ent && sal && typeof calcularDiferenciaHorasAMPM === 'function') {
+                    const duracionTotal = parseFloat(calcularDiferenciaHorasAMPM(ent, sal)) || 0;
+                    if (duracionTotal > hrsTrab) {
+                        almuerzo = parseFloat((duracionTotal - hrsTrab).toFixed(1));
+                    }
+                } else if (!ent && !sal && d.estado !== 'Feriado' && d.estado !== 'Día Libre') {
+                    // Si no hay horas y no es feriado/libre, asumir 1
+                    almuerzo = 1; 
+                } else if (d.estado === 'Feriado' || d.estado === 'Día Libre') {
+                    almuerzo = 0;
+                } else {
+                    // Fallback simple: Si hay horas pero no cálculo, asumir 1 si hrs > 5
+                    almuerzo = hrsTrab > 5 ? 1 : 0;
+                }
+
+                // Formatear horas para display (usando función global si existe)
+                if (typeof formatearHoraDesdeDB === 'function') {
+                    ent = formatearHoraDesdeDB(ent) || '';
+                    sal = formatearHoraDesdeDB(sal) || '';
+                }
+
                 return {
+                    'Dia': nombreDia,
                     'Fecha': d.fecha,
-                    'Día': fecha.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase(),
                     'Estado': d.estado,
-                    'Entrada': d.hora_entrada || '',
-                    'Salida': d.hora_salida || '',
-                    'Hrs Trabajadas': parseFloat(d.horas_trabajadas) || 0,
-                    'Hrs Extra': parseFloat(d.horas_extra) || 0,
+                    'Entrada': ent,
+                    'Salida': sal,
+                    'Almuerzo': almuerzo, 
+                    'Hrs': '', // Se recalculará con fórmula
+                    'Extras': '', // Se recalculará con fórmula
                     'Observaciones': d.observaciones || ''
                 };
             });
             
-            // Crear hoja
-            const ws = XLSX.utils.json_to_sheet(datosExport);
+            // 2. Crear Hoja iniciando en fila 6 (A6)
+            const ws = XLSX.utils.json_to_sheet(datos, { origin: "A6" });
             
-            // Anchos de columna
-            ws['!cols'] = [
-                { wch: 12 }, // Fecha
-                { wch: 10 }, // Día
-                { wch: 15 }, // Estado
-                { wch: 10 }, // Entrada
-                { wch: 10 }, // Salida
-                { wch: 14 }, // Hrs Trab
-                { wch: 12 }, // Hrs Extra
-                { wch: 40 }  // Obs
-            ];
-            
-            // Nombre de hoja (sin caracteres inválidos)
-            const nombreHoja = nombreEmpleado.substring(0, 30).replace(/[:\/?*\[\]\\]/g, '');
-            XLSX.utils.book_append_sheet(wb, ws, nombreHoja || 'Empleado');
+            // 3. Agregar Encabezados Corporativos (Filas 1-5)
+            XLSX.utils.sheet_add_aoa(ws, [
+                ["REPORTE DE ASISTENCIA MENSUAL (NUBE)"], // A1
+                ["EMPLEADO:", nombreEmpleado.toUpperCase()], // A2
+                ["PERIODO:", `${nombreMes} ${ano}`], // A3
+                ["EMISIÓN:", new Date().toLocaleDateString()], // A4
+                [""] // A5
+            ], { origin: "A1" });
+
+            // 4. Aplicar Estilos y Fórmulas
+            if (typeof aplicarEstilosYFormulasExcel === 'function') {
+                // Merge encabezado
+                if(!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } });
+                
+                // Estilo Título Principal
+                for(let c = 0; c <= 8; c++) {
+                    const cellAddr = XLSX.utils.encode_cell({c: c, r: 0});
+                    if(!ws[cellAddr]) ws[cellAddr] = { v: "", t: "s" };
+                    ws[cellAddr].s = ExcelTheme.styles.mainTitle;
+                }
+
+                // Estilos Info
+                [1, 2, 3].forEach(r => {
+                    const cellLabel = XLSX.utils.encode_cell({c: 0, r: r});
+                    if(ws[cellLabel]) ws[cellLabel].s = ExcelTheme.styles.infoLabel;
+                    ws['!merges'].push({ s: { r: r, c: 1 }, e: { r: r, c: 8 } }); // Merge valor
+                    const cellValue = XLSX.utils.encode_cell({c: 1, r: r});
+                    if(ws[cellValue]) ws[cellValue].s = ExcelTheme.styles.infoValue;
+                });
+
+                aplicarEstilosYFormulasExcel(ws, { 
+                    tableHeaderRow: 5, 
+                    tableDataStartRow: 6 
+                });
+            }
+
+            // 5. Definir Tabla (Filtros)
+            const rangeDatos = XLSX.utils.decode_range(ws['!ref']);
+            ws['!tbl'] = {
+                ref: XLSX.utils.encode_range({s: {r: 5, c: 0}, e: {r: rangeDatos.e.r, c: 8}}), 
+                columns: [
+                    {name: "Dia"}, {name: "Fecha"}, {name: "Estado"},
+                    {name: "Entrada"}, {name: "Salida"}, 
+                    {name: "Almuerzo"}, {name: "Hrs"},
+                    {name: "Extras"}, {name: "Observaciones"}
+                ]
+            };
+
+            // Nombre de hoja seguro
+            const safeSheetName = nombreEmpleado.substring(0, 30).replace(/[:\/?*\[\]\\]/g, '');
+            XLSX.utils.book_append_sheet(wb, ws, safeSheetName || 'Empleado');
         });
         
         // Generar archivo
         const fechaActual = new Date().toISOString().split('T')[0];
-        const nombreArchivo = `Registros_Asistencia_${fechaActual}.xlsx`;
+        const nombreArchivo = `Registros_Nube_${fechaActual}.xlsx`;
         XLSX.writeFile(wb, nombreArchivo);
         
-        showToast(`✅ Excel descargado: ${nombreArchivo}`, 'success');
+        showToast(`✅ Excel PRO descargado: ${nombreArchivo}`, 'success');
         
     } catch (error) {
         console.error('Error descargando Excel:', error);
-        showToast('❌ Error al generar Excel', 'error');
+        showToast('❌ Error al generar Excel: ' + error.message, 'error');
     }
 }
+
+/**
+ * Elimina registros de asistencia para el período seleccionado
+ */
+async function eliminarRegistrosMes() {
+    if (!supabase) {
+        showToast('❌ Conexión a base de datos no disponible', 'error');
+        return;
+    }
+
+    const filtroEmpleadoId = document.getElementById('filtroEmpleado').value;
+    const filtroMes = document.getElementById('filtroMes').value;
+    const filtroAno = document.getElementById('filtroAno').value;
+
+    if (!filtroMes || !filtroAno) {
+        showToast('⚠️ Selecciona mes y año para eliminar', 'warning');
+        return;
+    }
+
+    const nombreMes = document.getElementById('filtroMes').options[document.getElementById('filtroMes').selectedIndex].text;
+    
+    // Obtener nombre del empleado para confirmación
+    let mensajeConfirmacion = '';
+    let isAll = false;
+    
+    if (filtroEmpleadoId) {
+        const nombreEmpleado = document.getElementById('filtroEmpleado').options[document.getElementById('filtroEmpleado').selectedIndex].text;
+        mensajeConfirmacion = `¿Estás seguro de eliminar los registros de ${nombreEmpleado} del mes de ${nombreMes} ${filtroAno}?`;
+    } else {
+        mensajeConfirmacion = `⚠️ ATENCIÓN: ¿Estás seguro de eliminar los registros de TODOS los empleados del mes de ${nombreMes} ${filtroAno}? Esta acción no se puede deshacer.`;
+        isAll = true;
+    }
+
+    if (!confirm(mensajeConfirmacion)) return;
+    
+    // Doble confirmación para borrado masivo
+    if (isAll) {
+        if (!confirm('¿Realmente estás seguro? Se borrarán todos los datos del mes seleccionado.')) return;
+    }
+
+    try {
+        const mesStr = String(filtroMes).padStart(2, '0');
+        const lastDay = new Date(filtroAno, filtroMes, 0).getDate();
+        const inicioPeriodo = `${filtroAno}-${mesStr}-01`;
+        const finPeriodo = `${filtroAno}-${mesStr}-${lastDay}`;
+        
+        let query = supabase
+            .from('asistencias')
+            .delete()
+            .gte('fecha', inicioPeriodo)
+            .lte('fecha', finPeriodo);
+
+        if (filtroEmpleadoId) {
+            query = query.eq('empleado_id', parseInt(filtroEmpleadoId));
+        } else {
+            // Seguridad: Solo eliminar los creados por este usuario si no es un empleado específico
+             const { data: { user } } = await supabase.auth.getUser();
+             if (user) {
+                 const { data: misEmpleados } = await supabase
+                    .from('empleados')
+                    .select('id')
+                    .eq('created_by', user.id);
+                 
+                 if (misEmpleados && misEmpleados.length > 0) {
+                     const ids = misEmpleados.map(e => e.id);
+                     query = query.in('empleado_id', ids);
+                 }
+             }
+        }
+
+        const { error } = await query;
+
+        if (error) throw error;
+
+        showToast('✅ Registros eliminados correctamente', 'success');
+        
+        // Recargar datos
+        cargarRegistrosAsistencia();
+
+    } catch (error) {
+        console.error('❌ Error eliminando registros:', error);
+        showToast('Error al eliminar: ' + error.message, 'error');
+    }
+}
+
+
+
 
 /**
  * === GESTIÓN DE EMPLEADOS EN BASE DE DATOS ===
