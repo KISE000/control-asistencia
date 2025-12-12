@@ -220,6 +220,27 @@ async function cargarRegistrosAsistencia() {
         // Aplicar filtros
         if (filtroEmpleadoId) {
             query = query.eq('empleado_id', parseInt(filtroEmpleadoId));
+        } else {
+            // Si no hay filtro de empleado específico, limitar a LOS DEL USUARIO
+            // Pasos:
+            // 1. Obtener IDs de empleados del usuario
+            // 2. Filtrar asistencias por esos IDs
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: misEmpleados } = await supabase
+                    .from('empleados')
+                    .select('id')
+                    .eq('created_by', user.id);
+                
+                if (misEmpleados && misEmpleados.length > 0) {
+                    const ids = misEmpleados.map(e => e.id);
+                    query = query.in('empleado_id', ids);
+                } else {
+                    // Si no tiene empleados, no debería ver nada
+                    return []; 
+                }
+            }
         }
         
         if (filtroMes && filtroAno) {
@@ -557,7 +578,8 @@ async function eliminarEmpleadoSupabase(empleadoId, nombre) {
         const { error: errorUpdate } = await supabase
             .from('empleados')
             .update({ activo: false, updated_at: new Date().toISOString() })
-            .eq('id', empleadoId);
+            .eq('id', empleadoId)
+            .eq('created_by', user.id);
 
         if (errorUpdate) throw errorUpdate;
 
@@ -600,7 +622,8 @@ async function limpiarEmpleadosSupabase() {
         const { data: empleadosActivos, error: errorGet } = await supabase
             .from('empleados')
             .select('*')
-            .eq('activo', true);
+            .eq('activo', true)
+            .eq('created_by', user.id);
 
         if (errorGet) throw errorGet;
 
@@ -613,7 +636,8 @@ async function limpiarEmpleadosSupabase() {
         const { error: errorUpdate } = await supabase
             .from('empleados')
             .update({ activo: false, updated_at: new Date().toISOString() })
-            .eq('activo', true);
+            .eq('activo', true)
+            .eq('created_by', user.id);
 
         if (errorUpdate) throw errorUpdate;
 
@@ -652,10 +676,15 @@ async function cargarEmpleadosDesdeSupabase() {
     }
 
     try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) return [];
+
         const { data, error } = await supabase
             .from('empleados')
             .select('*')
             .eq('activo', true)
+            .eq('created_by', user.id)
             .order('created_at', { ascending: true });
 
         if (error) throw error;
