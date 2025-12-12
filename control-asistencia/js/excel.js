@@ -678,10 +678,10 @@ function renderTablaExcel() {
 
             html += `
                 <tr data-idx="${idx}" style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9; border-left: ${borderLeft};">
-                    <td style="padding: 10px 16px; color: #334155; font-variant-numeric: tabular-nums;">
+                    <td data-label="Fecha" style="padding: 10px 16px; color: #334155; font-variant-numeric: tabular-nums;">
                         ${formatFechaConDiaUI(fila.fecha)}
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Estado" style="padding: 10px 16px;">
                         <select class="input-tabla" onchange="actualizarCeldaExcel(${idx}, 'estado', this.value)" 
                             style="width: 100%; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; ${esFeriado ? 'color: #ea580c; font-weight: 600;' : ''}">
                             <option value="Presente" ${fila.estado === 'Presente' ? 'selected' : ''}>Presente</option>
@@ -693,36 +693,36 @@ function renderTablaExcel() {
                             <option value="Feriado" ${fila.estado === 'Feriado' ? 'selected' : ''} ${esFeriado ? '' : 'disabled'}>Feriado</option>
                         </select>
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Hora Entrada" style="padding: 10px 16px;">
                         ${inputEntrada}
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Hora Salida" style="padding: 10px 16px;">
                         ${inputSalida}
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Almuerzo" style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.almuerzo}" 
                             onchange="actualizarCeldaExcel(${idx}, 'almuerzo', this.value)" 
                             min="0" max="4" step="0.5" 
                             ${esFeriado ? 'disabled' : ''} 
                             style="width: 100%; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; ${esFeriado ? 'background: #f1f5f9;' : ''}">
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Hrs Trab." style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.horasTrabajadas}" 
                             disabled
                             style="width: 100%; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; color: #475569; font-weight: 500;">
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Hrs Extra" style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.horasExtra}" 
                             readonly
                             style="width: 100%; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; color: ${fila.horasExtra > 0 ? '#ea580c' : '#94a3b8'}; font-weight: ${fila.horasExtra > 0 ? 'bold' : 'normal'};">
                     </td>
-                    <td style="padding: 10px 16px;">
+                    <td data-label="Observaciones" style="padding: 10px 16px;">
                         <input type="text" class="input-tabla" value="${fila.observaciones}" 
                             onchange="actualizarCeldaExcel(${idx}, 'observaciones', this.value)" 
                             placeholder="Observaciones..."
                             style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px;">
                     </td>
-                    <td style="padding: 10px 16px; text-align: center;">
+                    <td data-label="Acción" style="padding: 10px 16px; text-align: center;">
                         <button onclick="completarDia(${idx})" 
                             class="btn-icon-small"
                             title="${fila.completado ? 'Marcar como pendiente' : 'Marcar como realizado'}"
@@ -1187,7 +1187,7 @@ async function guardarExcelSupabase(keepOpen = false) {
 async function ejecutarGuardado(keepOpen) {
     const btnId = keepOpen ? 'btnGuardarProgreso' : 'btnGuardarExcel';
     const btn = document.getElementById(btnId);
-    const originalContent = keepOpen ? '<i data-lucide="save-all"></i> Guardar Progreso' : '<i data-lucide="cloud-upload"></i> Guardar en Nube';
+    const originalContent = keepOpen ? '<i data-lucide="save-all"></i> Guardar Progreso' : '<i data-lucide="cloud-upload"></i> Guardar Progreso en Nube';
     
     if (btn) {
         btn.disabled = true;

@@ -6,6 +6,7 @@
 @media (max-width: 1024px) {
     /* Sidebar mobile - Glassmorphism Overlay */
     /* Sidebar mobile - INLINE Integration (No Overlay) */
+    /* Sidebar mobile - INLINE Integration (No Overlay) */
     .mobile-menu-btn {
         display: none !important; 
     }
@@ -37,30 +38,11 @@
         margin-bottom: 8px;
     }
 
-    /* Reset the active state styles completely */
-    .config-sidebar.active {
-        padding: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        top: auto !important;
-        height: auto !important;
-    }
+    /* Add a header for the section */
+
     
     /* Config cards styling for inline view */
-    .config-sidebar .card {
-        margin-bottom: 0 !important;
-        border: 1px solid var(--border-subtle) !important;
-        background: white !important;
-        width: 100% !important;
-    }
-    
-    .config-sidebar .card-header {
-        padding: 12px 16px !important;
-    }
-    
-    .config-sidebar .card-body {
-        padding: 16px !important;
-    }
+
 
     /* Header & Navigation */
     .topbar-inner {
@@ -77,8 +59,9 @@
     }
     
     /* Hide Header User Menu on Mobile (Moved to inline) */
-    .user-menu-container, .btn-ghost {
-        display: none !important;
+    /* Show user menu on mobile as well, spacing permitting */
+    .user-menu-container {
+        display: block !important;
     }
 
     /* Dashboard Layout - Fluid */
@@ -97,8 +80,20 @@
 
     .card-header, .card-header-flex {
         padding: 16px 20px !important;
-        flex-wrap: wrap; 
-        gap: 12px;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 16px !important;
+    }
+    
+    .header-title {
+        width: 100%;
+    }
+    
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end; /* Or flex-start if preferred */
+        gap: 8px;
     }
 
     .card-body {
@@ -135,14 +130,32 @@
         background: transparent !important;
     }
     
-    .user-name, .user-avatar i {
+    .user-name {
         display: none !important;
+    }
+    
+    .user-avatar i {
+        display: block !important;
     }
     
     .user-avatar {
         width: 36px !important;
         height: 36px !important;
         font-size: 0.9rem !important;
+    }
+
+    /* Fix Dropdown on Mobile */
+    .user-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 260px;
+        background: white;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        z-index: 1000;
+        margin-top: 8px;
     }
 
     /* === 2. STATS GRID === */
@@ -181,7 +194,8 @@
     .btn-hero {
         width: 100% !important;
         order: -1; /* Always first */
-        height: 56px !important; /* Taller touch target */
+        height: auto !important; /* Allow growing */
+        padding: 12px !important;
         margin-bottom: 4px;
     }
     
@@ -209,15 +223,48 @@
     .search-bar-area {
         flex-direction: column !important;
         padding: 16px 20px !important;
-        gap: 12px !important;
+        gap: 16px !important;
         background: transparent !important; /* Cleaner look */
         border-bottom: 1px solid var(--border-subtle) !important;
+        align-items: stretch !important;
     }
     
     .input-with-icon { width: 100% !important; }
+    
+    /* Ensure inputs in search bar take full width */
+    .search-bar-area select,
+    .search-bar-area input {
+        width: 100% !important;
+    }
+
+    .filter-group-date {
+        display: flex !important;
+        flex-direction: row !important; /* Side by side on mobile for date/year looks better usually, or wrap */
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    
+    .filter-group-date .select-wrapper {
+        flex: 2 !important;
+        min-width: 140px !important;
+    }
+    
+    .filter-group-date .input-with-icon {
+        flex: 1 !important;
+        min-width: 120px !important;
+    }
+    
+    /* Make buttons full width */
     .search-bar-area .btn-primary { 
         width: 100% !important; 
         justify-content: center !important;
+    }
+
+    #badgeConteoRegistros {
+        width: 100%;
+        justify-content: center;
+        margin-top: 8px;
     }
 
     /* === 5. EMPLOYEES LIST === */
@@ -259,6 +306,153 @@
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+    }
+
+    /* === EXCEL EDITOR CARD TRANSFORMATION - PREMIUM GRID === */
+    .tabla-excel, .tabla-excel thead, .tabla-excel tbody, .tabla-excel th, .tabla-excel td, .tabla-excel tr { 
+        display: block !important; 
+    }
+    
+    .tabla-excel thead tr { 
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
+    }
+    
+    .tabla-excel tr { 
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 12px !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: 16px !important;
+        margin-bottom: 20px !important;
+        background: white !important;
+        padding: 16px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
+        border-left-width: 5px !important; 
+        position: relative !important;
+    }
+
+    /* 1. HEADER: Date & Action (Float action to top right) */
+    .tabla-excel td[data-label="Fecha"] {
+        grid-column: 1 / -1 !important;
+        border-bottom: 1px solid var(--border-subtle) !important;
+        padding-bottom: 12px !important;
+        margin-bottom: 8px !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: var(--text-main) !important;
+        justify-content: flex-start !important;
+    }
+    
+    .tabla-excel td[data-label="Fecha"]:before { display: none !important; }
+
+    /* Action Button - Floating Top Right */
+    .tabla-excel td[data-label="Acción"] {
+        position: absolute !important;
+        top: 16px !important;
+        right: 16px !important;
+        width: auto !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* 2. STATE: Full Width */
+    .tabla-excel td[data-label="Estado"] {
+        grid-column: 1 / -1 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+    .tabla-excel td[data-label="Estado"]:before { display: none !important; }
+
+    /* 3. TIME INPUTS: Entry & Exit (Half width each) */
+    .tabla-excel td[data-label="Hora Entrada"],
+    .tabla-excel td[data-label="Hora Salida"] {
+        grid-column: span 3 !important; /* Full width for better touch targets? Or split? Let's split */
+    }
+    
+    /* Better layout: Entry (Col 1-2), Exit (Col 2-3)? No, 50% 50% */
+     /* Force specific items to share row */
+    .tabla-excel td[data-label="Hora Entrada"] {
+        grid-column: 1 / 2 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    .tabla-excel td[data-label="Hora Salida"] {
+        grid-column: 2 / 4 !important; /* Take remaining space */
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important; /* Align left to match Entry */
+        gap: 4px !important;
+        border: none !important;
+        padding: 0 !important;
+        padding-left: 12px !important; /* Visual separation */
+    }
+
+    /* Mini Labels for Time */
+    .tabla-excel td[data-label="Hora Entrada"]:before,
+    .tabla-excel td[data-label="Hora Salida"]:before {
+        content: attr(data-label) !important;
+        font-size: 0.75rem !important;
+        color: var(--text-secondary) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 2px !important;
+    }
+
+    /* 4. STATS: Lunch, Worked, Extra (1 col each) */
+    .tabla-excel td[data-label="Almuerzo"],
+    .tabla-excel td[data-label="Hrs Trab."],
+    .tabla-excel td[data-label="Hrs Extra"] {
+        grid-column: span 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 4px !important;
+        border: none !important;
+        padding: 8px 0 !important;
+        background: #f8fafc !important;
+        border-radius: 8px !important;
+        margin-top: 8px !important;
+    }
+
+    .tabla-excel td[data-label="Almuerzo"]:before,
+    .tabla-excel td[data-label="Hrs Trab."]:before,
+    .tabla-excel td[data-label="Hrs Extra"]:before {
+        font-size: 0.7rem !important;
+        text-align: center !important;
+        width: 100% !important;
+    }
+    
+    .tabla-excel td[data-label="Almuerzo"]:before { content: "Almuerzo"; }
+    .tabla-excel td[data-label="Hrs Trab."]:before { content: "Horas"; }
+    .tabla-excel td[data-label="Hrs Extra"]:before { content: "Extras"; }
+
+    /* 5. OBS: Full Width */
+    .tabla-excel td[data-label="Observaciones"] {
+        grid-column: 1 / -1 !important;
+        border: none !important;
+        padding: 0 !important;
+        margin-top: 8px !important;
+    }
+    .tabla-excel td[data-label="Observaciones"]:before { display: none !important; }
+
+    /* INPUT STYLING TWEAKS FOR GRID */
+    .tabla-excel .input-tabla {
+        width: 100% !important;
+        max-width: none !important;
+        text-align: center !important;
+        padding: 8px !important;
+        height: 42px !important; /* Larger touch target */
+    }
+    
+    /* Hide unneeded borders/pads from previous rule */
+    .tabla-excel td {
+        border-bottom: none !important;
     }
     
     /* Actions always visible on mobile */

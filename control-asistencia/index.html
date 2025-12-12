@@ -179,9 +179,7 @@
         align-items: stretch;
       }
 
-      .btn-menu-excel .btn-hero {
-        /* grid-column: 1; Removed to allow normal flow */
-      }
+
 
       .btn-menu-excel .btn-secondary {
         background: white;
@@ -248,18 +246,11 @@
             <i data-lucide="download"></i> Descargar Excel
           </button>
           <button
-            class="btn-primary btn-sky"
-            id="btnGuardarProgreso"
-            onclick="guardarProgreso()"
-          >
-            <i data-lucide="save-all"></i> Guardar Progreso
-          </button>
-          <button
             class="btn-primary"
             id="btnGuardarExcel"
             onclick="guardarExcelSupabase()"
           >
-            <i data-lucide="cloud-upload"></i> Guardar en Nube
+            <i data-lucide="cloud-upload"></i> Guardar Progreso en Nube
           </button>
         </div>
       </div>
@@ -1071,45 +1062,9 @@
         </div>
 
         <div class="topbar-actions">
-          <button
-            class="btn-ghost"
-            onclick="exportarConfiguracion()"
-            title="Exportar Backup"
-          >
-            <i data-lucide="download-cloud" style="width: 18px"></i>
-            <span class="desktop-only">Backup</span>
-          </button>
-          <button
-            class="btn-ghost"
-            onclick="importarConfiguracion()"
-            title="Importar Backup"
-          >
-            <i data-lucide="upload-cloud" style="width: 18px"></i>
-          </button>
 
-          <!-- SPECTACULAR DARK MODE TOGGLE -->
-          <!-- PROFESSIONAL MINIMALIST TOGGLE -->
-          <!-- SIMPLE ICON TOGGLE -->
-          <button
-            class="theme-toggle-simple"
-            onclick="toggleDarkMode()"
-            title="Cambiar tema"
-            aria-label="Toggle dark mode"
-          >
-            <i data-lucide="sun" class="icon-sun"></i>
-            <i data-lucide="moon" class="icon-moon"></i>
-            <span style="margin-left: 6px; font-weight: 500">Tema</span>
-          </button>
 
-          <div
-            class="separator"
-            style="
-              width: 1px;
-              height: 24px;
-              background: var(--border-subtle);
-              margin: 0 8px;
-            "
-          ></div>
+
 
           <!-- MENÚ DE USUARIO -->
           <div class="user-menu-container" style="position: relative">
@@ -1555,16 +1510,30 @@
                 <i data-lucide="chevron-down" class="select-icon"></i>
               </div>
 
-              <input
-                type="number"
-                id="filtroAno"
-                placeholder="Año"
-                class="modern-input"
-                style="width: 120px"
-                value="2025"
-                min="2020"
-                max="2050"
-              />
+              <div class="input-with-icon" style="width: 140px">
+                <span
+                  class="search-icon"
+                  style="
+                    width: auto;
+                    font-style: normal;
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    color: var(--text-muted);
+                  "
+                >
+                  Año
+                </span>
+                <input
+                  type="number"
+                  id="filtroAno"
+                  class="modern-input"
+                  style="padding-left: 60px !important"
+                  value="2025"
+                  min="2020"
+                  max="2050"
+                  onchange="cargarRegistrosAsistencia()"
+                />
+              </div>
             </div>
 
             <button
@@ -1572,8 +1541,8 @@
               onclick="cargarRegistrosAsistencia()"
               style="white-space: nowrap"
             >
-              <i data-lucide="cloud-download" style="width: 20px"></i> Cargar
-              Datos
+              <i data-lucide="cloud-download" style="width: 22px; height: 22px"></i>
+              Cargar Datos
             </button>
 
             <button
@@ -1582,7 +1551,7 @@
               onclick="descargarRegistrosExcel()"
               style="white-space: nowrap; background: #10b981"
             >
-              <i data-lucide="download" style="width: 20px"></i>
+              <i data-lucide="download" style="width: 22px; height: 22px"></i>
               <span class="desktop-only">Descargar Excel</span>
             </button>
 
@@ -1592,13 +1561,9 @@
               style="white-space: nowrap; background: #ef4444"
               title="Eliminar registros cargados"
             >
-              <i data-lucide="trash-2" style="width: 20px"></i>
+              <i data-lucide="trash-2" style="width: 22px; height: 22px"></i>
               <span class="desktop-only">Eliminar</span>
             </button>
-          </div>
-
-          <!-- Badge de conteo -->
-          <div style="padding: 0 24px 16px">
             <div
               id="badgeConteoRegistros"
               style="
@@ -1606,15 +1571,17 @@
                 padding: 8px 16px;
                 background: #dbeafe;
                 border-radius: 8px;
+                /* display: inline-flex;  -- overridden by flex parent interaction, but useful to keep if it wraps */
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
                 font-size: 0.9rem;
                 color: #1e40af;
                 font-weight: 600;
+                height: 48px; /* Match height of other inputs */
               "
             >
-              <i data-lucide="database" style="width: 16px"></i>
+              <i data-lucide="database" style="width: 20px; height: 20px"></i>
               <span id="textoConteoRegistros">0 registros encontrados</span>
             </div>
           </div>
@@ -1706,94 +1673,7 @@
           <div class="historial-container" id="historialGrid"></div>
         </div>
 
-        <!-- MENU SISTEMA MÓVIL - Al final de la página -->
-        <div
-          class="card mobile-only"
-          style="margin-top: 32px; border-top: 4px solid var(--border-subtle)"
-        >
-          <div class="card-header">
-            <i data-lucide="settings-2" class="icon-header"></i>
-            <h3>Sistema</h3>
-          </div>
-          <div
-            class="card-body"
-            style="display: flex; flex-direction: column; gap: 12px"
-          >
-            <div
-              style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"
-            >
-              <button
-                class="btn-text"
-                onclick="exportarConfiguracion()"
-                style="justify-content: center"
-              >
-                <i data-lucide="download-cloud"></i> Backup
-              </button>
-              <button
-                class="btn-text"
-                onclick="importarConfiguracion()"
-                style="justify-content: center"
-              >
-                <i data-lucide="upload-cloud"></i> Restaurar
-              </button>
-            </div>
 
-            <button
-              class="btn-text"
-              onclick="mostrarAyuda()"
-              style="justify-content: center"
-            >
-              <i data-lucide="help-circle"></i> Ayuda & Soporte
-            </button>
-
-            <div
-              style="
-                height: 1px;
-                background: var(--border-subtle);
-                margin: 4px 0;
-              "
-            ></div>
-
-            <div
-              style="
-                background: #fef2f2;
-                border-radius: 12px;
-                padding: 16px;
-                border: 1px solid #fecaca;
-              "
-            >
-              <button
-                class="btn-primary"
-                onclick="logoutSupabase()"
-                style="
-                  width: 100%;
-                  background: #ef4444;
-                  color: white;
-                  justify-content: center;
-                  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-                "
-              >
-                <i data-lucide="log-out"></i> Cerrar Sesión
-              </button>
-              <p
-                style="
-                  text-align: center;
-                  font-size: 0.8rem;
-                  color: #ef4444;
-                  margin-top: 10px;
-                  margin-bottom: 0;
-                  font-weight: 500;
-                "
-              >
-                <i
-                  data-lucide="user"
-                  style="width: 12px; height: 12px; vertical-align: middle"
-                ></i>
-                <span id="userEmailMobile">usuario@sistema.com</span>
-              </p>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
 
