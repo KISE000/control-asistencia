@@ -1,8 +1,12 @@
+// === GLOBALES ===
+// Las variables (empleados, feriados, etc.) ya están declaradas en config.js
+
 // === INICIALIZACIÓN Y EVENTOS ===
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarApp();
     setupDragAndDrop();
+    setupEventListeners();
 });
 
 function inicializarApp() {
@@ -27,7 +31,138 @@ function inicializarApp() {
     if(window.lucide) lucide.createIcons();
 }
 
+function setupEventListeners() {
+    const listen = (id, event, handler) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+    };
+
+    // Excel Modal
+    listen('btnCloseModalExcel', 'click', cerrarModalExcel);
+    listen('btnCancelModalExcel', 'click', cerrarModalExcel);
+    // Unify button ID to match HTML
+    listen('btnDownloadExcelEdited', 'click', descargarExcelEditado); 
+    listen('btnGuardarExcel', 'click', () => guardarExcelSupabase(false));
+
+    // Auth Modal
+    listen('tabLogin', 'click', () => cambiarTabAuth('login'));
+    listen('tabRegistro', 'click', () => cambiarTabAuth('registro'));
+    listen('loginEmail', 'keypress', e => { if (e.key === 'Enter') loginSupabase(); });
+    listen('loginPassword', 'keypress', e => { if (e.key === 'Enter') loginSupabase(); });
+    
+    // Fix IDs for password toggle (HTML uses toggleLoginPass/toggleRegisterPass)
+    listen('toggleLoginPass', 'click', () => togglePasswordVisibility('loginPassword', 'togglePasswordIcon'));
+    listen('toggleRegisterPass', 'click', () => togglePasswordVisibility('registroPassword', 'togglePasswordIcon2'));
+
+    // Fix ID for Forgot Password (HTML uses forgotPasswordLink)
+    listen('forgotPasswordLink', 'click', e => { e.preventDefault(); mostrarRecuperarPassword(); });
+
+    listen('registroPassword', 'keypress', e => { if (e.key === 'Enter') registrarSupabase(); });
+    listen('registroPasswordConfirm', 'keypress', e => { if (e.key === 'Enter') registrarSupabase(); });
+    listen('btnLogin', 'click', loginSupabase);
+    listen('btnRegistro', 'click', registrarSupabase);
+    
+    // Time Picker Modal
+    listen('btnCloseTimePicker', 'click', cerrarTimePicker);
+    listen('btnCancelTimePicker', 'click', cerrarTimePicker);
+    listen('btnConfirmTimePicker', 'click', confirmarTiempo);
+
+    // Recover Password Modal
+    listen('btnCloseRecuperarPassword', 'click', cerrarRecuperarPassword);
+    listen('recuperarEmail', 'keypress', e => { if (e.key === 'Enter') enviarRecuperacionPassword(); });
+    listen('btnCancelRecuperarPassword', 'click', cerrarRecuperarPassword);
+    listen('btnEnviarRecuperacion', 'click', enviarRecuperacionPassword);
+
+    // Logout Confirm Modal
+    listen('btnCancelLogout', 'click', cerrarModalLogout);
+    listen('btnConfirmarLogout', 'click', confirmarLogout);
+
+    // Topbar
+    listen('btnMobileMenu', 'click', toggleSidebar);
+    // listen('btnUserMenu', 'click', toggleUserMenu); // Handled by auth.js setupUserMenuListeners()
+    listen('darkModeToggle', 'change', toggleDarkMode);
+    listen('btnLogout', 'click', logoutSupabase);
+    listen('btnHelp', 'click', mostrarAyuda);
+
+    // Sidebar
+    listen('logoPreviewContainer', 'click', () => document.getElementById('logoInput').click());
+    listen('logoInput', 'change', cargarLogo);
+    listen('btnEliminarLogo', 'click', eliminarLogo);
+    listen('mes', 'change', actualizarCalendarioFeriados);
+    listen('horaEstandar', 'click', () => abrirTimePicker('horaEstandar', 'Hora de Entrada'));
+    listen('horaSalida', 'click', () => abrirTimePicker('horaSalida', 'Hora de Salida'));
+    listen('btnAgregarFeriado', 'click', agregarFeriado);
+
+    // Main content
+    listen('btnGenerar', 'click', generarPDFs);
+    listen('btnGenerarExcel', 'click', generarExcel);
+    listen('btnAbrirEditorExcel', 'click', e => { abrirEditorExcel(); e.currentTarget.blur(); });
+    
+    // Empleados
+    listen('btnSeleccionarTodos', 'click', toggleSeleccionarTodos);
+    listen('btnLimpiarEmpleados', 'click', limpiarEmpleados);
+    listen('nuevoEmpleado', 'keypress', e => { if(e.key==='Enter') agregarEmpleado(); });
+    listen('btnAgregarEmpleado', 'click', agregarEmpleado);
+
+    // Registros en la nube
+    listen('btnLimpiarFiltrosRegistros', 'click', limpiarFiltrosRegistros);
+    listen('btnRefrescarRegistros', 'click', cargarRegistrosAsistencia);
+    listen('filtroAno', 'change', cargarRegistrosAsistencia);
+    listen('btnCargarDatosNube', 'click', cargarRegistrosAsistencia);
+    listen('btnDescargarRegistros', 'click', descargarRegistrosExcel);
+    listen('btnEliminarRegistrosMes', 'click', eliminarRegistrosMes);
+    
+    // Repositorio digital
+    listen('btnRefrescarHistorial', 'click', cargarHistorial);
+    listen('archivoInput', 'change', mostrarNombreArchivo);
+    listen('btnSubir', 'click', subirArchivoSupabase);
+    
+    const filePreview = document.getElementById('filePreview');
+    if (filePreview) {
+        filePreview.addEventListener('click', e => {
+            if (e.target.matches('.close-preview, .close-preview *')) {
+                limpiarSeleccionArchivo();
+            }
+        });
+    }
+
+    // Confirmacion generico
+    listen('btnCloseModalConfirmacion', 'click', cerrarModalConfirmacion);
+    listen('btnCancelModalConfirmacion', 'click', cerrarModalConfirmacion);
+
+    listen('importFile', 'change', procesarImportacion);
+
+    // Global Key Listener for ESC to close modals
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modalExcel = document.getElementById('modalExcel');
+            if (modalExcel && modalExcel.style.display === 'flex') {
+                cerrarModalExcel();
+            }
+        }
+    });
+}
+
 // === LOCAL STORAGE & CONFIG LOGIC ===
+
+function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown) {
+        dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'block' : 'none';
+        
+        // Auto-close when clicking outside
+        if (dropdown.style.display === 'block') {
+            const closeMenu = (e) => {
+                if (!e.target.closest('#userDropdown') && !e.target.closest('#btnUserMenu')) {
+                    dropdown.style.display = 'none';
+                    document.removeEventListener('click', closeMenu);
+                }
+            };
+            // Delay adding listener to avoid immediate close
+            setTimeout(() => document.addEventListener('click', closeMenu), 0);
+        }
+    }
+}
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -200,7 +335,7 @@ function procesarImportacion() {
     const f = document.getElementById('importFile').files[0]; if(!f) return;
     const r = new FileReader();
     r.onload = e => {
-        try { JSON.parse(e.target.result); localStorage.setItem('controlAsistencia', e.target.result); location.reload(); }
+        try { JSON.parse(e.target.result); localStorage.setItem('controlAsistencia', e.target.result); location.reload(); } 
         catch(err) { showToast('Archivo inválido', 'error'); }
     };
     r.readAsText(f);

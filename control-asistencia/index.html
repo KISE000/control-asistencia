@@ -15,11 +15,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
 
-    <meta name="description" content="Sistema profesional para control de asistencia, gestión de nómina y generación de reportes Excel." />
+    <meta
+      name="description"
+      content="Sistema profesional para control de asistencia, gestión de nómina y generación de reportes Excel."
+    />
     <meta name="theme-color" content="#3b82f6" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -36,6 +39,7 @@
     <link rel="stylesheet" href="css/mobile.css" />
     <link rel="stylesheet" href="css/timepicker.css" />
     <link rel="stylesheet" href="css/modals.css" />
+    <link rel="stylesheet" href="css/cloud_records.css" />
   </head>
   <body>
     <div id="toast-container" class="toast-container"></div>
@@ -51,7 +55,11 @@
             ></i>
             Editor de Asistencia - Excel
           </h2>
-          <button class="btn-close-modal" onclick="cerrarModalExcel()" aria-label="Cerrar modal de Excel">
+          <button
+            id="btnCloseModalExcel"
+            class="btn-close-modal"
+            aria-label="Cerrar modal de Excel"
+          >
             <i data-lucide="x" style="width: 24px; height: 24px"></i>
           </button>
         </div>
@@ -61,21 +69,12 @@
         </div>
 
         <div class="modal-excel-footer">
-          <button class="btn-text" onclick="cerrarModalExcel()">
-            <i data-lucide="x"></i> Cancelar
-          </button>
+
           <div style="flex: 1"></div>
-          <button
-            class="btn-primary btn-green"
-            onclick="descargarExcelEditado()"
-          >
+          <button id="btnDownloadExcelEdited" class="btn-primary btn-green">
             <i data-lucide="download"></i> Descargar Excel
           </button>
-          <button
-            class="btn-primary"
-            id="btnGuardarExcel"
-            onclick="guardarExcelSupabase()"
-          >
+          <button class="btn-primary" id="btnGuardarExcel">
             <i data-lucide="cloud-upload"></i> Guardar Progreso en Nube
           </button>
         </div>
@@ -117,7 +116,6 @@
           <button
             id="tabLogin"
             class="auth-tab active"
-            onclick="cambiarTabAuth('login')"
             style="
               flex: 1;
               padding: 14px;
@@ -135,7 +133,6 @@
           <button
             id="tabRegistro"
             class="auth-tab"
-            onclick="cambiarTabAuth('registro')"
             style="
               flex: 1;
               padding: 14px;
@@ -201,7 +198,6 @@
                     font-size: 0.95rem;
                     transition: all 0.2s;
                   "
-                  onkeypress="if(event.key==='Enter') loginSupabase()"
                 />
               </div>
 
@@ -241,11 +237,10 @@
                       font-size: 0.95rem;
                       transition: all 0.2s;
                     "
-                    onkeypress="if(event.key==='Enter') loginSupabase()"
                   />
                   <button
                     type="button"
-                    onclick="togglePasswordVisibility('loginPassword', 'togglePasswordIcon')"
+                    id="toggleLoginPass"
                     style="
                       position: absolute;
                       right: 12px;
@@ -301,7 +296,7 @@
                 </label>
                 <a
                   href="#"
-                  onclick="event.preventDefault(); mostrarRecuperarPassword();"
+                  id="forgotPasswordLink"
                   style="
                     font-size: 0.875rem;
                     color: var(--primary);
@@ -442,11 +437,10 @@
                       font-size: 0.95rem;
                       transition: all 0.2s;
                     "
-                    onkeypress="if(event.key==='Enter') registrarSupabase()"
                   />
                   <button
                     type="button"
-                    onclick="togglePasswordVisibility('registroPassword', 'togglePasswordIcon2')"
+                    id="toggleRegisterPass"
                     style="
                       position: absolute;
                       right: 12px;
@@ -503,7 +497,6 @@
                     font-size: 0.95rem;
                     transition: all 0.2s;
                   "
-                  onkeypress="if(event.key==='Enter') registrarSupabase()"
                 />
               </div>
             </div>
@@ -544,7 +537,6 @@
           <button
             class="btn-primary"
             id="btnLogin"
-            onclick="loginSupabase()"
             style="
               width: 100%;
               justify-content: center;
@@ -567,7 +559,6 @@
           <button
             class="btn-primary"
             id="btnRegistro"
-            onclick="registrarSupabase()"
             style="
               width: 100%;
               justify-content: center;
@@ -608,8 +599,8 @@
             <span id="timePickerTitle">Seleccionar Hora</span>
           </h2>
           <button
+            id="btnCloseTimePicker"
             class="btn-close-modal"
-            onclick="cerrarTimePicker()"
             style="color: white"
             aria-label="Cerrar selector de hora"
           >
@@ -673,10 +664,10 @@
             border-top: 1px solid var(--border-subtle);
           "
         >
-          <button class="btn-text" onclick="cerrarTimePicker()">
+          <button id="btnCancelTimePicker" class="btn-text">
             <i data-lucide="x"></i> Cancelar
           </button>
-          <button class="btn-primary" onclick="confirmarTiempo()">
+          <button id="btnConfirmTimePicker" class="btn-primary">
             <i data-lucide="check"></i> Confirmar
           </button>
         </div>
@@ -692,11 +683,7 @@
         <div
           class="modal-excel-header"
           style="
-            background: linear-gradient(
-              135deg,
-              #f59e0b 0%,
-              #d97706 100%
-            );
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
             color: white;
             border-bottom: none;
           "
@@ -706,8 +693,8 @@
             <span>Recuperar Contraseña</span>
           </h2>
           <button
+            id="btnCloseRecuperar"
             class="btn-close-modal"
-            onclick="cerrarRecuperarPassword()"
             style="color: white"
             aria-label="Cerrar modal de recuperación"
           >
@@ -751,21 +738,20 @@
                 ></i>
                 Correo Electrónico
               </label>
-              <input
-                type="email"
-                id="recuperarEmail"
-                placeholder="tu@email.com"
-                autocomplete="email"
-                style="
-                  width: 100%;
-                  padding: 12px 16px;
-                  border: 2px solid var(--border);
-                  border-radius: 8px;
-                  font-size: 0.95rem;
-                  transition: all 0.2s;
-                "
-                onkeypress="if(event.key==='Enter') enviarRecuperacionPassword()"
-              />
+                              <input
+                              type="email"
+                              id="recuperarEmail"
+                              placeholder="tu@email.com"
+                              autocomplete="email"
+                              style="
+                                width: 100%;
+                                padding: 12px 16px;
+                                border: 2px solid var(--border);
+                                border-radius: 8px;
+                                font-size: 0.95rem;
+                                transition: all 0.2s;
+                              "
+                            />
             </div>
           </div>
 
@@ -796,13 +782,12 @@
             gap: 12px;
           "
         >
-          <button class="btn-text" onclick="cerrarRecuperarPassword()">
+          <button id="btnCancelRecuperar" class="btn-text">
             <i data-lucide="x"></i> Cancelar
           </button>
           <button
             class="btn-primary"
             id="btnEnviarRecuperacion"
-            onclick="enviarRecuperacionPassword()"
             style="
               flex: 1;
               justify-content: center;
@@ -832,11 +817,7 @@
         <div
           class="modal-excel-header"
           style="
-            background: linear-gradient(
-              135deg,
-              #ef4444 0%,
-              #dc2626 100%
-            );
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             border-bottom: none;
           "
@@ -860,7 +841,7 @@
               "
             ></i>
           </div>
-          
+
           <h3
             style="
               font-size: 1.25rem;
@@ -871,7 +852,7 @@
           >
             ¿Estás seguro?
           </h3>
-          
+
           <p
             style="
               color: var(--text-muted);
@@ -905,11 +886,7 @@
             class="btn-primary"
             id="btnConfirmarLogout"
             onclick="confirmarLogout()"
-            style="
-              flex: 1;
-              justify-content: center;
-              background: #ef4444;
-            "
+            style="flex: 1; justify-content: center; background: #ef4444"
             onmouseover="this.style.background='#dc2626'"
             onmouseout="this.style.background='#ef4444'"
           >
@@ -923,7 +900,11 @@
     <nav class="topbar">
       <div class="topbar-inner">
         <div class="brand-area">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menú">
+          <button
+            class="mobile-menu-btn"
+            onclick="toggleSidebar()"
+            aria-label="Abrir menú"
+          >
             <i data-lucide="menu"></i>
           </button>
           <div class="brand">
@@ -938,15 +919,10 @@
         </div>
 
         <div class="topbar-actions">
-
-
-
-
           <!-- MENÚ DE USUARIO -->
           <div class="user-menu-container" style="position: relative">
             <button
               class="btn-user-menu"
-              onclick="toggleUserMenu()"
               id="btnUserMenu"
             >
               <div class="user-avatar">
@@ -974,6 +950,10 @@
                 </div>
               </div>
               <div class="user-dropdown-divider"></div>
+
+<!-- Dark Mode Toggle Removed -->
+
+              <div class="user-dropdown-divider"></div>
               <button class="user-dropdown-item" onclick="logoutSupabase()">
                 <i data-lucide="log-out"></i>
                 <span>Cerrar Sesión</span>
@@ -981,7 +961,11 @@
             </div>
           </div>
 
-          <button class="btn-icon-circle" onclick="mostrarAyuda()" aria-label="Mostrar ayuda">
+          <button
+            class="btn-icon-circle"
+            onclick="mostrarAyuda()"
+            aria-label="Mostrar ayuda"
+          >
             <i data-lucide="help-circle" style="width: 22px"></i>
           </button>
         </div>
@@ -1116,7 +1100,14 @@
           </div>
           <div class="card-body">
             <div style="display: flex; gap: 10px; margin-bottom: 16px">
-              <input type="date" id="fechaFeriado" style="flex: 1" />
+              <div class="select-wrapper" style="flex: 1">
+                <input
+                  type="date"
+                  id="fechaFeriado"
+                  onclick="this.showPicker()"
+                />
+                <i data-lucide="calendar" class="select-icon"></i>
+              </div>
               <button
                 class="btn-text"
                 onclick="agregarFeriado()"
@@ -1215,7 +1206,16 @@
               <div class="btn-content">
                 <i data-lucide="file-check-2"></i>
                 <span>Generar PDF</span>
-                <span class="btn-subtitle" style="font-size: 0.75rem; font-weight: 400; opacity: 0.9; margin-top: -2px;">Hoja de asistencia para llenar a mano</span>
+                <span
+                  class="btn-subtitle"
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 400;
+                    opacity: 0.9;
+                    margin-top: -2px;
+                  "
+                  >Hoja de asistencia para llenar a mano</span
+                >
               </div>
               <div class="btn-shine"></div>
             </button>
@@ -1224,7 +1224,16 @@
               <div class="btn-content">
                 <i data-lucide="file-spreadsheet" style="width: 20px"></i>
                 <span>Generar Excel</span>
-                <span class="btn-subtitle" style="font-size: 0.75rem; font-weight: 400; opacity: 0.9; margin-top: -2px;">Archivo sin modificar</span>
+                <span
+                  class="btn-subtitle"
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 400;
+                    opacity: 0.9;
+                    margin-top: -2px;
+                  "
+                  >Archivo sin modificar</span
+                >
               </div>
               <div class="btn-shine"></div>
             </button>
@@ -1328,9 +1337,9 @@
 
         <!-- NUEVA SECCIÓN: REGISTROS EN LA NUBE -->
         <div class="card main-card" style="margin-top: 32px">
-          <div class="card-header-flex">
+          <div class="card-header-flex cloud-header-enhanced">
             <div class="header-title">
-              <div class="icon-box" style="color: #3b82f6; background: #dbeafe">
+              <div class="icon-box cloud-icon-glow" style="color: #3b82f6; background: #dbeafe">
                 <i data-lucide="database"></i>
               </div>
               <div>
@@ -1353,7 +1362,7 @@
           </div>
 
           <!-- Filtros -->
-          <div class="search-bar-area" style="gap: 12px; flex-wrap: wrap">
+          <div class="search-bar-area search-bar-area-enhanced" style="gap: 12px; flex-wrap: wrap">
             <div class="input-with-icon" style="flex: 1; min-width: 200px">
               <i data-lucide="user" class="search-icon"></i>
               <select
@@ -1417,7 +1426,10 @@
               onclick="cargarRegistrosAsistencia()"
               style="white-space: nowrap"
             >
-              <i data-lucide="cloud-download" style="width: 22px; height: 22px"></i>
+              <i
+                data-lucide="cloud-download"
+                style="width: 22px; height: 22px"
+              ></i>
               Cargar Datos
             </button>
 
@@ -1548,36 +1560,78 @@
 
           <div class="historial-container" id="historialGrid"></div>
         </div>
-
-
       </main>
     </div>
 
     <!-- MODAL CONFIRMACION (GENERICO) -->
-    <div class="modal-excel" id="modalConfirmacion" style="display: none; z-index: 10001;">
-      <div class="modal-excel-content" style="max-width: 450px; animation: fadeInUp 0.3s ease;">
-        <div class="modal-excel-header" style="background: #fff7ed; border-bottom: none; padding-bottom: 0;">
-          <h2 style="color: #9a3412; font-size: 1.25rem;">
-            <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+    <div
+      class="modal-excel"
+      id="modalConfirmacion"
+      style="display: none; z-index: 10001"
+    >
+      <div
+        class="modal-excel-content"
+        style="max-width: 450px; animation: fadeInUp 0.3s ease"
+      >
+        <div
+          class="modal-excel-header"
+          style="background: #fff7ed; border-bottom: none; padding-bottom: 0"
+        >
+          <h2 style="color: #9a3412; font-size: 1.25rem">
+            <i
+              data-lucide="alert-triangle"
+              style="width: 24px; height: 24px"
+            ></i>
             <span id="modalConfirmTitulo">Confirmación</span>
           </h2>
-          <button class="btn-close-modal" onclick="cerrarModalConfirmacion()" aria-label="Cerrar confirmación">
-            <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+          <button
+            class="btn-close-modal"
+            onclick="cerrarModalConfirmacion()"
+            aria-label="Cerrar confirmación"
+          >
+            <i data-lucide="x" style="width: 24px; height: 24px"></i>
           </button>
         </div>
-        <div class="modal-excel-body" style="padding: 20px 32px; text-align: center;">
-          <p id="modalConfirmMensaje" style="color: var(--text); font-size: 1rem; line-height: 1.5; margin: 0;">
+        <div
+          class="modal-excel-body"
+          style="padding: 20px 32px; text-align: center"
+        >
+          <p
+            id="modalConfirmMensaje"
+            style="
+              color: var(--text);
+              font-size: 1rem;
+              line-height: 1.5;
+              margin: 0;
+            "
+          >
             ¿Estás seguro?
           </p>
         </div>
-        <div class="modal-excel-footer" style="padding: 20px 32px; border-top: none; background: #fff7ed; border-radius: 0 0 16px 16px;">
-            <button class="btn-text" onclick="cerrarModalConfirmacion()" style="color: #9a3412;">
-                Cancelar
-            </button>
-            <div style="flex: 1;"></div>
-            <button id="btnModalConfirmAction" class="btn-primary" style="background: #ea580c; border: none;">
-                Confirmar
-            </button>
+        <div
+          class="modal-excel-footer"
+          style="
+            padding: 20px 32px;
+            border-top: none;
+            background: #fff7ed;
+            border-radius: 0 0 16px 16px;
+          "
+        >
+          <button
+            class="btn-text"
+            onclick="cerrarModalConfirmacion()"
+            style="color: #9a3412"
+          >
+            Cancelar
+          </button>
+          <div style="flex: 1"></div>
+          <button
+            id="btnModalConfirmAction"
+            class="btn-primary"
+            style="background: #ea580c; border: none"
+          >
+            Confirmar
+          </button>
         </div>
       </div>
     </div>
@@ -1600,6 +1654,7 @@
     <script src="js/enhanced.js"></script>
     <script src="js/timepicker.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/events.js"></script>
     <script>
       // Inicializar iconos al cargar por si acaso
       lucide.createIcons();

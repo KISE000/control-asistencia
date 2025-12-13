@@ -96,26 +96,6 @@ async function loginSupabase() {
 }
 
 /**
- * Cerrar sesión
- */
-async function logoutSupabase() {
-    if (!supabase) return;
-    
-    try {
-        const { error } = await supabase.auth.signOut();
-        
-        if (error) throw error;
-        
-        localStorage.removeItem('supabaseSession');
-        showToast('Sesión cerrada', 'success');
-        
-    } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-        showToast('Error al cerrar sesión', 'error');
-    }
-}
-
-/**
  * Verificar sesión activa
  */
 async function verificarSesion() {
@@ -545,29 +525,48 @@ function ocultarErrorLogin() {
 }
 
 /**
- * Toggle del menú desplegable de usuario
+ * Configurar listeners para el menú de usuario
  */
-function toggleUserMenu() {
+function setupUserMenuListeners() {
+    const btn = document.getElementById('btnUserMenu');
     const dropdown = document.getElementById('userDropdown');
-    if (dropdown) {
-        const isVisible = dropdown.style.display === 'block';
-        dropdown.style.display = isVisible ? 'none' : 'block';
+
+    if (btn && dropdown) {
+        // Limpiar listeners anteriores para evitar duplicados si se llama múltiples veces (aunque idealmente solo una)
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
         
-        if (window.lucide) lucide.createIcons();
+        newBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Listener global para cerrar al hacer clic fuera
+        // Nota: Agregamos este listener solo una vez al documento
+        if (!window.userMenuClickOutsideAttached) {
+            document.addEventListener('click', (e) => {
+                const d = document.getElementById('userDropdown');
+                const b = document.getElementById('btnUserMenu');
+                if (d && d.style.display === 'block') {
+                     // Si el clic no fue en el dropdown ni en el botón (el botón ya maneja su propio stopPropagation, pero por seguridad)
+                     if (!d.contains(e.target) && (!b || !b.contains(e.target))) {
+                         d.style.display = 'none';
+                     }
+                }
+            });
+            window.userMenuClickOutsideAttached = true;
+        }
     }
 }
 
-// Cerrar dropdown al hacer clic fuera
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('userDropdown');
-    const btnUserMenu = document.getElementById('btnUserMenu');
-    
-    if (dropdown && btnUserMenu) {
-        if (!dropdown.contains(e.target) && !btnUserMenu.contains(e.target)) {
-            dropdown.style.display = 'none';
-        }
-    }
-});
+// Inicializar listeners
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupUserMenuListeners);
+} else {
+    setupUserMenuListeners();
+}
 
 /**
  * Actualizar UI con información del usuario

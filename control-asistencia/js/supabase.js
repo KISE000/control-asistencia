@@ -163,13 +163,34 @@ async function cargarAsistenciasDesdeSupabase(periodo) {
     if (!supabase) return null;
 
     try {
-        const { data, error } = await supabase
+        const queryBase = supabase
             .from('asistencias')
             .select('*')
             .eq('periodo', periodo);
 
-        if (error) throw error;
-        return data;
+        let todosLosRegistros = [];
+        let pagina = 0;
+        const tamanoPagina = 1000; // Límite por consulta de Supabase
+
+        while (true) {
+            const { data, error } = await queryBase.range(pagina * tamanoPagina, (pagina + 1) * tamanoPagina - 1);
+
+            if (error) throw error;
+
+            if (data) {
+                todosLosRegistros = todosLosRegistros.concat(data);
+            }
+
+            // Si se obtuvieron menos registros que el tamaño de la página, es la última.
+            if (!data || data.length < tamanoPagina) {
+                break;
+            }
+
+            pagina++;
+        }
+        
+        return todosLosRegistros;
+
     } catch (error) {
         console.error('Error cargando asistencias:', error);
         return null;
@@ -210,22 +231,19 @@ async function cargarRegistrosAsistencia() {
         const filtroMes = document.getElementById('filtroMes').value;
         const filtroAno = document.getElementById('filtroAno').value;
         
-        // Construir query
-        let query = supabase
+        // --- INICIO DE MODIFICACIÓN: LÓGICA DE PAGINACIÓN ---
+        
+        // Construir query base
+        let queryBase = supabase
             .from('asistencias')
             .select('*')
-            .order('fecha', { ascending: false })
-            .limit(500);
-        
+            .order('fecha', { ascending: false });
+
         // Aplicar filtros
         if (filtroEmpleadoId) {
-            query = query.eq('empleado_id', parseInt(filtroEmpleadoId));
+            queryBase = queryBase.eq('empleado_id', parseInt(filtroEmpleadoId));
         } else {
-            // Si no hay filtro de empleado específico, limitar a LOS DEL USUARIO
-            // Pasos:
-            // 1. Obtener IDs de empleados del usuario
-            // 2. Filtrar asistencias por esos IDs
-
+            // Si no hay filtro de empleado específico, limitar a los del usuario
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data: misEmpleados } = await supabase
@@ -235,10 +253,15 @@ async function cargarRegistrosAsistencia() {
                 
                 if (misEmpleados && misEmpleados.length > 0) {
                     const ids = misEmpleados.map(e => e.id);
-                    query = query.in('empleado_id', ids);
+                    queryBase = queryBase.in('empleado_id', ids);
                 } else {
-                    // Si no tiene empleados, no debería ver nada
-                    return []; 
+                    // Si el usuario no tiene empleados, mostrar tabla vacía.
+                    registrosAsistenciaGlobal = [];
+                    renderTablaRegistros([]);
+                    textoBadge.textContent = '0 registros encontrados';
+                    badge.style.display = 'inline-flex';
+                    showToast(`No tienes empleados asignados para mostrar registros`, 'info');
+                    return;
                 }
             }
         }
@@ -248,19 +271,39 @@ async function cargarRegistrosAsistencia() {
             const lastDay = new Date(filtroAno, filtroMes, 0).getDate();
             const inicioPeriodo = `${filtroAno}-${mesStr}-01`;
             const finPeriodo = `${filtroAno}-${mesStr}-${lastDay}`;
-            query = query.gte('fecha', inicioPeriodo).lte('fecha', finPeriodo);
+            queryBase = queryBase.gte('fecha', inicioPeriodo).lte('fecha', finPeriodo);
         } else if (filtroAno) {
-            query = query.gte('fecha', `${filtroAno}-01-01`).lte('fecha', `${filtroAno}-12-31`);
+            queryBase = queryBase.gte('fecha', `${filtroAno}-01-01`).lte('fecha', `${filtroAno}-12-31`);
         }
         
-        const { data, error } = await query;
+        let todosLosRegistros = [];
+        let pagina = 0;
+        const tamanoPagina = 1000; // Límite por consulta de Supabase
+
+        while (true) {
+            const { data, error } = await queryBase.range(pagina * tamanoPagina, (pagina + 1) * tamanoPagina - 1);
+
+            if (error) throw error;
+
+            if (data) {
+                todosLosRegistros = todosLosRegistros.concat(data);
+            }
+
+            // Si se obtuvieron menos registros que el tamaño de la página, es la última.
+            if (!data || data.length < tamanoPagina) {
+                break;
+            }
+
+            pagina++;
+        }
         
-        if (error) throw error;
+        // --- FIN DE MODIFICACIÓN ---
         
         // Guardar en variable global
-        registrosAsistenciaGlobal = data || [];
+        registrosAsistenciaGlobal = todosLosRegistros || [];
         
-        // Actualizar badge de conteo
+        // Actualizar badge de conteo con animación
+        badge.classList.add('count-badge-animated');
         textoBadge.textContent = `${registrosAsistenciaGlobal.length} registro${registrosAsistenciaGlobal.length !== 1 ? 's' : ''} encontrado${registrosAsistenciaGlobal.length !== 1 ? 's' : ''}`;
         badge.style.display = 'inline-flex';
         
@@ -272,6 +315,9 @@ async function cargarRegistrosAsistencia() {
             
             // Actualizar dropdown de empleados si está vacío
             actualizarDropdownEmpleados(registrosAsistenciaGlobal);
+        } else {
+             // Si no se encontraron registros, pero la carga fue exitosa
+            showToast(`No se encontraron registros para los filtros seleccionados`, 'info');
         }
         
     } catch (error) {
@@ -298,79 +344,84 @@ function renderTablaRegistros(registros) {
     
     if (!registros || registros.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-                <i data-lucide="calendar-x" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px;"></i>
-                <p style="font-weight: 600;">Sin datos registrados</p>
-                <p style="font-size: 0.9rem;">No hay asistencias para este período</p>
+            <div class="empty-state-modern">
+                <i data-lucide="calendar-x" class="empty-state-icon"></i>
+                <p class="empty-state-title">Sin datos registrados</p>
+                <p class="empty-state-subtitle">No hay asistencias para este período</p>
             </div>
         `;
         if (window.lucide) lucide.createIcons();
         return;
     }
     
-    // Obtener colores para estados
+    // Mapeador de badges con clases CSS
+    const getBadgeClass = (estado) => {
+        const classes = {
+            'Presente': 'badge-presente',
+            'Ausente': 'badge-ausente',
+            'Permiso': 'badge-permiso',
+            'Incapacidad': 'badge-incapacidad',
+            'Vacaciones': 'badge-vacaciones',
+            'Feriado': 'badge-feriado',
+            'Día Libre': 'badge-dia-libre'
+        };
+        return classes[estado] || 'badge-presente';
+    };
+    
     const getEstadoBadge = (estado) => {
         const badges = {
-            'Presente': { bg: '#d1fae5', color: '#065f46', icon: 'check-circle' },
-            'Ausente': { bg: '#fee2e2', color: '#991b1b', icon: 'x-circle' },
-            'Permiso': { bg: '#fef3c7', color: '#92400e', icon: 'file-text' },
-            'Incapacidad': { bg: '#dbeafe', color: '#1e40af', icon: 'heart-pulse' },
-            'Vacaciones': { bg: '#e0e7ff', color: '#3730a3', icon: 'palmtree' },
-            'Feriado': { bg: '#fce7f3', color: '#831843', icon: 'calendar' },
-            'Día Libre': { bg: '#f3e8ff', color: '#6b21a8', icon: 'coffee' }
+            'Presente': { icon: 'check-circle' },
+            'Ausente': { icon: 'x-circle' },
+            'Permiso': { icon: 'file-text' },
+            'Incapacidad': { icon: 'heart-pulse' },
+            'Vacaciones': { icon: 'palmtree' },
+            'Feriado': { icon: 'calendar' },
+            'Día Libre': { icon: 'coffee' }
         };
         
-        const badge = badges[estado] || { bg: '#f3f4f6', color: '#374151', icon: 'circle' };
+        const badge = badges[estado] || { icon: 'circle' };
+        const badgeClass = getBadgeClass(estado);
+        
         return `
-            <span style="
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-                padding: 4px 10px;
-                background: ${badge.bg};
-                color: ${badge.color};
-                border-radius: 6px;
-                font-size: 0.85rem;
-                font-weight: 600;
-            ">
-                <i data-lucide="${badge.icon}" style="width: 14px; height: 14px;"></i>
+            <span class="estado-badge-modern ${badgeClass}">
+                <i data-lucide="${badge.icon}"></i>
                 ${estado}
             </span>
         `;
     };
     
     let html = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-            <thead style="background: #1e293b; position: sticky; top: 0; z-index: 1;">
+        <table class="records-table">
+            <thead class="records-table-header">
                 <tr>
-                    <th style="padding: 12px; text-align: left; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Empleado</th>
-                    <th style="padding: 12px; text-align: left; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Fecha</th>
-                    <th style="padding: 12px; text-align: left; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Estado</th>
-                    <th style="padding: 12px; text-align: center; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Entrada</th>
-                    <th style="padding: 12px; text-align: center; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Salida</th>
-                    <th style="padding: 12px; text-align: center; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Hrs Trab.</th>
-                    <th style="padding: 12px; text-align: center; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Hrs Extra</th>
-                    <th style="padding: 12px; text-align: left; color: white; font-weight: 600; border-bottom: 2px solid #3b82f6;">Observaciones</th>
+                    <th>Empleado</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Entrada</th>
+                    <th style="text-align: center;">Salida</th>
+                    <th style="text-align: center;">Hrs Trab.</th>
+                    <th style="text-align: center;">Hrs Extra</th>
+                    <th>Observaciones</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
     registros.forEach((reg, idx) => {
-        const rowBg = idx % 2 === 0 ? '#fafafa' : 'white';
         const fecha = new Date(reg.fecha + 'T00:00:00');
         const fechaFormateada = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        const horasExtraColor = reg.horas_extra > 0 ? '#ea580c' : '#94a3b8';
         
         html += `
-            <tr style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 12px; font-weight: 600; color: #1e293b;">${reg.empleado_nombre}</td>
-                <td style="padding: 10px 12px; color: #475569;">${fechaFormateada}</td>
-                <td style="padding: 10px 12px;">${getEstadoBadge(reg.estado)}</td>
-                <td style="padding: 10px 12px; text-align: center; font-family: monospace; color: #059669;">${reg.hora_entrada || '--:--'}</td>
-                <td style="padding: 10px 12px; text-align: center; font-family: monospace; color: #dc2626;">${reg.hora_salida || '--:--'}</td>
-                <td style="padding: 10px 12px; text-align: center; font-weight: 600; color: #1e293b;">${reg.horas_trabajadas || 0}</td>
-                <td style="padding: 10px 12px; text-align: center; font-weight: 700; color: ${reg.horas_extra > 0 ? '#ea580c' : '#94a3b8'};">${reg.horas_extra || 0}</td>
-                <td style="padding: 10px 12px; color: #64748b; font-size: 0.85rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${reg.observaciones || ''}">${reg.observaciones || '-'}</td>
+            <tr class="records-table-row" style="animation-delay: ${idx * 30}ms;">
+                <td class="records-table-cell cell-employee">${reg.empleado_nombre}</td>
+                <td class="records-table-cell cell-date">${fechaFormateada}</td>
+                <td class="records-table-cell">${getEstadoBadge(reg.estado)}</td>
+                <td class="records-table-cell cell-time cell-time-entrada">${reg.hora_entrada || '--:--'}</td>
+                <td class="records-table-cell cell-time cell-time-salida">${reg.hora_salida || '--:--'}</td>
+                <td class="records-table-cell cell-hours">${reg.horas_trabajadas || 0}</td>
+                <td class="records-table-cell cell-hours-extra" style="color: ${horasExtraColor};">${reg.horas_extra || 0}</td>
+                <td class="records-table-cell cell-observations" title="${reg.observaciones || ''}">${reg.observaciones || '-'}</td>
             </tr>
         `;
     });
@@ -385,6 +436,7 @@ function renderTablaRegistros(registros) {
     // Re-inicializar iconos de Lucide
     if (window.lucide) lucide.createIcons();
 }
+
 
 /**
  * Actualiza el dropdown de empleados con los empleados únicos de los registros
@@ -888,6 +940,7 @@ async function cargarEmpleadosDesdeSupabase() {
 async function sincronizarEmpleadosConSupabase() {
     if (!supabase) {
         console.warn('Supabase no disponible');
+        showToast('No se puede sincronizar: sin conexión a la base de datos.', 'error');
         return;
     }
 
@@ -900,26 +953,56 @@ async function sincronizarEmpleadosConSupabase() {
         
         if (empleadosLocalesSinDB.length > 0) {
             console.log(`Sincronizando ${empleadosLocalesSinDB.length} empleados locales con Supabase...`);
+            let nuevosCreados = 0;
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                throw new Error("Usuario no autenticado, no se puede sincronizar.");
+            }
             
             for (const emp of empleadosLocalesSinDB) {
-                const empleadoDB = await guardarEmpleadoSupabase(emp.nombre);
-                if (empleadoDB) {
-                    // Actualizar el empleado local con el ID de Supabase
-                    emp.supabaseId = empleadoDB.id;
+                // Para mitigar condiciones de carrera, verificamos si el empleado ya existe
+                // justo antes de intentar crearlo. Usamos ilike para búsqueda insensible a mayúsculas.
+                const { data: existingEmployee, error: checkError } = await supabase
+                    .from('empleados')
+                    .select('id, nombre')
+                    .eq('created_by', user.id)
+                    .ilike('nombre', emp.nombre.trim());
+
+                if (checkError) {
+                    throw new Error(`Error al verificar a '${emp.nombre}': ${checkError.message}`);
+                }
+
+                if (existingEmployee && existingEmployee.length > 0) {
+                    // El empleado ya existe, fue creado por otra sesión. Actualizamos el ID local.
+                    emp.supabaseId = existingEmployee[0].id;
+                } else {
+                    // Si no existe, ahora es más seguro crearlo.
+                    const nuevoEmpleadoDB = await guardarEmpleadoSupabase(emp.nombre);
+                    if (nuevoEmpleadoDB) {
+                        // Actualizar el empleado local con el nuevo ID de Supabase
+                        emp.supabaseId = nuevoEmpleadoDB.id;
+                        nuevosCreados++;
+                    } else {
+                        // El guardado falló por otra razón (ej. red). La función de guardado ya mostró un toast.
+                        // Lanzamos error para detener la sincronización y no dejar un estado inconsistente.
+                        throw new Error(`No se pudo guardar al empleado '${emp.nombre}'`);
+                    }
                 }
             }
             
-            // Guardar la configuración actualizada
-            if (typeof guardarConfiguracion === 'function') {
-                guardarConfiguracion();
+            if (nuevosCreados > 0) {
+                showToast(`✅ ${nuevosCreados} empleado(s) nuevo(s) guardado(s) en la nube.`, 'success');
             }
         }
 
-        // Actualizar empleados locales con los de la base de datos
+        // Actualizar la lista local de empleados con la información más reciente de la DB
+        // Recargamos para tener la lista más actualizada post-sincronización
+        const empleadosSincronizadosDB = await cargarEmpleadosDesdeSupabase();
         const empleadosMap = new Map();
         
-        // Agregar empleados de DB
-        empleadosDB.forEach(empDB => {
+        // 1. Cargar desde la DB (fuente de verdad)
+        empleadosSincronizadosDB.forEach(empDB => {
             empleadosMap.set(empDB.id, {
                 id: empDB.id,
                 supabaseId: empDB.id,
@@ -928,29 +1011,31 @@ async function sincronizarEmpleadosConSupabase() {
             });
         });
         
-        // Agregar empleados locales que ya tienen supabaseId
+        // 2. Sobrescribir o añadir desde la lista local para mantener el estado 'seleccionado'
         empleados.forEach(empLocal => {
-            if (empLocal.supabaseId && !empleadosMap.has(empLocal.supabaseId)) {
-                empleadosMap.set(empLocal.supabaseId, empLocal);
+            if(empLocal.supabaseId && empleadosMap.has(empLocal.supabaseId)) {
+                const empEnMapa = empleadosMap.get(empLocal.supabaseId);
+                empleadosMap.set(empLocal.supabaseId, { ...empEnMapa, seleccionado: empLocal.seleccionado });
             }
         });
         
-        // Convertir mapa a array
-        const empleadosSincronizados = Array.from(empleadosMap.values());
+        // Convertir mapa a array y ordenar por nombre
+        const empleadosFinal = Array.from(empleadosMap.values())
+            .sort((a, b) => a.nombre.localeCompare(b.nombre));
         
-        if (empleadosSincronizados.length > 0) {
-            empleados = empleadosSincronizados;
-            if (typeof renderEmpleados === 'function') {
-                renderEmpleados();
-            }
-            if (typeof guardarConfiguracion === 'function') {
-                guardarConfiguracion();
-            }
+        if (empleadosFinal.length > 0) {
+            empleados = empleadosFinal;
         }
 
-        console.log('✅ Sincronización completada');
+        // Reflejar cambios en la UI y guardar configuración
+        if (typeof renderEmpleados === 'function') renderEmpleados();
+        if (typeof guardarConfiguracion === 'function') guardarConfiguracion();
+
+        console.log('✅ Sincronización de empleados completada');
 
     } catch (error) {
-        console.error('❌ Error en sincronización:', error);
+        console.error('❌ Error en sincronización de empleados:', error);
+        // Notificar al usuario del error
+        showToast('Error de sincronización: ' + error.message, 'error');
     }
 }

@@ -544,10 +544,10 @@ function renderTablaExcel() {
     const gruposArray = Object.values(grupos);
     
     // 2. HTML: Barra de Pestañas
-    let html = '<div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">';
+    let html = '<div style="background: var(--surface); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">';
     
     // Tabs Header
-    html += '<div style="display: flex; background: #f8fafc; border-bottom: 2px solid #e2e8f0; overflow-x: auto;">';
+    html += '<div style="display: flex; background: var(--surface-subtle); border-bottom: 2px solid var(--border); overflow-x: auto;">';
     
     gruposArray.forEach((grupo, idx) => {
         const isActive = idx === 0;
@@ -559,22 +559,22 @@ function renderTablaExcel() {
                     flex: 0 0 auto;
                     padding: 14px 24px;
                     border: none;
-                    background: ${isActive ? 'white' : 'transparent'};
-                    color: ${isActive ? '#1e293b' : '#64748b'};
+                    background: ${isActive ? 'var(--surface)' : 'transparent'};
+                    color: ${isActive ? 'var(--text-main)' : 'var(--text-muted)'};
                     font-weight: ${isActive ? '600' : '500'};
                     font-size: 0.95rem;
                     cursor: pointer;
-                    border-bottom: 3px solid ${isActive ? '#3b82f6' : 'transparent'};
+                    border-bottom: 3px solid ${isActive ? 'var(--primary)' : 'transparent'};
                     transition: all 0.2s ease;
                     display: flex;
                     align-items: center;
                     gap: 8px;
                 "
-                onmouseover="if(!this.classList.contains('tab-active')) this.style.background='#f1f5f9'"
+                onmouseover="if(!this.classList.contains('tab-active')) this.style.background='var(--surface-hover)'"
                 onmouseout="if(!this.classList.contains('tab-active')) this.style.background='transparent'"
                 class="${isActive ? 'tab-active' : ''}">
                 <div style="
-                    background: ${isActive ? '#3b82f6' : '#cbd5e1'};
+                    background: ${isActive ? 'var(--primary)' : 'var(--border)'};
                     color: white;
                     width: 24px;
                     height: 24px;
@@ -587,8 +587,8 @@ function renderTablaExcel() {
                 ">${grupo.nombre.charAt(0)}</div>
                 <span>${grupo.nombre}</span>
                 <span style="
-                    background: ${isActive ? '#dbeafe' : '#e2e8f0'};
-                    color: ${isActive ? '#1e40af' : '#64748b'};
+                    background: ${isActive ? 'var(--primary-light)' : 'var(--border-subtle)'};
+                    color: ${isActive ? 'var(--primary)' : 'var(--text-muted)'};
                     padding: 2px 8px;
                     border-radius: 12px;
                     font-size: 0.75rem;
@@ -621,16 +621,16 @@ function renderTablaExcel() {
                 <div style="overflow-x: auto; max-height: 60vh; overflow-y: auto;">
                     <table class="tabla-excel" style="width: 100%; border-collapse: collapse;">
                         <thead style="position: sticky; top: 0; z-index: 10;">
-                            <tr style="background: #1e293b;">
-                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 100px;">Fecha</th>
-                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 140px;">Estado</th>
-                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 120px;">Hora Entrada</th>
-                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 120px;">Hora Salida</th>
-                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 80px;">Almuerzo</th>
-                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 90px;">Hrs Trab.</th>
-                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 90px;">Hrs Extra</th>
-                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: white; font-weight: 600; min-width: 200px;">Observaciones</th>
-                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: white; font-weight: 600; min-width: 80px;">Acción</th>
+                            <tr style="background: var(--surface-hover); border-bottom: 2px solid var(--primary);">
+                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 100px;">Fecha</th>
+                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 140px;">Estado</th>
+                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 120px;">Hora Entrada</th>
+                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 120px;">Hora Salida</th>
+                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 80px;">Almuerzo</th>
+                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 90px;">Hrs Trab.</th>
+                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 90px;">Hrs Extra</th>
+                                <th style="padding: 14px 16px; text-align: left; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 200px;">Observaciones</th>
+                                <th style="padding: 14px 16px; text-align: center; font-size: 0.85rem; color: var(--text-main); font-weight: 600; min-width: 80px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -640,11 +640,11 @@ function renderTablaExcel() {
             const idx = fila.globalIdx;
             const esFeriado = fila.estado === 'Feriado';
             
-            // Si está completado, usar verde. Si es feriado, naranja. Si no, alternar.
-            let rowBg = esFeriado ? '#fff7ed' : (fila.dia % 2 === 0 ? '#fafafa' : 'white');
-            if (fila.completado) rowBg = '#dcfce7'; // Verde realizado
+            // Estilos dinámicos usando variables CSS
+            let rowClass = esFeriado ? 'row-feriado' : (fila.dia % 2 === 0 ? 'row-even' : 'row-odd');
+            if (fila.completado) rowClass += ' row-completed';
 
-            const borderLeft = esFeriado ? '4px solid #f97316' : (fila.completado ? '4px solid #22c55e' : '4px solid transparent');
+            const borderLeft = esFeriado ? '4px solid var(--warning)' : (fila.completado ? '4px solid var(--success)' : '4px solid transparent');
             
             // Input readonly para TimePicker
             // Nota: usamos un input text readonly en lugar de select para la hora, para ser consistente con el nuevo TimePicker
@@ -659,7 +659,7 @@ function renderTablaExcel() {
                     onclick="abrirTimePickerParaTabla(${idx}, 'horaEntrada', 'Entrada ${fila.fecha}')"
                     class="input-tabla"
                     ${esFeriado ? 'disabled' : ''}
-                    style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; cursor: pointer; ${esFeriado ? 'background: #f1f5f9; color: #94a3b8;' : 'background: white;'}"
+                    style="width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; cursor: pointer; ${esFeriado ? 'background: var(--surface-hover); color: var(--text-muted);' : 'background: var(--bg-input); color: var(--text-main);'}"
                     placeholder="--:--"
                 >
             `;
@@ -671,19 +671,19 @@ function renderTablaExcel() {
                     onclick="abrirTimePickerParaTabla(${idx}, 'horaSalida', 'Salida ${fila.fecha}')"
                     class="input-tabla"
                     ${esFeriado ? 'disabled' : ''}
-                    style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; cursor: pointer; ${esFeriado ? 'background: #f1f5f9; color: #94a3b8;' : 'background: white;'}"
+                    style="width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-family: monospace; text-align: center; font-size: 0.95rem; cursor: pointer; ${esFeriado ? 'background: var(--surface-hover); color: var(--text-muted);' : 'background: var(--bg-input); color: var(--text-main);'}"
                     placeholder="--:--"
                 >
             `;
 
             html += `
-                <tr data-idx="${idx}" style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9; border-left: ${borderLeft};">
-                    <td data-label="Fecha" style="padding: 10px 16px; color: #334155; font-variant-numeric: tabular-nums;">
+                <tr data-idx="${idx}" class="${rowClass}" style="border-bottom: 1px solid var(--border-subtle); border-left: ${borderLeft};">
+                    <td data-label="Fecha" style="padding: 10px 16px; color: var(--text-secondary); font-variant-numeric: tabular-nums;">
                         ${formatFechaConDiaUI(fila.fecha)}
                     </td>
                     <td data-label="Estado" style="padding: 10px 16px;">
                         <select class="input-tabla" onchange="actualizarCeldaExcel(${idx}, 'estado', this.value)" 
-                            style="width: 100%; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; ${esFeriado ? 'color: #ea580c; font-weight: 600;' : ''}">
+                            style="width: 100%; border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; background: var(--bg-input); color: var(--text-main); ${esFeriado ? 'color: var(--warning); font-weight: 600;' : ''}">
                             <option value="Presente" ${fila.estado === 'Presente' ? 'selected' : ''}>Presente</option>
                             <option value="Ausente" ${fila.estado === 'Ausente' ? 'selected' : ''}>Ausente</option>
                             <option value="Permiso" ${fila.estado === 'Permiso' ? 'selected' : ''}>Permiso</option>
@@ -704,31 +704,31 @@ function renderTablaExcel() {
                             onchange="actualizarCeldaExcel(${idx}, 'almuerzo', this.value)" 
                             min="0" max="4" step="0.5" 
                             ${esFeriado ? 'disabled' : ''} 
-                            style="width: 100%; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; ${esFeriado ? 'background: #f1f5f9;' : ''}">
+                            style="width: 100%; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 6px; background: var(--bg-input); color: var(--text-main); ${esFeriado ? 'background: var(--surface-hover);' : ''}">
                     </td>
                     <td data-label="Hrs Trab." style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.horasTrabajadas}" 
                             disabled
-                            style="width: 100%; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; color: #475569; font-weight: 500;">
+                            style="width: 100%; text-align: center; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px; background: var(--surface-subtle); color: var(--text-secondary); font-weight: 500;">
                     </td>
                     <td data-label="Hrs Extra" style="padding: 10px 16px;">
                         <input type="number" class="input-tabla" value="${fila.horasExtra}" 
                             readonly
-                            style="width: 100%; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; color: ${fila.horasExtra > 0 ? '#ea580c' : '#94a3b8'}; font-weight: ${fila.horasExtra > 0 ? 'bold' : 'normal'};">
+                            style="width: 100%; text-align: center; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px; background: var(--surface-subtle); color: ${fila.horasExtra > 0 ? 'var(--warning)' : 'var(--text-muted)'}; font-weight: ${fila.horasExtra > 0 ? 'bold' : 'normal'};">
                     </td>
                     <td data-label="Observaciones" style="padding: 10px 16px;">
                         <input type="text" class="input-tabla" value="${fila.observaciones}" 
                             onchange="actualizarCeldaExcel(${idx}, 'observaciones', this.value)" 
                             placeholder="Observaciones..."
-                            style="width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px;">
+                            style="width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--bg-input); color: var(--text-main);">
                     </td>
                     <td data-label="Acción" style="padding: 10px 16px; text-align: center;">
                         <button onclick="completarDia(${idx})" 
                             class="btn-icon-small"
                             title="${fila.completado ? 'Marcar como pendiente' : 'Marcar como realizado'}"
                             style="
-                                background: ${fila.completado ? '#22c55e' : '#f1f5f9'}; 
-                                color: ${fila.completado ? 'white' : '#64748b'};
+                                background: ${fila.completado ? 'var(--success)' : 'var(--surface-subtle)'}; 
+                                color: ${fila.completado ? 'white' : 'var(--text-muted)'};
                                 border: none;
                                 border-radius: 6px;
                                 width: 32px;
@@ -1189,6 +1189,12 @@ async function ejecutarGuardado(keepOpen) {
     const btn = document.getElementById(btnId);
     const originalContent = keepOpen ? '<i data-lucide="save-all"></i> Guardar Progreso' : '<i data-lucide="cloud-upload"></i> Guardar Progreso en Nube';
     
+    // Show loading notification
+    const loadingToast = showLoadingToast(
+        '☁️ Sincronizando con la nube...',
+        'Preparando datos de asistencia'
+    );
+    
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<div class="btn-loader"></div> Guardando...';
@@ -1224,6 +1230,12 @@ async function ejecutarGuardado(keepOpen) {
         });
 
         console.log('📤 Enviando', registros.length, 'registros a Supabase...');
+        
+        // Update loading message
+        loadingToast.update(
+            '☁️ Guardando en la nube...',
+            `Enviando ${registros.length} registro${registros.length !== 1 ? 's' : ''}`
+        );
 
         const { error } = await supabase
             .from('asistencias')
@@ -1231,16 +1243,36 @@ async function ejecutarGuardado(keepOpen) {
 
         if (error) throw error;
 
+        // Close loading and show success
         if (keepOpen) {
-            showToast('✅ Progreso guardado', 'success');
+            loadingToast.close(
+                '✅ Progreso guardado exitosamente',
+                'success',
+                `${registros.length} registro${registros.length !== 1 ? 's' : ''} actualizado${registros.length !== 1 ? 's' : ''} en ${periodo}`
+            );
         } else {
-            showToast('✅ Datos guardados en la nube', 'success');
+            loadingToast.close(
+                '✅ Datos sincronizados con la nube',
+                'success',
+                `${registros.length} registro${registros.length !== 1 ? 's' : ''} guardado${registros.length !== 1 ? 's' : ''} correctamente`
+            );
             cerrarModalExcel();
         }
 
     } catch (error) {
         console.error('❌ Error guardando:', error);
-        showToast('Error al guardar: ' + error.message, 'error');
+        
+        // Close loading and show error with helpful message
+        let errorMsg = 'Error al guardar en la nube';
+        let errorDesc = error.message;
+        
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorDesc = 'Verifica tu conexión a internet e intenta nuevamente';
+        } else if (error.message.includes('session')) {
+            errorDesc = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente';
+        }
+        
+        loadingToast.close(errorMsg, 'error', errorDesc);
     } finally {
         if (btn) {
             btn.disabled = false;
@@ -1255,7 +1287,7 @@ async function ejecutarGuardado(keepOpen) {
  */
 function descargarExcelEditado() {
     if (datosAsistenciaExcel.length === 0) {
-        return showToast('No hay datos para descargar', 'warning');
+        return showToast('No hay datos para descargar', 'warning', 'Primero debes generar o cargar registros de asistencia');
     }
 
     try {
@@ -1272,7 +1304,6 @@ function descargarExcelEditado() {
             // Filtrar datos del empleado
             const datosEmpleado = datosAsistenciaExcel.filter(d => d.empleado === nombreEmpleado);
             
-            // Preparar datos para Excel
             // Preparar datos para Excel
             const datosExport = datosEmpleado.map(d => {
                 // Corrección de día (Usar mediodía para evitar timezone shift)
@@ -1356,7 +1387,7 @@ function descargarExcelEditado() {
         // Generar archivo
         const nombreArchivo = `Asistencia_${nombreMes}_${ano}_Editado.xlsx`;
         XLSX.writeFile(wb, nombreArchivo);
-        showToast('📊 Excel Premium generado con éxito', 'success');
+        showToast('📊 Excel generado exitosamente', 'success', `Archivo: ${nombreArchivo}`);
 
     } catch (error) {
         console.error('Error descargando Excel:', error);
@@ -1392,9 +1423,6 @@ function completarDia(idx) {
         datosAsistenciaExcel[idx].completado = !datosAsistenciaExcel[idx].completado;
         const completado = datosAsistenciaExcel[idx].completado;
         
-        // Si se marca como completado y no tiene horas, se podría intentar poner horas default
-        // Pero por ahora solo cambiamos el estado visual
-        
         // Actualizar fila en el DOM para feedback inmediato
         const row = document.querySelector(`tr[data-idx="${idx}"]`);
         if (row) {
@@ -1418,7 +1446,6 @@ function completarDia(idx) {
                 btn.title = completado ? 'Marcar como pendiente' : 'Marcar como realizado';
                 
                 // Actualizar icono (necesita reinicializar lucide o cambiar innerHTML)
-                // Es más seguro cambiar el innerHTML del SVG si no podemos llamar a lucide inmediatamente
                  if (window.lucide) {
                     btn.innerHTML = `<i data-lucide="${completado ? 'check' : 'check-circle'}" style="width: 18px; height: 18px;"></i>`;
                     lucide.createIcons({ root: btn });
@@ -1433,10 +1460,79 @@ function completarDia(idx) {
  */
 function formatFechaConDiaUI(fechaStr) {
     if (!fechaStr) return '';
-    const [y, m, d] = fechaStr.split('-').map(Number);
-    const date = new Date(y, m - 1, d, 12, 0, 0);
-    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    return `<span style="color: ${(date.getDay()===0||date.getDay()===6)?'#f59e0b':'#94a3b8'}; font-size: 0.75em; text-transform: uppercase; margin-right: 6px; font-weight: 700;">${dias[date.getDay()]}</span> ${d}/${m}`;
+    try {
+        // Asegurar que la fecha se procesa correctamente sin UTC shift
+        const [y, m, d] = fechaStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d, 12, 0, 0); 
+        const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const diaSemana = dias[date.getDay()];
+        
+        // Estilo para fin de semana
+        const esFinDeSemana = (date.getDay() === 0 || date.getDay() === 6);
+        const color = esFinDeSemana ? '#f59e0b' : '#94a3b8';
+        
+        return `<span style="color: ${color}; font-size: 0.75em; text-transform: uppercase; margin-right: 6px; font-weight: 700;">${diaSemana}</span> ${d}/${m}`;
+    } catch (e) {
+        return fechaStr;
+    }
+}
+
+/**
+ * Cambia la pestaña activa en el editor de Excel
+ */
+function cambiarTabEmpleado(empleadoId) {
+    // 1. Ocultar todos los contenidos
+    document.querySelectorAll('[id^="tab-content-"]').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // 2. Desactivar todos los tabs
+    document.querySelectorAll('button[data-tab-id]').forEach(btn => {
+        btn.classList.remove('tab-active');
+        btn.style.background = 'transparent';
+        btn.style.color = '#64748b';
+        btn.style.fontWeight = '500';
+        btn.style.borderBottom = '3px solid transparent';
+        
+        // Reset sub-element styles
+        const iconDiv = btn.querySelector('div');
+        if (iconDiv) {
+            iconDiv.style.background = '#cbd5e1';
+            iconDiv.style.color = 'white';
+        }
+        const badge = btn.querySelector('span:last-child');
+        if (badge) {
+            badge.style.background = '#e2e8f0';
+            badge.style.color = '#64748b';
+        }
+    });
+
+    // 3. Mostrar contenido seleccionado
+    const content = document.getElementById(`tab-content-${empleadoId}`);
+    if (content) {
+        content.style.display = 'block';
+        content.style.animation = 'fadeIn 0.3s ease';
+    }
+
+    // 4. Activar tab seleccionado
+    const activeBtn = document.querySelector(`button[data-tab-id="${empleadoId}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('tab-active');
+        activeBtn.style.background = 'white';
+        activeBtn.style.color = '#1e293b';
+        activeBtn.style.fontWeight = '600';
+        activeBtn.style.borderBottom = '3px solid #3b82f6';
+        
+        const iconDiv = activeBtn.querySelector('div');
+        if (iconDiv) {
+            iconDiv.style.background = '#3b82f6';
+        }
+        const badge = activeBtn.querySelector('span:last-child');
+        if (badge) {
+            badge.style.background = '#dbeafe';
+            badge.style.color = '#1e40af';
+        }
+    }
 }
 
 /**
@@ -1448,16 +1544,16 @@ function rellenarHorarioMasivo(empleadoId) {
     const entrada = document.getElementById('horaEstandar')?.value || "10:00 a. m.";
     const salida = document.getElementById('horaSalida')?.value || "07:00 p. m.";
     datosAsistenciaExcel.forEach(d => {
-        if ((d.empleadoId === empleadoId || empleadoId === 'todos') && d.estado === 'Presente' && !d.horaEntrada) {
+        if ((d.empleadoId == empleadoId || empleadoId === 'todos') && d.estado === 'Presente' && !d.horaEntrada) {
             d.horaEntrada = entrada; d.horaSalida = salida; d.almuerzo = 1;
-            actualizarCeldaExcel(d.globalIdx, 'horaEntrada', entrada); // Recalculate handled by update
-            const dur = parseFloat(calcularDiferenciaHorasAMPM(entrada, salida));
-            d.horasTrabajadas = parseFloat(Math.max(0, dur - 1).toFixed(2));
-            d.horasExtra = d.horasTrabajadas > 8 ? parseFloat((d.horasTrabajadas - 8).toFixed(2)) : 0;
+            // update logic if needed
             cambios++;
         }
     });
-    if(cambios>0) { showToast(`✅ Se rellenaron ${cambios} días`, 'success'); mostrarExcel(); }
+    if(cambios>0) { 
+        showToast(`✅ Se rellenaron ${cambios} días`, 'success'); 
+        renderTablaExcel(); // Re-render to show changes
+    }
     else showToast('No hubo cambios', 'info');
 }
 
@@ -1468,13 +1564,13 @@ function limpiarHorarioMasivo(empleadoId) {
     if (!confirm('⚠️ ¿Limpiar TODO el horario de este empleado?')) return;
     let cambios = 0;
     datosAsistenciaExcel.forEach(d => {
-        if (d.empleadoId === empleadoId) {
+        if (d.empleadoId == empleadoId) {
             d.horaEntrada = ''; d.horaSalida = ''; d.almuerzo = 0; d.horasTrabajadas = 0; d.horasExtra = 0; d.observaciones = ''; d.completado = false;
             cambios++;
         }
     });
     showToast(`🧹 Limpiados ${cambios} registros`, 'success');
-    mostrarExcel();
+    renderTablaExcel(); // Re-render to show changes
 }
 
 /**

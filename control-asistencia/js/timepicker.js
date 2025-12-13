@@ -33,6 +33,7 @@ function inicializarTimePicker() {
         console.log('Time picker inicializado correctamente');
     } catch (error) {
         console.error('Error al inicializar time picker:', error);
+        if(window.showToast) showToast('Error iniciando selector de hora', 'error');
     }
 }
 
@@ -96,6 +97,7 @@ function abrirTimePicker(inputId, title) {
         }
     } catch (error) {
         console.error('Error al abrir time picker:', error);
+        if(window.showToast) showToast('Error abriendo selector de hora', 'error');
     }
 }
 
@@ -291,12 +293,7 @@ function confirmarTiempo() {
 }
 
 // Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    inicializarTimePicker();
-});
-
-// También inicializar si el DOM ya está cargado
-if (document.readyState === 'loading') {
+if (document.readyState === 'loading') {    
     document.addEventListener('DOMContentLoaded', inicializarTimePicker);
 } else {
     inicializarTimePicker();

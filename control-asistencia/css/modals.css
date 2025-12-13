@@ -1,5 +1,4 @@
-/* Estilos para Modal Excel, Login y TimePicker */
-.modal-excel {
+ï»¿.modal-excel {
   display: none;
   position: fixed;
   top: 0;
@@ -7,30 +6,39 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 10000;
-  align-items: center;
+  z-index: 2000;
   justify-content: center;
-  backdrop-filter: blur(4px);
+  align-items: center;
+  padding: 20px; /* Prevent touching edges on mobile */
 }
 
 .modal-excel-content {
-  background: white;
-  border-radius: 16px;
-  width: 95%;
-  max-width: 1400px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    background: white;
+    width: 95%;
+    max-width: 1600px;
+    height: 90%;
+    max-height: 90%;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    position: relative;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-.modal-excel-header {
-  padding: 24px 32px;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Fix for small modals (Confirmation, etc) to adapt to content height */
+#modalConfirmacion .modal-excel-content,
+#modalTimePicker .modal-excel-content,
+#modalLogin .modal-excel-content,
+#modalRecuperar .modal-excel-content {
+    height: auto;
+    max-height: 90vh;
+}
+
+[data-theme="dark"] .modal-excel-content {
+    background: #1e293b; /* Slate 800 */
+    border: 1px solid #334155; /* Slate 700 */
 }
 
 .modal-excel-header h2 {
@@ -40,6 +48,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1; /* Allow title to take available space */
+}
+.modal-excel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .btn-hero .btn-content {
@@ -65,6 +80,11 @@
   justify-content: flex-end;
   gap: 12px;
 }
+
+/* Table Row States */
+.row-odd { background: transparent; }
+.row-even { background: var(--surface-subtle); }
+.row-feriado { background: var(--danger-bg); }
 
 .tabla-excel {
   width: 100%;
@@ -172,7 +192,7 @@
   }
 }
 
-/* --- Estilos Adicionales (Animaciones y Menú Usuario) --- */
+/* --- Estilos Adicionales (Animaciones y MenÃº Usuario) --- */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -206,7 +226,7 @@
   }
 }
 
-/* Estilos para tabs de autenticación */
+/* Estilos para tabs de autenticaciÃ³n */
 .auth-tab {
   font-family: inherit;
   transition: all 0.3s ease;
@@ -227,7 +247,7 @@
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
-/* Estilos del menú de usuario */
+/* Estilos del menÃº de usuario */
 .btn-user-menu {
   display: flex;
   align-items: center;
@@ -235,7 +255,7 @@
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: white;
+  background: var(--surface-subtle);
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
@@ -276,12 +296,15 @@
   top: calc(100% + 8px);
   right: 0;
   width: 280px;
-  background: white;
+  background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
   animation: dropdownFadeIn 0.2s ease;
+}
+[data-theme="dark"] .user-dropdown {
+    background: #1e293b;
 }
 
 @keyframes dropdownFadeIn {
@@ -353,10 +376,11 @@
   height: 18px;
 }
 
-/* Ocultar contenido cuando no hay sesión */
+/* Ocultar contenido cuando no hay sesiÃ³n */
 .content-locked {
   filter: blur(8px);
   pointer-events: none;
   user-select: none;
 }
+
 

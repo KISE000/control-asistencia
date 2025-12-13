@@ -19,23 +19,51 @@ async function generarPDFs() {
         incluirAprobacion: document.getElementById('incluirAprobacion').checked
     };
 
+    // Load existing attendance data ONCE for all employees
+    let datosMes = [];
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const periodo = `${meses[mes-1]}_${ano}`;
+    
+    if (typeof cargarAsistenciasDesdeSupabase === 'function') {
+        try {
+            showToast('Cargando datos de asistencia...', 'info');
+            datosMes = await cargarAsistenciasDesdeSupabase(periodo) || [];
+            console.log(`Loaded ${datosMes.length} records for PDF generation`);
+        } catch(e) {
+            console.error('Error loading attendance for PDF:', e);
+            showToast('Error cargando datos de asistencia', 'error');
+        }
+    }
+
     try {
         for(let i=0; i<sels.length; i++) {
             const p = Math.round(((i+1)/sels.length)*100);
             document.getElementById('progressFill').style.width = p+'%';
             document.getElementById('progressText').textContent = p+'%';
-            await generarPDFEmpleado(sels[i], mes, ano, hIn, hOut, opts);
-            await new Promise(r => setTimeout(r, 100));
+            
+            // Filter data for this specific employee
+            // Loose equality to handle string/number ID mismatch
+            const datosEmpleado = datosMes.filter(d => d.empleado_id == sels[i].id);
+            
+            await generarPDFEmpleado(sels[i], mes, ano, hIn, hOut, opts, datosEmpleado);
+            await new Promise(r => setTimeout(r, 100)); // Small delay for UI update
         }
         showToast('Documentos generados correctamente', 'success');
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        showToast('Error al generar PDF: ' + e.message, 'error');
+    }
     finally { 
         btn.disabled = false; 
         setTimeout(() => { document.getElementById('progress').style.display = 'none'; }, 2000);
     }
 }
 
-async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
+async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts, datosEmpleado = []) {
+    if (!window.jspdf) {
+        showToast('Error: Librería PDF no cargada', 'error');
+        throw new Error("jsPDF no definido");
+    }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'letter');
     const dias = new Date(ano, mes, 0).getDate();
@@ -52,38 +80,38 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
         white: [255, 255, 255]
     };
 
-    let y = 10; // Margen superior reducido
+    let y = 8; // Margen superior más reducido
 
     // --- HEADER ---
     if(logoData) {
         try { 
-            doc.addImage(logoData, 'PNG', 14, 6, 15, 15, undefined, 'FAST'); 
+            doc.addImage(logoData, 'PNG', 14, 5, 12, 12, undefined, 'FAST'); 
         } catch(e){}
     }
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14); // Un poco más pequeño
+    doc.setFontSize(12); // Más pequeño
     doc.setTextColor(...colors.primary);
-    doc.text('CONTROL DE ASISTENCIA', 108, y+4, {align:'center'});
+    doc.text('CONTROL DE ASISTENCIA', 108, y+3, {align:'center'});
     
     // Subtítulo
-    y += 9;
-    doc.setFontSize(9); 
+    y += 7;
+    doc.setFontSize(8); 
     doc.setTextColor(...colors.lightText);
     doc.setFont('helvetica', 'normal');
     doc.text('Reporte Mensual de Actividades', 108, y, {align:'center'});
 
     // --- INFO BOX ---
-    y += 6;
+    y += 5;
     doc.setDrawColor(200); 
     doc.setLineWidth(0.1); 
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(14, y, 188, 14, 2, 2, 'FD'); // Caja más compacta
+    doc.roundedRect(14, y, 188, 12, 2, 2, 'FD'); // Caja más compacta
     
-    const infoY = y + 6;
-    const infoY2 = y + 11; // Lineas más pegadas
+    const infoY = y + 5;
+    const infoY2 = y + 9; // Lineas más pegadas
 
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(...colors.secondary);
     
     // Fila 1: Empleado y Periodo
@@ -97,7 +125,7 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
     doc.setFont('helvetica', 'bold'); doc.text('HORARIO:', 20, infoY2);
     doc.setFont('helvetica', 'normal'); doc.text(`${hIn} - ${hOut}`, 42, infoY2);
 
-    y += 18; // Espacio antes de tabla
+    y += 15; // Espacio reducido antes de tabla
 
     // --- TABLE COLUMNS ---
     let cols = [
@@ -124,50 +152,98 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
         const fStr = `${ano}-${(mes).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
         const holiday = feriados.find(x => x.fecha === fStr);
         
+        // Look for existing attendance record (datosEmpleado is already filtered by employee)
+        const registro = datosEmpleado.find(r => r.fecha === fStr);
+        
+        // Format data for PDF
+        let entrada = '';
+        let salida = '';
+        let horasTot = '';
+        let horasEx = '';
+        let motivo = holiday ? holiday.descripcion : '';
+        
+        if (registro) {
+            // Format hours from DB (24h) to display format (12h am/pm)
+            if (registro.hora_entrada) {
+                const [h, m] = registro.hora_entrada.split(':');
+                let hour = parseInt(h);
+                const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
+                hour = hour % 12 || 12;
+                entrada = `${hour}:${m} ${ampm}`;
+            }
+            
+            if (registro.hora_salida) {
+                const [h, m] = registro.hora_salida.split(':');
+                let hour = parseInt(h);
+                const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
+                hour = hour % 12 || 12;
+                salida = `${hour}:${m} ${ampm}`;
+            }
+            
+            if (registro.horas_trabajadas) {
+                horasTot = registro.horas_trabajadas.toFixed(1);
+            }
+            
+            if (registro.horas_extra && registro.horas_extra > 0) {
+                horasEx = registro.horas_extra.toFixed(1);
+            }
+            
+            if (registro.observaciones && !motivo) {
+                motivo = registro.observaciones.replace('[✓]', '').trim();
+            }
+        }
+        
         rows.push({
             d: dayName.substring(0,3).toUpperCase(), 
             f: d, 
-            in:'', out:'', tot:'', ex:'', 
-            mo: holiday ? holiday.descripcion : '', 
+            in: entrada, 
+            out: salida, 
+            tot: horasTot, 
+            ex: horasEx, 
+            mo: motivo, 
             fi:'',
             isGray: (isWeekend || !!holiday),
             isSunday: dayIdx === 0
         });
     }
 
+
     // --- GENERATE TABLE ---
+    if (typeof doc.autoTable !== 'function') {
+        throw new Error("Plugin AutoTable no cargado");
+    }
     doc.autoTable({
         startY: y, 
         columns: cols, 
         body: rows,
         theme: 'grid',
         styles: { 
-            fontSize: 7, // Reducido para asegurar espacio
+            fontSize: 7.5, // Aumentado para mejor lectura
             font: 'helvetica', 
-            cellPadding: 1, // Compacto
-            lineColor: [220], 
+            cellPadding: 1.5, // Más aire en las celdas
+            lineColor: [200, 200, 200], // Líneas más suaves
             lineWidth: 0.1, 
             valign: 'middle', 
             halign: 'center', 
             textColor: colors.text,
-            minCellHeight: 4.2 // Altura controlada
+            minCellHeight: 5.5 // Celdas más altas (menos comprimido)
         },
         headStyles: { 
             fillColor: colors.primary, 
             textColor: 255, 
             fontStyle: 'bold', 
-            fontSize: 7.5, 
+            fontSize: 8, 
             halign: 'center',
             cellPadding: 2
         },
         columnStyles: { 
-            d: {cellWidth:12, fontStyle:'bold'}, 
-            f: {cellWidth:12}, // Ancho aumentado para "Fecha"
-            in: {cellWidth:20}, 
-            out: {cellWidth:20}, 
-            tot: {cellWidth:15},
-            ex: {cellWidth:12},
-            fi: {cellWidth:25}, 
+            d: {cellWidth:14, fontStyle:'bold'}, 
+            f: {cellWidth:14}, 
+            in: {cellWidth:22}, // Más espacio para horas
+            out: {cellWidth:22}, 
+            tot: {cellWidth:16},
+            ex: {cellWidth:14},
+            fi: {cellWidth:30}, // Más espacio para firma
             mo: {halign:'left', cellWidth:'auto'} 
         },
         didParseCell: (data) => {
@@ -181,14 +257,18 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
     });
 
     // --- FOOTER & SIGNATURES ---
-    // Compactar el pie de página
-    let finalY = doc.lastAutoTable.finalY + 4; // Menos espacio despues de tabla
+    // Calcular posición final asegurando que cabe
+    let finalY = doc.lastAutoTable.finalY + 5; 
+    const pageHeight = doc.internal.pageSize.height;
     
+    // Si queda muy poco espacio, ajustar
+    if (finalY > pageHeight - 40) finalY = pageHeight - 40;
+
     // Resumen Box
     doc.setDrawColor(200); 
     doc.setLineWidth(0.1);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(14, finalY, 188, 12, 2, 2, 'S'); // Caja más baja
+    doc.roundedRect(14, finalY, 188, 11, 2, 2, 'S'); 
 
     doc.setFontSize(7.5); 
     doc.setFont('helvetica', 'bold'); 
@@ -197,7 +277,7 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...colors.text);
-    const lineY = finalY + 8.5;
+    const lineY = finalY + 8;
     
     doc.text('Días Lab: ____', 18, lineY); 
     doc.text('Asistencias: ____', 60, lineY);
@@ -205,8 +285,9 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
     doc.text('Retardos: ____', 125, lineY);
     if(opts.incluirHorasExtras) doc.text('Total Extra: ____', 155, lineY);
 
-    // Firmas
-    const firmaY = finalY + 24; // Subimos las firmas
+    // Firmas (Alineadas abajo)
+    // Usamos posición absoluta desde el fondo para uniformidad
+    const firmaY = pageHeight - 25; 
     
     doc.setDrawColor(100); 
     doc.setLineWidth(0.3);
@@ -226,7 +307,7 @@ async function generarPDFEmpleado(emp, mes, ano, hIn, hOut, opts) {
     // Pie de página
     doc.setFontSize(6); 
     doc.setTextColor(180);
-    const footerY = doc.internal.pageSize.height - 6;
+    const footerY = pageHeight - 6;
     doc.text(`Generado el ${new Date().toLocaleDateString()}`, 108, footerY, {align:'center'});
     
     const safeName = emp.nombre.replace(/[^a-z0-9]/gi, '_');

@@ -1,10 +1,10 @@
 /* TOPBAR (GLASS STYLE) */
 .topbar {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--glass-bg);
     backdrop-filter: blur(var(--blur-strength));
     -webkit-backdrop-filter: blur(var(--blur-strength));
     border-bottom: 1px solid var(--glass-border);
-    position: sticky; top: 0; z-index: 50;
+    position: sticky; top: 0; z-index: 1000;
     height: 64px; width: 100%;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 }
@@ -44,7 +44,7 @@
     .config-sidebar { display: none; }
     .config-sidebar.active { 
         display: flex; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; 
-        background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); 
+        background: var(--bg-body); 
         z-index: 40; padding: 24px; overflow-y: auto; 
     }
     .mobile-menu-btn { display: block; }

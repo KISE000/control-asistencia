@@ -3,31 +3,13 @@
 // ===================================================
 
 /**
- * Dark Mode Toggle
+ * Dark Mode Initialization
+ * Enforces dark mode by default.
  */
 function initDarkMode() {
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-}
-
-function toggleDarkMode() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    // Add transitioning class for smooth animation
-    document.body.classList.add('theme-transitioning');
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    // Remove transitioning class after animation
-    setTimeout(() => {
-        document.body.classList.remove('theme-transitioning');
-    }, 400);
-    
-    // Log for feedback
-    console.log(`🌓 Theme changed to: ${newTheme}`);
+    // Always enforce dark mode
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
 }
 
 /**

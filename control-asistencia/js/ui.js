@@ -1,27 +1,142 @@
 // === UI RENDERING & UTILS ===
 
-function showToast(msg, type = 'info') {
+/**
+ * Enhanced Toast Notification System
+ * @param {string} msg - Main message to display
+ * @param {string} type - Type of notification: 'info', 'success', 'error', 'warning', 'loading'
+ * @param {string} description - Optional description text (secondary line)
+ * @param {number} duration - Duration in ms before auto-hide (0 = no auto-hide)
+ * @returns {HTMLElement} - The toast element for further manipulation
+ */
+function showToast(msg, type = 'info', description = '', duration = 4000) {
     const container = document.getElementById('toast-container');
+    if (!container) {
+        console.warn('Toast container not found');
+        return null;
+    }
+    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
+    // Icon mapping
     let icon = 'info';
     if(type === 'success') icon = 'check-circle';
     if(type === 'error') icon = 'alert-circle';
     if(type === 'warning') icon = 'alert-triangle';
+    if(type === 'loading') icon = 'loader';
 
-    toast.innerHTML = `
-        <div class="toast-icon"><i data-lucide="${icon}"></i></div>
-        <div class="toast-content">${msg}</div>
+    // Build toast structure
+    let toastHTML = `
+        <div class="toast-icon">
+            <i data-lucide="${icon}" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div class="toast-body">
+            <div class="toast-content">${msg}</div>
+            ${description ? `<div class="toast-description">${description}</div>` : ''}
+        </div>
     `;
-
+    
+    // Add progress bar for loading state
+    if (type === 'loading') {
+        toastHTML += '<div class="toast-progress"></div>';
+    }
+    
+    toast.innerHTML = toastHTML;
     container.appendChild(toast);
+    
+    // Initialize Lucide icons
     if(window.lucide) lucide.createIcons();
 
+    // Auto-hide logic with pause on hover
+    let autoHideTimeout = null;
+    
+    const startAutoHide = () => {
+        if (duration > 0 && type !== 'loading') {
+            autoHideTimeout = setTimeout(() => {
+                hideToast(toast);
+            }, duration);
+        }
+    };
+    
+    const pauseAutoHide = () => {
+        if (autoHideTimeout) {
+            clearTimeout(autoHideTimeout);
+            autoHideTimeout = null;
+        }
+    };
+    
+    // Pause on hover, resume on leave
+    toast.addEventListener('mouseenter', pauseAutoHide);
+    toast.addEventListener('mouseleave', startAutoHide);
+    
+    // Start auto-hide
+    startAutoHide();
+    
+    // Store toast ID for reference
+    toast.toastId = Date.now();
+    
+    return toast;
+}
+
+/**
+ * Hide and remove a toast notification
+ */
+function hideToast(toast) {
+    if (!toast || !toast.parentElement) return;
+    
+    toast.style.animation = 'slideOut 0.3s forwards cubic-bezier(0.4, 0, 1, 1)';
     setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s forwards ease-in';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 300);
+}
+
+/**
+ * Show a loading toast that persists until manually closed
+ * Returns an object with update and close methods
+ */
+function showLoadingToast(msg, description = '') {
+    const toast = showToast(msg, 'loading', description, 0); // Duration 0 = no auto-hide
+    
+    return {
+        // Update the toast message
+        update: (newMsg, newDescription = '') => {
+            if (!toast || !toast.parentElement) return;
+            
+            const contentEl = toast.querySelector('.toast-content');
+            const descEl = toast.querySelector('.toast-description');
+            
+            if (contentEl) contentEl.textContent = newMsg;
+            
+            if (newDescription && descEl) {
+                descEl.textContent = newDescription;
+            } else if (newDescription && !descEl) {
+                const body = toast.querySelector('.toast-body');
+                const desc = document.createElement('div');
+                desc.className = 'toast-description';
+                desc.textContent = newDescription;
+                body.appendChild(desc);
+            }
+        },
+        
+        // Close the loading toast and optionally show a new one
+        close: (finalMsg = '', finalType = 'success', finalDescription = '') => {
+            if (toast && toast.parentElement) {
+                hideToast(toast);
+                
+                if (finalMsg) {
+                    // Small delay to ensure smooth transition
+                    setTimeout(() => {
+                        showToast(finalMsg, finalType, finalDescription);
+                    }, 200);
+                }
+            }
+        },
+        
+        // Get the toast element reference
+        element: toast
+    };
 }
 
 // Alias para compatibilidad
