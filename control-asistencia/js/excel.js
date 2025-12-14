@@ -304,15 +304,8 @@ async function generarExcel() {
 }
 
 /**
- * Abre modal con tabla editable de datos para el periodo seleccionado (Mantenido)
- */
-/**
- * Abre modal con tabla editable de datos para el periodo seleccionado
- * Carga datos existentes de Supabase y los combina
- */
-/**
- * Abre modal con tabla editable de datos para el periodo seleccionado
- * Carga datos existentes de Supabase y los combina
+ * Abre modal con tabla editable de datos para el periodo seleccionado.
+ * Carga datos existentes de Supabase y los combina con la selección actual.
  */
 async function abrirEditorExcel() {
     const seleccionados = empleados.filter(e => e.seleccionado);

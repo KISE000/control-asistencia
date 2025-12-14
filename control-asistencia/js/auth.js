@@ -41,12 +41,12 @@ async function loginSupabase() {
         console.log('✅ Login exitoso:', data);
         
         // Guardar sesión en localStorage para persistencia
-        localStorage.setItem('supabaseSession', JSON.stringify(data.session));
+        localStorage.setItem(APP_CONSTANTS.KEYS.SESSION, JSON.stringify(data.session));
         
         // Guardar email si "Recordar sesión" está marcado
         const recordarSesion = document.getElementById('recordarSesion');
         if (recordarSesion && recordarSesion.checked) {
-            localStorage.setItem('rememberedEmail', email);
+            localStorage.setItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL, email);
         } else {
             localStorage.removeItem('rememberedEmail');
         }
@@ -123,7 +123,7 @@ function abrirModalLogin() {
         modal.style.display = 'flex';
         
         // Cargar email recordado si existe
-        const rememberedEmail = localStorage.getItem('rememberedEmail');
+        const rememberedEmail = localStorage.getItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL);
         const emailInput = document.getElementById('loginEmail');
         const recordarCheckbox = document.getElementById('recordarSesion');
         

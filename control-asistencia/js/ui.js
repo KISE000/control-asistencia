@@ -295,3 +295,4 @@ function limpiarSeleccionArchivo() {
     input.value = '';
     document.getElementById('filePreview').style.display = 'none';
 }
+

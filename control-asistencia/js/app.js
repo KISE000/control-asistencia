@@ -10,19 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function inicializarApp() {
-    if (window.supabase && window.supabase.createClient) {
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            if (supabase) {
-                cargarHistorial();
-                // Sincronizar empleados con la base de datos
-                sincronizarEmpleadosConSupabase();
-            }
-        } catch (e) { console.error("Error Supabase:", e); }
-    } else { console.warn('Librería Supabase no detectada.'); }
+    // Verificación de conexión a Supabase (inicializado en config.js)
+    if (typeof supabase !== 'undefined' && supabase) {
+        cargarHistorial();
+        // Sincronizar empleados con la base de datos si existe la función
+        if (typeof sincronizarEmpleadosConSupabase === 'function') {
+            sincronizarEmpleadosConSupabase();
+        }
+    } else { 
+        console.warn('Cliente Supabase no disponible. La aplicación funcionará en modo local.'); 
+    }
 
     cargarConfiguracion();
-    if(!localStorage.getItem('controlAsistencia')) configurarFechaActual();
+    if(!localStorage.getItem(APP_CONSTANTS.KEYS.CONTROL_ASISTENCIA)) configurarFechaActual();
     if (document.getElementById('empleadosGrid')) renderEmpleados();
     renderFeriados();
     renderLogo();
@@ -300,10 +300,10 @@ function guardarConfiguracion() {
             incluirAprobacion: document.getElementById('incluirAprobacion').checked
         }
     };
-    try { localStorage.setItem('controlAsistencia', JSON.stringify(c)); } catch(e) { showToast('Memoria llena (Logo)', 'error'); }
+    try { localStorage.setItem(APP_CONSTANTS.KEYS.CONTROL_ASISTENCIA, JSON.stringify(c)); } catch(e) { showToast('Memoria llena (Logo)', 'error'); }
 }
 function cargarConfiguracion() {
-    const raw = localStorage.getItem('controlAsistencia'); if(!raw) return;
+    const raw = localStorage.getItem(APP_CONSTANTS.KEYS.CONTROL_ASISTENCIA); if(!raw) return;
     try {
         const d = JSON.parse(raw);
         empleados = d.empleados || []; feriados = d.feriados || []; logoData = d.logoData || null; nextId = d.nextId || 4;
@@ -325,7 +325,7 @@ function guardarConfiguracionAuto() {
     });
 }
 function exportarConfiguracion() {
-    const b = new Blob([localStorage.getItem('controlAsistencia')], {type:'application/json'});
+    const b = new Blob([localStorage.getItem(APP_CONSTANTS.KEYS.CONTROL_ASISTENCIA)], {type:'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(b);
     a.download = `backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
     showToast('Backup descargado', 'success');
@@ -335,7 +335,7 @@ function procesarImportacion() {
     const f = document.getElementById('importFile').files[0]; if(!f) return;
     const r = new FileReader();
     r.onload = e => {
-        try { JSON.parse(e.target.result); localStorage.setItem('controlAsistencia', e.target.result); location.reload(); } 
+        try { JSON.parse(e.target.result); localStorage.setItem(APP_CONSTANTS.KEYS.CONTROL_ASISTENCIA, e.target.result); location.reload(); } 
         catch(err) { showToast('Archivo inválido', 'error'); }
     };
     r.readAsText(f);

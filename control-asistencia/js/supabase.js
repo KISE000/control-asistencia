@@ -33,7 +33,7 @@ async function subirArchivoSupabase() {
         const mes = document.getElementById('mes').value;
         const ano = document.getElementById('ano').value;
 
-        const { error: dbError } = await supabase.from('historial_nominas').insert([{ 
+        const { error: dbError } = await supabase.from(APP_CONSTANTS.TABLES.HISTORIAL).insert([{ 
             nombre_archivo: nombreManual, 
             url_archivo: publicUrl,
             empleado: 'General', 
@@ -83,8 +83,8 @@ async function cargarHistorial() {
     
     try {
         const { data, error } = await supabase
-            .from('historial_nominas')
-            .select('*')
+            .from(APP_CONSTANTS.TABLES.HISTORIAL)
+            .select('id, created_at, url_archivo, nombre_archivo, periodo')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -164,8 +164,8 @@ async function cargarAsistenciasDesdeSupabase(periodo) {
 
     try {
         const queryBase = supabase
-            .from('asistencias')
-            .select('*')
+            .from(APP_CONSTANTS.TABLES.ASISTENCIAS)
+            .select('*') // Mantenemos * aquí porque se usan todos los campos en la edición
             .eq('periodo', periodo);
 
         let todosLosRegistros = [];
