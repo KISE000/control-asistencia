@@ -133,14 +133,27 @@ function setupEventListeners() {
     listen('importFile', 'change', procesarImportacion);
 
     // Global Key Listener for ESC to close modals
+    // NOTA: Modal Excel no se cierra con ESC para evitar pérdida accidental de datos
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const modalExcel = document.getElementById('modalExcel');
-            if (modalExcel && modalExcel.style.display === 'flex') {
-                cerrarModalExcel();
-            }
+            // if (modalExcel && modalExcel.style.display === 'flex') {
+            //     cerrarModalExcel(); // Desactivado: no cerrar con ESC
+            // }
         }
     });
+    
+    // Prevenir cierre del modal Excel al hacer clic en el overlay
+    const modalExcel = document.getElementById('modalExcel');
+    if (modalExcel) {
+        const modalContent = modalExcel.querySelector('.modal-excel-content');
+        if (modalContent) {
+            // Prevenir que los clics en el contenido cierren el modal
+            modalContent.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+    }
 }
 
 // === LOCAL STORAGE & CONFIG LOGIC ===
@@ -340,4 +353,4 @@ function procesarImportacion() {
     };
     r.readAsText(f);
 }
-function mostrarAyuda() { alert('Control de Asistencia PRO v2.2\n\nArrastra archivos para subirlos a la nube.'); }
+function mostrarAyuda() { alert('Control de Asistencia\n\nArrastra archivos para subirlos a la nube.'); }

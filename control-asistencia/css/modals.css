@@ -13,18 +13,18 @@
 }
 
 .modal-excel-content {
-    background: white;
-    width: 95%;
-    max-width: 1600px;
-    height: 90%;
-    max-height: 90%;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    overflow: hidden;
-    position: relative;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+  background: white;
+  width: 95%;
+  max-width: 1600px;
+  height: 90%;
+  max-height: 90%;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  position: relative;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Fix for small modals (Confirmation, etc) to adapt to content height */
@@ -32,13 +32,13 @@
 #modalTimePicker .modal-excel-content,
 #modalLogin .modal-excel-content,
 #modalRecuperar .modal-excel-content {
-    height: auto;
-    max-height: 90vh;
+  height: auto;
+  max-height: 90vh;
 }
 
 [data-theme="dark"] .modal-excel-content {
-    background: #1e293b; /* Slate 800 */
-    border: 1px solid #334155; /* Slate 700 */
+  background: #1e293b; /* Slate 800 */
+  border: 1px solid #334155; /* Slate 700 */
 }
 
 .modal-excel-header h2 {
@@ -82,9 +82,15 @@
 }
 
 /* Table Row States */
-.row-odd { background: transparent; }
-.row-even { background: var(--surface-subtle); }
-.row-feriado { background: var(--danger-bg); }
+.row-odd {
+  background: transparent;
+}
+.row-even {
+  background: var(--surface-subtle);
+}
+.row-feriado {
+  background: var(--danger-bg);
+}
 
 .tabla-excel {
   width: 100%;
@@ -304,7 +310,7 @@
   animation: dropdownFadeIn 0.2s ease;
 }
 [data-theme="dark"] .user-dropdown {
-    background: #1e293b;
+  background: #1e293b;
 }
 
 @keyframes dropdownFadeIn {
@@ -383,4 +389,8 @@
   user-select: none;
 }
 
-
+/* Bloquear scroll cuando el modal está abierto */
+body.modal-open {
+  overflow: hidden;
+  height: 100vh;
+}

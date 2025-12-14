@@ -423,7 +423,12 @@ async function abrirEditorExcel() {
         });
 
         renderTablaExcel();
-        document.getElementById('modalExcel').style.display = 'flex';
+        const modal = document.getElementById('modalExcel');
+        modal.style.display = 'flex';
+        
+        // Bloquear scroll de la página de fondo
+        document.body.classList.add('modal-open');
+        
         modoEdicionExcel = true;
         if (window.lucide) lucide.createIcons();
 
@@ -1393,6 +1398,10 @@ function descargarExcelEditado() {
  */
 function cerrarModalExcel() {
     document.getElementById('modalExcel').style.display = 'none';
+    
+    // Restaurar scroll de la página
+    document.body.classList.remove('modal-open');
+    
     modoEdicionExcel = false;
     datosAsistenciaExcel = [];
 }

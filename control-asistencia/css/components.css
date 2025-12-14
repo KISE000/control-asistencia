@@ -295,9 +295,11 @@ input:checked + .slider:before {
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: var(--transition);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  min-width: 110px;
 }
 .btn-text:hover {
   border-color: var(--primary);

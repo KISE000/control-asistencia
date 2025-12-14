@@ -117,7 +117,7 @@ class PDFService {
     _renderHeader(doc, data) {
         // Full width header background
         doc.setFillColor(...this.colors.primary);
-        doc.rect(0, 0, 216, 25, 'F'); // Reduced to 25mm
+        doc.rect(0, 0, 216, 20, 'F'); // Reduced to 20mm
         
         const rightMargin = 18; 
 
@@ -126,8 +126,8 @@ class PDFService {
             try {
                 // White circle background for logo
                 doc.setFillColor(...this.colors.white);
-                doc.circle(24, 12.5, 8, 'F'); 
-                doc.addImage(data.logoData, 'PNG', 18, 6.5, 12, 12, undefined, 'FAST');
+                doc.circle(22, 10, 6.5, 'F'); 
+                doc.addImage(data.logoData, 'PNG', 17, 5.5, 9, 9, undefined, 'FAST');
             } catch (e) {
                 console.warn('Error adding logo:', e);
             }
@@ -135,17 +135,17 @@ class PDFService {
 
         // Title
         doc.setFont(this.fonts.main, 'bold');
-        doc.setFontSize(18); // Reduced size
+        doc.setFontSize(16);
         doc.setTextColor(...this.colors.white);
-        doc.text('REPORTE DE ASISTENCIA', 216 - rightMargin, 12, { align: 'right' });
+        doc.text('REPORTE DE ASISTENCIA', 216 - rightMargin, 10, { align: 'right' });
 
         // Subtitle (Period)
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont(this.fonts.main, 'normal');
         doc.setTextColor(240, 253, 244); 
-        doc.text(data.period, 216 - rightMargin, 19, { align: 'right' });
+        doc.text(data.period, 216 - rightMargin, 16, { align: 'right' });
 
-        return 32; 
+        return 26; 
     }
 
     /**
@@ -167,18 +167,19 @@ class PDFService {
         doc.text('HORARIO', col2X, startY);
 
         doc.setTextColor(...this.colors.text);
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont(this.fonts.main, 'normal');
 
+        // Show actual employee and schedule data
         doc.text(data.employee.nombre, leftMargin, startY + 4);
         doc.text(`${data.startTime} - ${data.endTime}`, col2X, startY + 4);
         
         // Decorative line
-        doc.setDrawColor(...this.colors.gray);
-        doc.setLineWidth(0.5);
-        doc.line(leftMargin, startY + 8, 216 - 18, startY + 8);
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.3);
+        doc.line(leftMargin, startY + 7, 216 - 18, startY + 7);
 
-        return startY + 12; // Very compact
+        return startY + 10;
     }
 
     /**
@@ -205,47 +206,59 @@ class PDFService {
             throw new Error("Plugin AutoTable no cargado");
         }
 
+        // Create blank rows for manual entry
+        const blankRows = data.rows.map((row, index) => {
+            const blankRow = {
+                d: row.d,  // Keep day name
+                f: row.f,  // Keep date number
+                in: '',    // Blank check-in
+                out: '',   // Blank check-out
+                tot: '',   // Blank total
+                fi: ''     // Blank firma
+            };
+            if (data.includeExtraHours) blankRow.ex = '';
+            if (data.includeAbsenceReason) blankRow.mo = '';
+            return blankRow;
+        });
+        
         doc.autoTable({
             startY: startY,
             columns: cols,
-            body: data.rows,
-            theme: 'plain', 
+            body: blankRows,
+            theme: 'striped',
             styles: {
-                fontSize: 7, // Small font to fit 31 days
+                fontSize: 6.5,
                 font: this.fonts.main,
-                cellPadding: 1, // Minimize padding
+                cellPadding: { top: 1.5, bottom: 1.5, left: 1, right: 1 },
                 valign: 'middle',
                 halign: 'center',
                 textColor: this.colors.text,
-                lineColor: [241, 245, 249],
-                lineWidth: 0,
-                minCellHeight: 5 // Force compact rows
+                lineColor: [220, 220, 220], // Subtle light gray borders
+                lineWidth: 0.15, // Very thin modern borders
+                minCellHeight: 5.2 // Compact but writable
             },
             headStyles: {
-                fillColor: this.colors.white,
+                fillColor: [249, 250, 251], // Very subtle gray
                 textColor: this.colors.primary,
                 fontStyle: 'bold',
-                fontSize: 8,
+                fontSize: 7,
                 halign: 'center',
-                lineWidth: 0,
-                cellPadding: 2 
+                lineWidth: 0.2,
+                lineColor: [200, 200, 200],
+                cellPadding: 1.5
             },
             columnStyles: {
-                d: { cellWidth: 15, fontStyle: 'bold', textColor: this.colors.secondary },
-                f: { cellWidth: 15, textColor: this.colors.lightText },
-                in: { cellWidth: 25 },
-                out: { cellWidth: 25 },
-                tot: { cellWidth: 15, fontStyle: 'bold' },
-                ex: { cellWidth: 15, textColor: this.colors.accent },
+                d: { cellWidth: 13, fontStyle: 'bold', textColor: this.colors.secondary },
+                f: { cellWidth: 12, textColor: this.colors.lightText },
+                in: { cellWidth: 22 },
+                out: { cellWidth: 22 },
+                tot: { cellWidth: 13, fontStyle: 'bold' },
+                ex: { cellWidth: 12, textColor: this.colors.accent },
                 mo: { halign: 'left', cellWidth: 'auto' },
-                fi: { cellWidth: 35 }
+                fi: { cellWidth: 30 }
             },
-            didParseCell: (data) => {
-                if (data.section === 'body') {
-                    if (data.row.index % 2 === 0) {
-                        data.cell.styles.fillColor = [250, 250, 250]; 
-                    }
-                }
+            alternateRowStyles: {
+                fillColor: [252, 252, 253] // Subtle zebra striping
             },
             didDrawCell: (data) => {
                 if (data.section === 'body' && data.column.dataKey === 'mo') {
@@ -278,7 +291,7 @@ class PDFService {
                     }
                 }
             },
-            margin: { left: 18, right: 18, bottom: 40 } // Reserve space for footer!
+            margin: { left: 18, right: 18, bottom: 38 }
         });
 
         return doc.lastAutoTable.finalY + 5; 
@@ -295,52 +308,54 @@ class PDFService {
         const margin = 18;
         
         // --- Summary Cards ---
-        // Compact Cards
-        const cardH = 12; // Reduced height
-        const cardsY = pageHeight - 50; // Move up slightly
+        const cardH = 11;
+        const cardsY = pageHeight - 36;
         
         const availableWidth = 216 - (margin * 2);
-        const gap = 4;
+        const gap = 3;
         const cardW = (availableWidth - (gap * 3)) / 4;
 
         const drawCard = (index, label, value) => {
             const x = margin + (index * (cardW + gap));
             
-            doc.setFillColor(...this.colors.gray);
-            doc.roundedRect(x, cardsY, cardW, cardH, 2, 2, 'F');
+            // Modern card with subtle border instead of fill
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(x, cardsY, cardW, cardH, 1.5, 1.5, 'S');
             
-            doc.setFontSize(6);
+            doc.setFontSize(5.5);
             doc.setTextColor(...this.colors.lightText);
             doc.setFont(this.fonts.main, 'bold');
-            doc.text(label.toUpperCase(), x + cardW / 2, cardsY + 4, { align: 'center' });
+            doc.text(label.toUpperCase(), x + cardW / 2, cardsY + 3.5, { align: 'center' });
             
-            doc.setFontSize(9);
+            doc.setFontSize(8);
             doc.setTextColor(...this.colors.primary);
             doc.setFont(this.fonts.main, 'normal');
-            doc.text(value || '-', x + cardW / 2, cardsY + 9, { align: 'center' });
+            doc.text(value || '____', x + cardW / 2, cardsY + 8, { align: 'center' });
         };
 
-        drawCard(0, 'Días Lab.', data.summary.daysWorked);
-        drawCard(1, 'Asistencias', data.summary.attendances);
-        drawCard(2, 'Faltas', data.summary.absences);
-        drawCard(3, 'Extra (Hrs)', data.summary.totalExtra);
+        // Leave summary cards blank for manual entry
+        drawCard(0, 'Días Lab.', '____');
+        drawCard(1, 'Asistencias', '____');
+        drawCard(2, 'Faltas', '____');
+        drawCard(3, 'Extra (Hrs)', '____');
 
         // --- Signatures ---
-        const firmaY = pageHeight - 22; // Lower down
+        const firmaY = pageHeight - 18;
         
-        doc.setDrawColor(...this.colors.lightText);
+        doc.setDrawColor(200, 200, 200);
         doc.setLineWidth(0.2);
-        doc.setFontSize(7);
+        doc.setFontSize(6);
         doc.setTextColor(...this.colors.text);
 
         // Employee
-        doc.line(margin + 10, firmaY, margin + 70, firmaY);
-        doc.text('FIRMA DEL EMPLEADO', margin + 40, firmaY + 4, { align: 'center' });
+        doc.line(margin + 5, firmaY, margin + 65, firmaY);
+        doc.text('FIRMA DEL EMPLEADO', margin + 35, firmaY + 3.5, { align: 'center' });
 
         // Supervisor
         if (data.includeApproval) {
-            doc.line(216 - margin - 70, firmaY, 216 - margin - 10, firmaY);
-            doc.text('FIRMA DEL SUPERVISOR', 216 - margin - 40, firmaY + 4, { align: 'center' });
+            doc.line(216 - margin - 65, firmaY, 216 - margin - 5, firmaY);
+            doc.text('FIRMA DEL SUPERVISOR', 216 - margin - 35, firmaY + 3.5, { align: 'center' });
         }
     }
 
