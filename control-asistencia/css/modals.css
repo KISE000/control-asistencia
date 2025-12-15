@@ -380,13 +380,590 @@
 
 /* Ocultar contenido cuando no hay sesión */
 .content-locked {
-  filter: blur(8px);
-  pointer-events: none;
-  user-select: none;
+  display: none !important;
 }
 
-/* Bloquear scroll cuando el modal está abierto */
-body.modal-open {
-  overflow: hidden;
+/* Estilos especiales para el login cuando es "pantalla completa" */
+body.login-mode {
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100vh;
+  margin: 0;
 }
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Modo oscuro para el login */
+[data-theme="dark"] body.login-mode {
+    background: linear-gradient(-45deg, #0f172a, #334155, #1e293b, #0f172a);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+/* Ajustes para el modal de login en modo pantalla completa */
+/* ==========================================================
+   SPLIT SCREEN LOGIN STYLES
+   ========================================================== */
+
+/* Ajustes para el modal de login cuando actuá como PÁGINA COMPLETA */
+#modalLogin {
+  background: white; /* Fallback */
+  padding: 0 !important; /* Reset modal padding */
+  overflow: hidden; /* Prevent scrollbars specifically for this */
+}
+
+/* El body ya tiene .login-mode con height: 100vh */
+
+/* Contenedor principal dividido */
+.login-split-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  box-shadow: none;
+  background: white;
+}
+
+/* --- LADO IZQUIERDO: BRANDING --- */
+.login-brand-side {
+  flex: 0.6; /* Ratio 30-35% */
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Centrado vertical */
+  padding: 40px;
+  color: white;
+  overflow: hidden;
+  text-align: center; /* Centrado texto */
+}
+
+/* ... (dark mode brand) ... */
+
+/* Decoraciones */
+.brand-content {
+  position: relative;
+  z-index: 10;
+  max-width: 100%; /* Aprovechar el ancho */
+  margin: 0 auto;
+}
+
+.brand-logo-large {
+  width: 96px; /* Más grande */
+  height: 96px;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px auto; /* Centrado */
+  color: white;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease;
+}
+
+.brand-logo-large:hover {
+  transform: scale(1.05) rotate(5deg);
+}
+
+.brand-logo-large i {
+  width: 48px;
+  height: 48px;
+}
+
+.login-brand-side h1 {
+  font-size: 2.5rem; /* Ajustado para el espacio */
+  font-weight: 900;
+  margin-bottom: 24px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.login-brand-side p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  font-weight: 400;
+  margin: 0 auto 48px auto;
+  max-width: 90%;
+}
+
+/* Feature list centrado */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center; /* Centrado items */
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: rgba(0,0,0,0.1);
+  padding: 10px 20px;
+  border-radius: 50px;
+}
+
+/* --- LADO DERECHO: FORMULARIOS --- */
+.login-form-side {
+  flex: 1.4; /* Dominante */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: var(--surface);
+  position: relative;
+}
+
+.login-form-wrapper {
+  width: 100%;
+  max-width: 580px; /* Aún más ancho para presencia */
+  padding: 40px;
+  animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.login-header {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.login-header h2 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+/* Tabs personalizadas - FIXED */
+.auth-tabs-container {
+  display: flex;
+  background: #f3f4f6;
+  padding: 5px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  gap: 6px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 14px 20px;
+  text-align: center;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
+
+.auth-tab:not(.active):hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .auth-tab.active {
+    background: var(--surface-hover);
+}
+
+/* Form Groups - Spacing */
+.form-group {
+    margin-bottom: 28px; /* Más espacio entre grupos */
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: normal;
+    padding-left: 4px; /* Alineación visual */
+}
+
+/* Inputs mejorados UX MAX */
+.input-with-icon-left {
+  position: relative;
+  display: flex; /* Asegura que el contenedor maneje bien los hijos absolutos si falla algo */
+  align-items: center; /* Alineación vertical de fallback */
+}
+
+.input-with-icon-left input {
+  width: 100%;
+  padding: 18px 24px 18px 56px;
+  border: 2px solid var(--border); 
+  background: white; 
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  color: var(--text);
+  height: 64px; 
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.input-with-icon-left input:focus {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+/* Icono Izquierdo (Lucide genera SVG) */
+.input-with-icon-left > svg,
+.input-with-icon-left > i {
+  position: absolute;
+  left: 24px; 
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+  pointer-events: none;
+  z-index: 5; /* Asegurar que esté por encima del fondo del input */
+}
+
+.input-with-icon-left input:focus + svg,
+.input-with-icon-left input:focus ~ svg,
+.input-with-icon-left input:focus + i,
+.input-with-icon-left input:focus ~ i {
+  color: var(--primary);
+}
+
+/* Botón eye toggle - FIXED POSITION */
+.btn-toggle-pass {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 8px; /* Hitbox generoso */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.btn-toggle-pass:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text);
+}
+
+.btn-toggle-pass svg,
+.btn-toggle-pass i {
+  width: 24px;
+  height: 24px;
+}
+
+/* Footer opciones - Typography */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  margin-bottom: 40px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Más gap */
+  font-size: 1rem; /* Texto más grande */
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+}
+
+#forgotPasswordLink {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+
+#forgotPasswordLink:hover {
+    text-decoration: underline;
+}
+
+/* Botones Grandes - Refined */
+.btn-block {
+  width: 100%;
+  padding: 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 14px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-lg {
+  height: 60px;
+}
+
+.btn-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-block:active {
+  transform: translateY(-1px);
+}
+
+/* Copyright */
+.copyright-text {
+  text-align: center;
+  margin-top: 40px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Alerts */
+.login-alert {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+/* RESPONSIVE: Mobile */
+@media (max-width: 900px) {
+  .login-split-container {
+    flex-direction: column;
+  }
+  
+  .login-brand-side {
+    display: none; /* Simplificar en móvil, o reducir tamaño */
+  }
+  
+  .login-form-side {
+    padding: 24px;
+    background: var(--bg); /* Que se vea como página normal */
+  }
+}
+
+/* ========================================
+   ESTILOS MODERNOS PARA MODAL LOGOUT
+   ======================================== */
+
+.modal-logout-modern {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Contenedor del icono */
+.logout-icon-container {
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: center;
+}
+
+.logout-icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  position: relative;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(107, 114, 128, 0);
+  }
+}
+
+/* Título del modal */
+.logout-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+/* Descripción */
+.logout-description {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Contenedor de acciones */
+.logout-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Botón de cancelar */
+.btn-logout-cancel {
+  flex: 1;
+  padding: 14px 24px;
+  border: 2px solid var(--border);
+  background: white;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.btn-logout-cancel:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
+.btn-logout-cancel:active {
+  transform: translateY(0);
+}
+
+/* Botón de confirmar */
+.btn-logout-confirm {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  background: #374151;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.btn-logout-confirm:hover {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-logout-confirm:active {
+  transform: translateY(0);
+}
+
+/* Responsive para botones en móvil */
+@media (max-width: 480px) {
+  .logout-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .btn-logout-cancel,
+  .btn-logout-confirm {
+    width: 100%;
+  }
+}
+
+/* Dark mode support */
+[data-theme="dark"] .modal-logout-modern {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+
+[data-theme="dark"] .logout-icon-circle {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .btn-logout-cancel {
+  background: var(--surface-subtle);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .btn-logout-cancel:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .btn-logout-confirm {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .btn-logout-confirm:hover {
+  background: #374151;
+}
+
+

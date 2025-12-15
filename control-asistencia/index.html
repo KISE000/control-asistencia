@@ -82,501 +82,199 @@
       </div>
     </div>
 
-    <!-- MODAL LOGIN / REGISTRO -->
+    <!-- MODAL LOGIN / REGISTRO (FULL PAGE SPLIT) -->
     <div class="modal-excel" id="modalLogin" style="display: none">
-      <div
-        class="modal-excel-content"
-        style="max-width: 480px; animation: fadeInUp 0.3s ease"
-      >
-        <div
-          class="modal-excel-header"
-          style="
-            background: linear-gradient(
-              135deg,
-              var(--primary) 0%,
-              #2563eb 100%
-            );
-            color: white;
-            border-bottom: none;
-          "
-        >
-          <h2 style="color: white">
-            <i data-lucide="lock-keyhole" style="width: 28px; height: 28px"></i>
-            <span id="authModalTitle">Iniciar Sesión</span>
-          </h2>
+      <!-- Contenedor Principal Split -->
+      <div class="login-split-container">
+        
+        <!-- LADO IZQUIERDO: Branding y Visual -->
+        <div class="login-brand-side">
+          <div class="brand-content">
+            <div class="brand-logo-large">
+              <i data-lucide="layers"></i>
+            </div>
+            <h1>Control Asistencia <span class="text-highlight">PRO</span></h1>
+            <p>Gestiona tu personal de manera eficiente, segura y moderna.</p>
+            
+            <div class="feature-list">
+              <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Control de asistencia en tiempo real</span>
+              </div>
+              <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Reportes automáticos en Excel y PDF</span>
+              </div>
+              <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Gestión segura en la nube</span>
+              </div>
+            </div>
+          </div>
+          <!-- Elementos decorativos de fondo -->
+          <div class="decoration-circle circle-1"></div>
+          <div class="decoration-circle circle-2"></div>
         </div>
 
-        <!-- TABS: Login / Registro -->
-        <div
-          style="
-            display: flex;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-          "
-        >
-          <button
-            id="tabLogin"
-            class="auth-tab active"
-            style="
-              flex: 1;
-              padding: 14px;
-              border: none;
-              background: white;
-              font-weight: 600;
-              color: var(--primary);
-              border-bottom: 3px solid var(--primary);
-              cursor: pointer;
-              transition: all 0.2s;
-            "
-          >
-            Iniciar Sesión
-          </button>
-          <button
-            id="tabRegistro"
-            class="auth-tab"
-            style="
-              flex: 1;
-              padding: 14px;
-              border: none;
-              background: transparent;
-              font-weight: 500;
-              color: var(--text-muted);
-              border-bottom: 3px solid transparent;
-              cursor: pointer;
-              transition: all 0.2s;
-            "
-          >
-            Crear Cuenta
-          </button>
-        </div>
+        <!-- LADO DERECHO: Formularios -->
+        <div class="login-form-side">
+          <div class="login-form-wrapper">
+            
+            <div class="login-header">
+              <h2 id="authModalTitle">Iniciar Sesión</h2>
+              <p class="login-subtitle">Bienvenido de nuevo</p>
+            </div>
 
-        <div class="modal-excel-body" style="padding: 32px">
-          <!-- FORMULARIO DE LOGIN -->
-          <div id="formLogin" style="display: block">
-            <p
-              style="
-                color: var(--text-muted);
-                margin-bottom: 24px;
-                text-align: center;
-                font-size: 0.95rem;
-              "
-            >
-              Ingresa tus credenciales para acceder
-            </p>
+            <!-- TABS: Login / Registro -->
+            <div class="auth-tabs-container">
+              <button
+                id="tabLogin"
+                class="auth-tab active"
+                type="button"
+                onclick="cambiarTabAuth('login')"
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                id="tabRegistro"
+                class="auth-tab"
+                type="button"
+                onclick="cambiarTabAuth('registro')"
+              >
+                Crear Cuenta
+              </button>
+            </div>
 
-            <div style="display: flex; flex-direction: column; gap: 20px">
+            <!-- FORMULARIO DE LOGIN -->
+            <div id="formLogin" style="display: block">
               <div class="form-group">
-                <label
-                  style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 600;
-                    color: var(--text);
-                    font-size: 0.9rem;
-                  "
-                >
-                  <i
-                    data-lucide="mail"
-                    style="
-                      width: 16px;
-                      height: 16px;
-                      vertical-align: middle;
-                      margin-right: 6px;
-                    "
-                  ></i>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="loginEmail"
-                  placeholder="tu@email.com"
-                  autocomplete="email"
-                  style="
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: 2px solid var(--border);
-                    border-radius: 8px;
-                    font-size: 0.95rem;
-                    transition: all 0.2s;
-                  "
-                />
+                <label>Email</label>
+                <div class="input-with-icon-left">
+                  <i data-lucide="mail"></i>
+                  <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="tu@email.com"
+                    autocomplete="email"
+                  />
+                </div>
               </div>
 
               <div class="form-group">
-                <label
-                  style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 600;
-                    color: var(--text);
-                    font-size: 0.9rem;
-                  "
-                >
-                  <i
-                    data-lucide="key"
-                    style="
-                      width: 16px;
-                      height: 16px;
-                      vertical-align: middle;
-                      margin-right: 6px;
-                    "
-                  ></i>
-                  Contraseña
-                </label>
-                <div style="position: relative">
+                <label>Contraseña</label>
+                <div class="input-with-icon-left">
+                  <i data-lucide="lock"></i>
                   <input
                     type="password"
                     id="loginPassword"
                     placeholder="Ingresa tu contraseña"
                     autocomplete="current-password"
-                    style="
-                      width: 100%;
-                      padding: 12px 16px;
-                      padding-right: 45px;
-                      border: 2px solid var(--border);
-                      border-radius: 8px;
-                      font-size: 0.95rem;
-                      transition: all 0.2s;
-                    "
                   />
                   <button
                     type="button"
                     id="toggleLoginPass"
-                    style="
-                      position: absolute;
-                      right: 12px;
-                      top: 50%;
-                      transform: translateY(-50%);
-                      background: none;
-                      border: none;
-                      cursor: pointer;
-                      color: var(--text-muted);
-                      padding: 4px;
-                    "
-                    aria-label="Mostrar contraseña"
+                    class="btn-toggle-pass"
+                    onclick="togglePasswordVisibility('loginPassword', 'togglePasswordIcon')"
                   >
-                    <i
-                      data-lucide="eye"
-                      id="togglePasswordIcon"
-                      style="width: 20px; height: 20px"
-                    ></i>
+                    <i data-lucide="eye" id="togglePasswordIcon"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- Opciones adicionales -->
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  margin-top: 8px;
-                "
-              >
-                <label
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    cursor: pointer;
-                    font-size: 0.875rem;
-                    color: var(--text);
-                  "
-                >
-                  <input
-                    type="checkbox"
-                    id="recordarSesion"
-                    style="
-                      width: 18px;
-                      height: 18px;
-                      cursor: pointer;
-                      accent-color: var(--primary);
-                    "
-                  />
+              <div class="form-options">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="recordarSesion" />
                   <span>Recordar sesión</span>
                 </label>
-                <a
-                  href="#"
-                  id="forgotPasswordLink"
-                  style="
-                    font-size: 0.875rem;
-                    color: var(--primary);
-                    text-decoration: none;
-                    font-weight: 500;
-                    transition: opacity 0.2s;
-                  "
-                  onmouseover="this.style.opacity='0.7'"
-                  onmouseout="this.style.opacity='1'"
-                >
-                  ¿Olvidaste tu contraseña?
-                </a>
+                <a href="#" id="forgotPasswordLink" onclick="mostrarRecuperarPassword()">¿Olvidaste tu contraseña?</a>
               </div>
             </div>
-          </div>
 
-          <!-- FORMULARIO DE REGISTRO -->
-          <div id="formRegistro" style="display: none">
-            <p
-              style="
-                color: var(--text-muted);
-                margin-bottom: 24px;
-                text-align: center;
-                font-size: 0.95rem;
-              "
-            >
-              Crea tu cuenta para comenzar
-            </p>
-
-            <div style="display: flex; flex-direction: column; gap: 20px">
+            <!-- FORMULARIO DE REGISTRO -->
+            <div id="formRegistro" style="display: none">
               <div class="form-group">
-                <label
-                  style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 600;
-                    color: var(--text);
-                    font-size: 0.9rem;
-                  "
-                >
-                  <i
-                    data-lucide="user"
-                    style="
-                      width: 16px;
-                      height: 16px;
-                      vertical-align: middle;
-                      margin-right: 6px;
-                    "
-                  ></i>
-                  Nombre Completo
-                </label>
-                <input
-                  type="text"
-                  id="registroNombre"
-                  placeholder="Juan Pérez"
-                  autocomplete="name"
-                  style="
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: 2px solid var(--border);
-                    border-radius: 8px;
-                    font-size: 0.95rem;
-                    transition: all 0.2s;
-                  "
-                />
+                <label>Nombre Completo</label>
+                <div class="input-with-icon-left">
+                  <i data-lucide="user"></i>
+                  <input
+                    type="text"
+                    id="registroNombre"
+                    placeholder="Juan Pérez"
+                    autocomplete="name"
+                  />
+                </div>
               </div>
 
               <div class="form-group">
-                <label
-                  style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 600;
-                    color: var(--text);
-                    font-size: 0.9rem;
-                  "
-                >
-                  <i
-                    data-lucide="mail"
-                    style="
-                      width: 16px;
-                      height: 16px;
-                      vertical-align: middle;
-                      margin-right: 6px;
-                    "
-                  ></i>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="registroEmail"
-                  placeholder="tu@email.com"
-                  autocomplete="email"
-                  style="
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: 2px solid var(--border);
-                    border-radius: 8px;
-                    font-size: 0.95rem;
-                    transition: all 0.2s;
-                  "
-                />
+                <label>Email</label>
+                <div class="input-with-icon-left">
+                  <i data-lucide="mail"></i>
+                  <input
+                    type="email"
+                    id="registroEmail"
+                    placeholder="tu@email.com"
+                    autocomplete="email"
+                  />
+                </div>
               </div>
 
               <div class="form-group">
-                <label
-                  style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 600;
-                    color: var(--text);
-                    font-size: 0.9rem;
-                  "
-                >
-                  <i
-                    data-lucide="key"
-                    style="
-                      width: 16px;
-                      height: 16px;
-                      vertical-align: middle;
-                      margin-right: 6px;
-                    "
-                  ></i>
-                  Contraseña
-                </label>
-                <div style="position: relative">
+                <label>Contraseña</label>
+                <div class="input-with-icon-left">
+                  <i data-lucide="lock"></i>
                   <input
                     type="password"
                     id="registroPassword"
-                    placeholder="Crea tu contraseña (mín. 6 caracteres)"
+                    placeholder="Crea una contraseña (mín. 6 caracteres)"
                     autocomplete="new-password"
-                    style="
-                      width: 100%;
-                      padding: 12px 16px;
-                      padding-right: 45px;
-                      border: 2px solid var(--border);
-                      border-radius: 8px;
-                      font-size: 0.95rem;
-                      transition: all 0.2s;
-                    "
                   />
                   <button
                     type="button"
                     id="toggleRegisterPass"
-                    style="
-                      position: absolute;
-                      right: 12px;
-                      top: 50%;
-                      transform: translateY(-50%);
-                      background: none;
-                      border: none;
-                      cursor: pointer;
-                      color: var(--text-muted);
-                      padding: 4px;
-                    "
-                    aria-label="Mostrar contraseña"
+                    class="btn-toggle-pass"
+                    onclick="togglePasswordVisibility('registroPassword', 'togglePasswordIcon2')"
                   >
-                    <i
-                      data-lucide="eye"
-                      id="togglePasswordIcon2"
-                      style="width: 20px; height: 20px"
-                    ></i>
+                    <i data-lucide="eye" id="togglePasswordIcon2"></i>
                   </button>
                 </div>
               </div>
 
               <div class="form-group">
-                <label
-                  style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 600;
-                    color: var(--text);
-                    font-size: 0.9rem;
-                  "
-                >
-                  <i
-                    data-lucide="shield-check"
-                    style="
-                      width: 16px;
-                      height: 16px;
-                      vertical-align: middle;
-                      margin-right: 6px;
-                    "
-                  ></i>
-                  Confirmar Contraseña
-                </label>
-                <input
-                  type="password"
-                  id="registroPasswordConfirm"
-                  placeholder="Confirma tu contraseña"
-                  autocomplete="new-password"
-                  style="
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: 2px solid var(--border);
-                    border-radius: 8px;
-                    font-size: 0.95rem;
-                    transition: all 0.2s;
-                  "
-                />
+                <label>Confirmar Contraseña</label>
+                <div class="input-with-icon-left">
+                  <i data-lucide="shield-check"></i>
+                  <input
+                    type="password"
+                    id="registroPasswordConfirm"
+                    placeholder="Repite tu contraseña"
+                    autocomplete="new-password"
+                  />
+                </div>
               </div>
             </div>
+
+            <!-- MENSAJE DE ERROR -->
+            <div id="loginError" class="login-alert" style="display: none;">
+              <i data-lucide="alert-circle"></i>
+              <span id="loginErrorText">Error</span>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="login-actions">
+              <button class="btn-primary btn-block btn-lg" id="btnLogin">
+                <span class="btn-text-content">Iniciar Sesión <i data-lucide="arrow-right"></i></span>
+                <div class="btn-loader" style="display: none"></div>
+              </button>
+
+              <button class="btn-primary btn-block btn-lg" id="btnRegistro" style="display: none;">
+                <span class="btn-text-content">Crear Cuenta <i data-lucide="user-plus"></i></span>
+                <div class="btn-loader" style="display: none"></div>
+              </button>
+            </div>
+
+            <p class="copyright-text">© 2025 Control Asistencia</p>
+
           </div>
-
-          <!-- MENSAJE DE ERROR -->
-          <div
-            id="loginError"
-            style="
-              display: none;
-              padding: 12px;
-              background: #fef2f2;
-              border: 1px solid #fecaca;
-              border-radius: 8px;
-              color: #dc2626;
-              font-size: 0.875rem;
-              margin-top: 20px;
-              align-items: center;
-              gap: 8px;
-            "
-          >
-            <i data-lucide="alert-circle" style="width: 18px; height: 18px"></i>
-            <span id="loginErrorText"></span>
-          </div>
-        </div>
-
-        <div
-          class="modal-excel-footer"
-          style="
-            padding: 20px 32px;
-            background: var(--surface-subtle);
-            border-top: 1px solid var(--border-subtle);
-            flex-direction: column;
-            gap: 12px;
-          "
-        >
-          <!-- BOTÓN LOGIN -->
-          <button
-            class="btn-primary"
-            id="btnLogin"
-            style="
-              width: 100%;
-              justify-content: center;
-              padding: 14px;
-              font-size: 1rem;
-              display: block;
-            "
-          >
-            <span
-              class="btn-text-content"
-              style="display: flex; align-items: center; gap: 10px"
-            >
-              <i data-lucide="log-in" style="width: 20px"></i>
-              Iniciar Sesión
-            </span>
-            <div class="btn-loader" style="display: none"></div>
-          </button>
-
-          <!-- BOTÓN REGISTRO -->
-          <button
-            class="btn-primary"
-            id="btnRegistro"
-            style="
-              width: 100%;
-              justify-content: center;
-              padding: 14px;
-              font-size: 1rem;
-              display: none;
-            "
-          >
-            <span
-              class="btn-text-content"
-              style="display: flex; align-items: center; gap: 10px"
-            >
-              <i data-lucide="user-plus" style="width: 20px"></i>
-              Crear Cuenta
-            </span>
-            <div class="btn-loader" style="display: none"></div>
-          </button>
         </div>
       </div>
     </div>
@@ -812,88 +510,44 @@
     <!-- MODAL CONFIRMAR CIERRE DE SESIÓN -->
     <div class="modal-excel" id="modalConfirmarLogout" style="display: none">
       <div
-        class="modal-excel-content"
-        style="max-width: 420px; animation: fadeInUp 0.3s ease"
+        class="modal-excel-content modal-logout-modern"
+        style="max-width: 440px; animation: fadeInUp 0.3s ease"
       >
-        <div
-          class="modal-excel-header"
-          style="
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            border-bottom: none;
-          "
-        >
-          <h2 style="color: white">
-            <i data-lucide="log-out" style="width: 28px; height: 28px"></i>
-            <span>Cerrar Sesión</span>
-          </h2>
-        </div>
-
-        <div class="modal-excel-body" style="padding: 32px; text-align: center">
-          <div style="margin-bottom: 20px">
-            <i
-              data-lucide="alert-triangle"
-              style="
-                width: 64px;
-                height: 64px;
-                color: #f59e0b;
-                margin: 0 auto 16px;
-                display: block;
-              "
-            ></i>
+        <!-- Sin header rojo, todo integrado en el body -->
+        <div class="modal-excel-body" style="padding: 48px 40px; text-align: center">
+          <!-- Icono circular con animación sutil -->
+          <div class="logout-icon-container">
+            <div class="logout-icon-circle">
+              <i data-lucide="log-out" style="width: 32px; height: 32px"></i>
+            </div>
           </div>
 
-          <h3
-            style="
-              font-size: 1.25rem;
-              font-weight: 700;
-              color: var(--text);
-              margin-bottom: 12px;
-            "
-          >
-            ¿Estás seguro?
+          <!-- Título y descripción -->
+          <h3 class="logout-title">
+            ¿Cerrar sesión?
           </h3>
 
-          <p
-            style="
-              color: var(--text-muted);
-              font-size: 0.95rem;
-              line-height: 1.6;
-              margin-bottom: 0;
-            "
-          >
-            Tu sesión se cerrará y tendrás que volver a iniciar sesión para
-            acceder al sistema.
+          <p class="logout-description">
+            Tu sesión actual se cerrará. Podrás volver a iniciar sesión en cualquier momento.
           </p>
-        </div>
 
-        <div
-          class="modal-excel-footer"
-          style="
-            padding: 20px 32px;
-            background: var(--surface-subtle);
-            border-top: 1px solid var(--border-subtle);
-            gap: 12px;
-          "
-        >
-          <button
-            class="btn-text"
-            onclick="cerrarModalLogout()"
-            style="flex: 1"
-          >
-            <i data-lucide="x"></i> Cancelar
-          </button>
-          <button
-            class="btn-primary"
-            id="btnConfirmarLogout"
-            onclick="confirmarLogout()"
-            style="flex: 1; justify-content: center; background: #ef4444"
-            onmouseover="this.style.background='#dc2626'"
-            onmouseout="this.style.background='#ef4444'"
-          >
-            <i data-lucide="log-out" style="width: 20px"></i>
-            Cerrar Sesión
-          </button>
+          <!-- Botones mejorados -->
+          <div class="logout-actions">
+            <button
+              class="btn-logout-cancel"
+              onclick="cerrarModalLogout()"
+            >
+              Cancelar
+            </button>
+            <button
+              class="btn-logout-confirm"
+              id="btnConfirmarLogout"
+              onclick="confirmarLogout()"
+            >
+              <i data-lucide="log-out" style="width: 18px; height: 18px"></i>
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </div>
     </div>
