@@ -68,6 +68,19 @@ function showToast(msg, type = 'info', description = '') {
         return showLoadingToast(msg, description);
     }
 
+    // Evitar duplicados recientes (Debounce de 2 segundos para mismo mensaje)
+    if (notifications.length > 0) {
+        const last = notifications[0];
+        const now = new Date();
+        const lastTime = last.timestamp instanceof Date ? last.timestamp : new Date(last.timestamp);
+        const timeDiff = now - lastTime;
+        
+        if (last.msg === msg && timeDiff < 2000) {
+            console.log('🚫 Notificación duplicada prevenida:', msg);
+            return null;
+        }
+    }
+
     const newNotif = {
         id: Date.now(),
         msg,

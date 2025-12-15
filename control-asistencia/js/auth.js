@@ -596,13 +596,17 @@ function actualizarUIUsuario(userData) {
  */
 function toggleContentLock(locked) {
     const dashboardContainer = document.querySelector('.dashboard-container');
+    const topbar = document.querySelector('.topbar');
+    const body = document.body;
     
-    if (dashboardContainer) {
-        if (locked) {
-            dashboardContainer.classList.add('content-locked');
-        } else {
-            dashboardContainer.classList.remove('content-locked');
-        }
+    if (locked) {
+        if (dashboardContainer) dashboardContainer.classList.add('content-locked');
+        if (topbar) topbar.classList.add('content-locked');
+        body.classList.add('login-mode');
+    } else {
+        if (dashboardContainer) dashboardContainer.classList.remove('content-locked');
+        if (topbar) topbar.classList.remove('content-locked');
+        body.classList.remove('login-mode');
     }
 }
 
@@ -686,6 +690,9 @@ async function inicializarAutenticacion() {
             console.log('✅ Sesión activa encontrada:', session.user.email);
             toggleContentLock(false);
             actualizarUIUsuario(session.user);
+            
+            // Asegurarnos de que el modal de login esté cerrado
+            cerrarModalLogin();
         } else {
             // NO HAY SESIÓN: Bloquear y mostrar login
             console.log('⚠️ No hay sesión activa');

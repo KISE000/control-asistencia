@@ -38,6 +38,11 @@ El proyecto se encuentra en la carpeta `control-asistencia`. Aquí están los co
   - `auth.js`: Gestión de sesiones de usuario, login/registro.
   - `timepicker.js`: Lógica del selector de hora personalizado visual.
   - `constants.js`: Constantes globales (nombres de tablas, claves localStorage).
+  - `pdf-service.js`: Servicio de generación de reportes PDF usando jsPDF.
+  - `pdf.js`: Controlador de la interfaz para la exportación a PDF.
+  - `ui.js`: Sistema centralizado de notificaciones (Toasts) y renderizado de UI.
+  - `events.js`: Manejador central de eventos del DOM.
+  - `enhanced.js`: Mejoras visuales (animaciones, efectos).
 - **`sql/`**: Scripts de configuración de base de datos.
   - `setup_empleados.sql`: Crea tabla de empleados y logs de auditoría.
   - `solucion_definitiva_rls.sql`: Configura seguridad para tabla empleados.
@@ -113,6 +118,14 @@ Sección "Ver Registros en Nube":
 - **Eliminación**: Borrar registros de períodos específicos.
 
 **Seguridad**: Solo ves registros de asistencias de TUS empleados, gracias a RLS.
+
+### F. Generación de PDF Nativa 📄
+
+Posibilidad de generar reportes individuales en formato PDF listos para firmar:
+
+- **Diseño Profesional**: Encabezado con logo, tabla limpia y sección de firmas.
+- **Generación Cliente**: Todo el proceso ocurre en el navegador (rápido y seguro).
+- **Personalizable**: Opciones para incluir/excluir horas extras, motivos de ausencia, etc.
 
 ---
 
@@ -234,6 +247,17 @@ Sección "Ver Registros en Nube":
 - El conflict key es `(empleado_id, fecha)`.
 - Función `ejecutarGuardado()` en `excel.js`.
 
+### Sistema de Notificaciones (`ui.js`)
+
+- Reemplazo de `alert()` o toasts nativos antiguos por un sistema personalizado.
+- `showToast(msg, type)`: Muestra notificaciones no intrusivas en la esquina inferior.
+- Centro de notificaciones (campana) que agrupa historial reciente.
+
+### Gestión de Eventos (`events.js`)
+
+- Centralización de `addEventListener` para mantener el código organizado.
+- Facilita el mantenimiento al tener todos los disparadores en un solo archivo.
+
 ---
 
 ## 7. Configuración de Seguridad (Primera vez)
@@ -298,11 +322,46 @@ Si es la primera vez que usas el proyecto, necesitas configurar las políticas R
 
 ---
 
-## 9. Próximos Pasos / Mejoras Futuras
+## 9. Mejoras de UX Implementadas 🎨
+
+### Modal de Cierre de Sesión Moderno
+
+**Actualización**: Diciembre 2024
+
+- **Diseño limpio**: Eliminado el header rojo agresivo en favor de un diseño minimalista centrado
+- **Iconografía amigable**: Icono circular con gradiente gris y animación de pulso sutil
+- **Colores neutros**: Reemplazado el rojo alarmante por tonos grises profesionales (#374151)
+- **Texto directo**: Cambio de "¿Estás seguro?" a "¿Cerrar sesión?" para ser más claro
+- **Efectos hover**: Animaciones suaves con elevación en botones
+- **Responsive**: Botones apilados en móvil (< 480px) con mejor accesibilidad táctil
+
+**Archivos**: `index.html` (estructura), `css/modals.css` (estilos)
+
+### Formulario de Login Refinado
+
+**Mejoras implementadas**:
+
+- **Tipografía optimizada**: Labels sin mayúsculas (más profesional), tamaños balanceados
+- **Inputs mejorados**: Altura reducida a 64px, bordes visibles, sombras sutiles
+- **Tabs elegantes**: Efecto hover en pestañas inactivas, transiciones suaves con cubic-bezier
+- **Placeholders claros**: Cambio de `••••••••` a "Ingresa tu contraseña" (elimina confusión)
+- **Botones refinados**: Tamaño 60px, efectos hover más sutiles y profesionales
+- **Espaciado optimizado**: Mejor balance visual entre componentes
+
+**Beneficios**:
+
+- Menos intimidante para nuevos usuarios
+- Mejor legibilidad y comprensión
+- Experiencia más moderna y profesional
+- Feedback visual claro en todas las interacciones
+
+---
+
+## 10. Próximos Pasos / Mejoras Futuras
 
 - [ ] Agregar reportes de estadísticas (gráficas de asistencia)
 - [ ] Notificaciones automáticas para ausencias
-- [ ] Exportar a PDF directamente (actualmente solo Excel)
+- [x] Exportar a PDF directamente (Implementado ✅)
 - [ ] App móvil nativa
 - [ ] Roles y permisos (admin, supervisor, empleado)
 
@@ -316,5 +375,5 @@ Si es la primera vez que usas el proyecto, necesitas configurar las políticas R
 
 ---
 
-**Última actualización**: Diciembre 2025  
-**Versión**: 2.0 (Con sistema de seguridad RLS completo)
+**Última actualización**: Diciembre 2024  
+**Versión**: 2.1 (Con mejoras de UX en modal de logout y formulario de login)
