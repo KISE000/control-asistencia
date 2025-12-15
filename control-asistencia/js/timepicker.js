@@ -22,10 +22,10 @@ function inicializarTimePicker() {
         const modal = document.getElementById('modalTimePicker');
         if (modal) {
             modal.addEventListener('click', function(e) {
-                // Si se hace clic en el fondo oscuro (el modal mismo), cerrar
-                if (e.target === modal) {
-                    cerrarTimePicker();
-                }
+                // Si se hace clic en el fondo oscuro (el modal mismo), NO cerrar (según solicitud)
+                // if (e.target === modal) {
+                //     cerrarTimePicker();
+                // }
             });
         }
         
@@ -89,7 +89,7 @@ function abrirTimePicker(inputId, title) {
         }
         
         modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Bloquear scroll
+        document.body.classList.add('modal-open'); // Bloquear scroll usando clase CSS
         
         // Reinicializar iconos de Lucide
         if (typeof lucide !== 'undefined') {
@@ -108,7 +108,7 @@ function cerrarTimePicker() {
         if (modal) {
             modal.style.display = 'none';
         }
-        document.body.style.overflow = ''; // Restaurar scroll
+        document.body.classList.remove('modal-open'); // Restaurar scroll
         // NO nullificar currentTimeInputId aquí si se necesita después, 
         // pero es mejor limpiarlo para evitar ediciones fantasma.
         // Lo limpiamos al final de la animación o inmediatamente.

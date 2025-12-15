@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   addClickListener('btnCloseModalExcel', cerrarModalExcel);
   addClickListener('btnCancelModalExcel', cerrarModalExcel);
   addClickListener('btnDownloadExcelEdited', descargarExcelEditado);
-  addClickListener('btnGuardarExcel', guardarExcelSupabase);
+  addClickListener('btnGuardarExcel', () => guardarExcelSupabase(true));
 
   // --- AUTH MODAL ---
   addClickListener('tabLogin', () => cambiarTabAuth('login'));

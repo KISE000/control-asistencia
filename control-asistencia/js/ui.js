@@ -1,142 +1,179 @@
 // === UI RENDERING & UTILS ===
 
 /**
- * Enhanced Toast Notification System
- * @param {string} msg - Main message to display
- * @param {string} type - Type of notification: 'info', 'success', 'error', 'warning', 'loading'
- * @param {string} description - Optional description text (secondary line)
- * @param {number} duration - Duration in ms before auto-hide (0 = no auto-hide)
- * @returns {HTMLElement} - The toast element for further manipulation
+ * CONTROL DE NOTIFICACIONES (Campana y Status Bar)
+ * Reemplaza al antiguo sistema de Toast.
  */
-function showToast(msg, type = 'info', description = '', duration = 4000) {
-    const container = document.getElementById('toast-container');
-    if (!container) {
-        console.warn('Toast container not found');
-        return null;
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    // Icon mapping
-    let icon = 'info';
-    if(type === 'success') icon = 'check-circle';
-    if(type === 'error') icon = 'alert-circle';
-    if(type === 'warning') icon = 'alert-triangle';
-    if(type === 'loading') icon = 'loader';
 
-    // Build toast structure
-    let toastHTML = `
-        <div class="toast-icon">
-            <i data-lucide="${icon}" style="width: 24px; height: 24px;"></i>
-        </div>
-        <div class="toast-body">
-            <div class="toast-content">${msg}</div>
-            ${description ? `<div class="toast-description">${description}</div>` : ''}
-        </div>
-    `;
+let notifications = [];
+let isNotificationOpen = false;
+
+/**
+ * Limpia notificaciones que tengan más de 1 minuto de antigüedad automaticamente.
+ */
+function cleanExpiredNotifications() {
+    const ONE_MINUTE = 60 * 1000;
+    const now = Date.now();
+    const initialCount = notifications.length;
     
-    // Add progress bar for loading state
-    if (type === 'loading') {
-        toastHTML += '<div class="toast-progress"></div>';
+    notifications = notifications.filter(n => {
+        const timestamp = n.timestamp instanceof Date ? n.timestamp.getTime() : new Date(n.timestamp).getTime();
+        const diff = now - timestamp;
+        return diff < ONE_MINUTE;
+    });
+    
+    // Si hubo cambios, actualizar UI
+    if (notifications.length !== initialCount) {
+        updateNotificationBadge();
+        renderNotifications();
+    }
+}
+
+// Iniciar limpieza automática cada 10 segundos
+setInterval(cleanExpiredNotifications, 10000);
+
+// Inicialización de event listeners
+document.addEventListener('click', (e) => {
+    const container = document.querySelector('.notification-container');
+    const dropdown = document.getElementById('notificationDropdown');
+    
+    // Cerrar si clic fuera
+    if(isNotificationOpen && container && !container.contains(e.target)) {
+        isNotificationOpen = false;
+        dropdown.style.display = 'none';
+    }
+});
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationDropdown');
+    if(!dropdown) return;
+    
+    isNotificationOpen = !isNotificationOpen;
+    dropdown.style.display = isNotificationOpen ? 'block' : 'none';
+    
+    if(isNotificationOpen) {
+        // Marcar como vistas (visual) o lógica adicional si se requiere
+    }
+}
+
+/**
+ * Muestra notificación en la lista de la campana.
+ * @param {string} msg - Título principal
+ * @param {string} type - 'success', 'error', 'info', 'warning'
+ * @param {string} description - Texto secundario
+ */
+function showToast(msg, type = 'info', description = '') {
+    // Si es loading, delegamos a showLoadingToast (por compatibilidad si alguien llama showToast con 'loading')
+    if(type === 'loading') {
+        return showLoadingToast(msg, description);
+    }
+
+    const newNotif = {
+        id: Date.now(),
+        msg,
+        type,
+        description,
+        timestamp: new Date()
+    };
+    
+    notifications.unshift(newNotif);
+    updateNotificationBadge();
+    renderNotifications();
+    playNotificationSound(type);
+
+    return null; // Ya no retornamos elemento DOM
+}
+
+function updateNotificationBadge() {
+    const badge = document.getElementById('notificationBadge');
+    if(!badge) return;
+    
+    const count = notifications.length;
+    if(count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function renderNotifications() {
+    const list = document.getElementById('notificationList');
+    if(!list) return;
+    
+    if(notifications.length === 0) {
+        list.innerHTML = `
+            <div class="empty-notifications">
+                <i data-lucide="bell" style="opacity:0.3; width:32px;"></i>
+                <p>No tienes notificaciones recientes</p>
+            </div>
+        `;
+    } else {
+        list.innerHTML = notifications.map(n => `
+            <div class="notification-item unread">
+                <div class="notif-icon ${n.type}">
+                    <i data-lucide="${getIconForType(n.type)}" style="width:16px;"></i>
+                </div>
+                <div class="notif-content">
+                    <div class="notif-title">${n.msg}</div>
+                    ${n.description ? `<div class="notif-desc">${n.description}</div>` : ''}
+                    <span class="notif-time">${timeAgo(n.timestamp)}</span>
+                </div>
+            </div>
+        `).join('');
     }
     
-    toast.innerHTML = toastHTML;
-    container.appendChild(toast);
-    
-    // Initialize Lucide icons
     if(window.lucide) lucide.createIcons();
+}
 
-    // Auto-hide logic with pause on hover
-    let autoHideTimeout = null;
-    
-    const startAutoHide = () => {
-        if (duration > 0 && type !== 'loading') {
-            autoHideTimeout = setTimeout(() => {
-                hideToast(toast);
-            }, duration);
-        }
-    };
-    
-    const pauseAutoHide = () => {
-        if (autoHideTimeout) {
-            clearTimeout(autoHideTimeout);
-            autoHideTimeout = null;
-        }
-    };
-    
-    // Pause on hover, resume on leave
-    toast.addEventListener('mouseenter', pauseAutoHide);
-    toast.addEventListener('mouseleave', startAutoHide);
-    
-    // Start auto-hide
-    startAutoHide();
-    
-    // Store toast ID for reference
-    toast.toastId = Date.now();
-    
-    return toast;
+function getIconForType(type) {
+    if(type === 'success') return 'check';
+    if(type === 'error') return 'x-circle';
+    if(type === 'warning') return 'alert-triangle';
+    return 'info';
+}
+
+function limpiarNotificaciones() {
+    notifications = [];
+    updateNotificationBadge();
+    renderNotifications();
+    playNotificationSound('clear');
+}
+
+function playNotificationSound(type) {
+    // Opcional: Sonido sutil
 }
 
 /**
- * Hide and remove a toast notification
- */
-function hideToast(toast) {
-    if (!toast || !toast.parentElement) return;
-    
-    toast.style.animation = 'slideOut 0.3s forwards cubic-bezier(0.4, 0, 1, 1)';
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 300);
-}
-
-/**
- * Show a loading toast that persists until manually closed
- * Returns an object with update and close methods
+ * Muestra indicador de carga en la barra superior.
+ * Reemplaza al toast persistente de loading.
  */
 function showLoadingToast(msg, description = '') {
-    const toast = showToast(msg, 'loading', description, 0); // Duration 0 = no auto-hide
+    const indicator = document.getElementById('statusIndicator');
+    const text = document.getElementById('statusText');
+    
+    if(indicator && text) {
+        text.textContent = msg;
+        indicator.style.display = 'flex';
+    }
     
     return {
-        // Update the toast message
-        update: (newMsg, newDescription = '') => {
-            if (!toast || !toast.parentElement) return;
-            
-            const contentEl = toast.querySelector('.toast-content');
-            const descEl = toast.querySelector('.toast-description');
-            
-            if (contentEl) contentEl.textContent = newMsg;
-            
-            if (newDescription && descEl) {
-                descEl.textContent = newDescription;
-            } else if (newDescription && !descEl) {
-                const body = toast.querySelector('.toast-body');
-                const desc = document.createElement('div');
-                desc.className = 'toast-description';
-                desc.textContent = newDescription;
-                body.appendChild(desc);
+        update: (newMsg, newDesc) => {
+            if(text) text.textContent = newMsg;
+        },
+        close: (finalMsg, finalType, finalDesc) => {
+            if(indicator) indicator.style.display = 'none';
+            if(finalMsg) {
+                showToast(finalMsg, finalType || 'success', finalDesc);
             }
         },
-        
-        // Close the loading toast and optionally show a new one
-        close: (finalMsg = '', finalType = 'success', finalDescription = '') => {
-            if (toast && toast.parentElement) {
-                hideToast(toast);
-                
-                if (finalMsg) {
-                    // Small delay to ensure smooth transition
-                    setTimeout(() => {
-                        showToast(finalMsg, finalType, finalDescription);
-                    }, 200);
-                }
-            }
-        },
-        
-        // Get the toast element reference
-        element: toast
+        element: null
     };
+}
+
+// Compatibilidad con código antiguo que intente borrar el toast manualmente
+function hideToast(toast) {
+    // No-op
 }
 
 // Alias para compatibilidad

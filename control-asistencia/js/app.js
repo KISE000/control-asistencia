@@ -82,7 +82,7 @@ function setupEventListeners() {
     // listen('btnUserMenu', 'click', toggleUserMenu); // Handled by auth.js setupUserMenuListeners()
     listen('darkModeToggle', 'change', toggleDarkMode);
     listen('btnLogout', 'click', logoutSupabase);
-    listen('btnHelp', 'click', mostrarAyuda);
+    // listen('btnHelp', 'click', mostrarAyuda); // Removed
 
     // Sidebar
     listen('logoPreviewContainer', 'click', () => document.getElementById('logoInput').click());
@@ -353,4 +353,3 @@ function procesarImportacion() {
     };
     r.readAsText(f);
 }
-function mostrarAyuda() { alert('Control de Asistencia\n\nArrastra archivos para subirlos a la nube.'); }

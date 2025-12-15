@@ -13,7 +13,7 @@
 }
 
 .modal-excel-content {
-  background: white;
+  background: var(--surface-subtle);
   width: 95%;
   max-width: 1600px;
   height: 90%;
@@ -31,15 +31,13 @@
 #modalConfirmacion .modal-excel-content,
 #modalTimePicker .modal-excel-content,
 #modalLogin .modal-excel-content,
-#modalRecuperar .modal-excel-content {
+#modalRecuperar .modal-excel-content,
+#modalConfirmarLogout .modal-excel-content {
   height: auto;
   max-height: 90vh;
 }
 
-[data-theme="dark"] .modal-excel-content {
-  background: #1e293b; /* Slate 800 */
-  border: 1px solid #334155; /* Slate 700 */
-}
+
 
 .modal-excel-header h2 {
   font-size: 1.5rem;
@@ -309,9 +307,7 @@
   z-index: 9999;
   animation: dropdownFadeIn 0.2s ease;
 }
-[data-theme="dark"] .user-dropdown {
-  background: #1e293b;
-}
+
 
 @keyframes dropdownFadeIn {
   from {

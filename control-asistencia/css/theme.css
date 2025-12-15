@@ -1,42 +1,42 @@
-/* VARIABLES & DESIGN SYSTEM - PROFESSIONAL DARK MODE */
+/* VARIABLES & DESIGN SYSTEM - PROFESSIONAL LIGHT MODE */
 :root {
-    /* Primary Colors */
-    --primary: #6366f1;       
-    --primary-hover: #818cf8; 
-    --primary-light: rgba(99, 102, 241, 0.2); 
-    --primary-glow: rgba(99, 102, 241, 0.4);
+    color-scheme: light;
+
+    /* Primary Colors - Keeping consistency */
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: rgba(99, 102, 241, 0.1);
+    --primary-glow: rgba(99, 102, 241, 0.25);
     
     /* Semantic Colors */
-    --success: #34d399;
-    --success-bg: rgba(52, 211, 153, 0.15);
-    --danger: #f87171;
-    --danger-hover: #ef4444;
-    --danger-bg: rgba(248, 113, 113, 0.15);
-    --warning: #fbbf24;
-
-    color-scheme: dark;
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.1);
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --danger-bg: rgba(239, 68, 68, 0.1);
+    --warning: #f59e0b;
     
-    /* Backgrounds */
-    --bg-body: #0f172a; /* Slate 900 - Deep, rich dark */
-    --bg-input: #1e293b; /* Slate 800 */
+    /* Backgrounds - Professional Light Theme */
+    --bg-body: #f8fafc; /* Slate 50 */
+    --bg-input: #ffffff; /* Pure white */
     
     /* Surfaces */
-    --glass-bg: rgba(30, 41, 59, 0.7); /* Translucent Slate 800 */
-    --glass-border: rgba(255, 255, 255, 0.08); /* Subtle white border */
-    --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    --blur-strength: 20px;
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(148, 163, 184, 0.2);
+    --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --blur-strength: 10px;
     
     /* Borders & Surfaces */
-    --border: #334155; /* Slate 700 */
-    --border-subtle: #334155; 
-    --surface-hover: #334155; /* Slate 700 */
-    --surface-subtle: #1e293b; /* Slate 800 */
+    --border: #e2e8f0; /* Slate 200 */
+    --border-subtle: #f1f5f9; /* Slate 100 */
+    --surface-hover: #f1f5f9; /* Slate 100 */
+    --surface-subtle: #ffffff; /* White for cards */
     
     /* Text */
-    --text-main: #f1f5f9; /* Slate 100 */
-    --text-secondary: #cbd5e1; /* Slate 300 */
-    --text-muted: #94a3b8; /* Slate 400 */
-    --text: #f1f5f9;
+    --text-main: #0f172a; /* Slate 900 - Dark text for contrast */
+    --text-secondary: #334155; /* Slate 700 */
+    --text-muted: #64748b; /* Slate 500 */
+    --text: #0f172a;
     
     /* Design Tokens */
     --radius-sm: 0.5rem;
@@ -46,26 +46,8 @@
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     
-    /* Transition for theme change (kept for other transitions) */
-    --theme-transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Apply transitions to theme-changing elements */
-body,
-.card,
-.topbar,
-.btn-primary,
-.btn-hero,
-.btn-text,
-.btn-ghost,
-.modal-excel-content,
-input,
-select,
-textarea {
-    transition: var(--theme-transition);
+    /* Legacy transition var (optional but kept for compatibility) */
+    --theme-transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* RESET & BASE */
@@ -81,17 +63,16 @@ body {
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     background: var(--bg-body);
-    /* Subtle texture for depth without distraction */
-    background-image: 
-        linear-gradient(180deg, rgba(30, 41, 59, 0.3) 0%, transparent 100%);
+    /* Light gradient background */
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     background-attachment: fixed;
 }
 
 button, input, select { font-family: inherit; font-size: inherit; }
 a { text-decoration: none; color: inherit; }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar (Light style by default) */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #64748b; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

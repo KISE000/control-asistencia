@@ -1110,7 +1110,8 @@ async function guardarExcelSupabase(keepOpen = false) {
         return showToast('❌ Error: Conexión a base de datos no disponible', 'error');
     }
 
-    const btnId = keepOpen ? 'btnGuardarProgreso' : 'btnGuardarExcel';
+    // Modificación: Siempre usar btnGuardarExcel ya que es el único botón visible en el modal
+    const btnId = 'btnGuardarExcel';
     const btn = document.getElementById(btnId);
     if (!btn) return;
 
@@ -1183,7 +1184,8 @@ async function guardarExcelSupabase(keepOpen = false) {
  * Ejecuta la lógica real de guardado (Upsert)
  */
 async function ejecutarGuardado(keepOpen) {
-    const btnId = keepOpen ? 'btnGuardarProgreso' : 'btnGuardarExcel';
+    // Modificación: Siempre usar btnGuardarExcel
+    const btnId = 'btnGuardarExcel';
     const btn = document.getElementById(btnId);
     const originalContent = keepOpen ? '<i data-lucide="save-all"></i> Guardar Progreso' : '<i data-lucide="cloud-upload"></i> Guardar Progreso en Nube';
     

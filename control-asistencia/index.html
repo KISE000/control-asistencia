@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Control de Asistencia PRO | Dashboard</title>
+    
+
 
     <!-- Favicon -->
     <link
@@ -42,7 +44,7 @@
     <link rel="stylesheet" href="css/cloud_records.css" />
   </head>
   <body>
-    <div id="toast-container" class="toast-container"></div>
+    <!-- Toast Container Removed -->
 
     <!-- MODAL EXCEL -->
     <div class="modal-excel" id="modalExcel">
@@ -918,6 +920,35 @@
         </div>
 
         <div class="topbar-actions">
+
+          
+          <!-- INDICADOR DE ESTADO (Cargando...) -->
+          <div id="statusIndicator" class="status-indicator" style="display: none;">
+             <i data-lucide="loader-2" class="spin-anim"></i>
+             <span id="statusText">Procesando...</span>
+          </div>
+
+          <!-- NOTIFICACIONES (CAMPANA) -->
+          <div class="notification-container" style="position: relative;">
+            <button class="btn-icon-circle notification-btn" onclick="toggleNotifications()" id="btnNotifications" aria-label="Notificaciones">
+              <i data-lucide="bell" style="width: 22px;"></i>
+              <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </button>
+            
+            <!-- DROPDOWN NOTIFICACIONES -->
+            <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
+                <div class="notification-header-panel">
+                    <h3>Notificaciones</h3>
+                    <button class="btn-text-mini" onclick="limpiarNotificaciones()">Limpiar</button>
+                </div>
+                <div class="notification-list" id="notificationList">
+                    <div class="empty-notifications">
+                        <p>No tienes notificaciones recientes</p>
+                    </div>
+                </div>
+            </div>
+          </div>
+
           <!-- MENÚ DE USUARIO -->
           <div class="user-menu-container" style="position: relative">
             <button class="btn-user-menu" id="btnUserMenu">
@@ -957,13 +988,7 @@
             </div>
           </div>
 
-          <button
-            class="btn-icon-circle"
-            onclick="mostrarAyuda()"
-            aria-label="Mostrar ayuda"
-          >
-            <i data-lucide="help-circle" style="width: 22px"></i>
-          </button>
+
         </div>
       </div>
     </nav>

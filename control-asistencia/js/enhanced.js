@@ -7,9 +7,9 @@
  * Enforces dark mode by default.
  */
 function initDarkMode() {
-    // Always enforce dark mode
-    document.documentElement.setAttribute('data-theme', 'dark');
-    localStorage.setItem('theme', 'dark');
+    // Dark mode enforcement removed to allow Light Mode default.
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('theme');
 }
 
 /**
