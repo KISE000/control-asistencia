@@ -1,0 +1,65 @@
+# ===========================
+# Sistema Operativo
+# ===========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+
+# ===========================
+# IDEs y Editores
+# ===========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ===========================
+# Dependencias
+# ===========================
+node_modules/
+bower_components/
+
+# ===========================
+# Archivos de Entorno/Configuración Sensible
+# ===========================
+.env
+.env.local
+.env.*.local
+config.local.js
+secrets.js
+*.key
+*.pem
+
+# Configuración con credenciales de Supabase
+js/config.js
+
+# ===========================
+# Base de Datos
+# ===========================
+*.db
+*.sqlite
+*.sqlite3
+*.sql.backup
+*.sql.bak
+
+# ===========================
+# Archivos Temporales y Cache
+# ===========================
+*.tmp
+*.temp
+*.cache
+.cache/
+tmp/
+temp/
+
+# ===========================
+# Builds y Distribución
+# ===========================
+dist/
+build/
+*.min.js.map
+*.min.css.map

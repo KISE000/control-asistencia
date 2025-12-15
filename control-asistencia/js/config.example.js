@@ -1,11 +1,21 @@
-// CREDENCIALES SUPABASE
-const SUPABASE_URL = 'https://exttzsyfyqmonbleihna.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4dHR6c3lmeXFtb25ibGVpaG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMzMxMTMsImV4cCI6MjA4MDkwOTExM30.6Nhkyyx6ds7VSvVzq_XDHDugL9XKXQhfxCu8HLGSLEU';
+// ========================================
+// CREDENCIALES SUPABASE - EJEMPLO
+// ========================================
+// ⚠️ INSTRUCCIONES:
+// 1. Copia este archivo como "config.js"
+// 2. Reemplaza las credenciales con las tuyas de Supabase
+// 3. NUNCA subas config.js a GitHub (ya está en .gitignore)
+//
+// Para obtener tus credenciales:
+// - Ve a https://supabase.com → Tu proyecto → Settings → API
+// ========================================
+
+const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+const SUPABASE_KEY = 'tu_clave_anon_aqui';
 
 // Variables Globales
 let supabase = null;
 
-// Inicializar Supabase
 // Inicializar Supabase
 // ⚠️ ADVERTENCIA DE SEGURIDAD:
 // Las claves están expuestas en el cliente. Asegúrate de tener RLS (Row Level Security)
@@ -22,11 +32,9 @@ if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
 } else {
     console.error('❌ La librería de Supabase no se ha cargado. Verifica tu conexión a internet.');
 }
-let empleados = [
-    {id: 1, nombre: 'Melissa Guzmán', seleccionado: true},
-    {id: 2, nombre: 'Jimena Hernández', seleccionado: true},
-    {id: 3, nombre: 'Samantha Varela', seleccionado: true}
-];
+
+// Datos iniciales (vacíos por defecto, se cargan desde Supabase)
+let empleados = [];
 let feriados = []; 
 let logoData = null; 
-let nextId = 4;
+let nextId = 1;
