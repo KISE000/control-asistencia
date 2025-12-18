@@ -5,6 +5,22 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Variables Globales
 // No declaramos 'var supabase = null' aquí para evitar sobrescribir la librería cargada por CDN antes de usarla.
 
+// DETECCIÓN DE ENTORNO
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// FILTRADO DE LOGS EN PRODUCCIÓN
+if (!IS_LOCAL) {
+    // Guardamos las funciones originales por si se necesitan (opcional, para depuración de emergencia)
+    const originalConsoleLog = console.log;
+    const originalConsoleInfo = console.info;
+
+    // Sobrescribimos para que no hagan nada
+    console.log = function() {};
+    console.info = function() {};
+    
+    // Mantenemos console.warn y console.error para errores críticos
+}
+
 // Inicializar Supabase
 // ⚠️ ADVERTENCIA DE SEGURIDAD:
 // Las claves están expuestas en el cliente. Asegúrate de tener RLS (Row Level Security)
