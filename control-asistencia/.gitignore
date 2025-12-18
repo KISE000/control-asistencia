@@ -35,7 +35,7 @@ secrets.js
 *.pem
 
 # Configuración con credenciales de Supabase
-js/config.js
+
 
 
 # ===========================
