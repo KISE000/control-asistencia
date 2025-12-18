@@ -1,7 +1,7 @@
 // CREDENCIALES SUPABASE
 // ⚠️ REEMPLAZAR CON TUS CREDENCIALES
-const SUPABASE_URL = 'https://tu-proyecto.supabase.co';
-const SUPABASE_KEY = 'tu-clave-anon';
+const SUPABASE_URL = 'https://exttzsyfyqmonbleihna.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4dHR6c3lmeXFtb25ibGVpaG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMzMxMTMsImV4cCI6MjA4MDkwOTExM30.6Nhkyyx6ds7VSvVzq_XDHDugL9XKXQhfxCu8HLGSLEU';
 
 // Variables Globales
 // No declaramos 'var supabase = null' aquí para evitar sobrescribir la librería cargada por CDN antes de usarla.
