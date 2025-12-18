@@ -1,0 +1,14 @@
+{
+  "name": "control-asistencia-ishop",
+  "version": "1.0.0",
+  "description": "Sistema de Control de Asistencia",
+  "scripts": {
+    "build": "node scripts/generate-config.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -233,5 +233,39 @@ ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id);
 
 ---
 
+## 🌍 Despliegue Seguro (Deployment)
+
+Para publicar tu aplicación en **GitHub** y desplegar en **Netlify/Vercel** sin exponer tus credenciales:
+
+### 1. Configuración de Git
+
+El archivo `js/config.js` ha sido agregado a `.gitignore`. Esto evita que tus claves reales se suban al repositorio público.
+
+### 2. Configuración en Netlify / Vercel
+
+Cuando configures tu proyecto en el proveedor de hosting:
+
+1. Ve a **Environment Variables** (Variables de Entorno).
+2. Agrega las siguientes variables:
+   - `SUPABASE_URL`: Tu URL del proyecto (https://xyz.supabase.co)
+   - `SUPABASE_KEY`: Tu clave `anon` pública
+
+### 3. Comando de Build
+
+Configura el comando de build para que genere el archivo de configuración antes de publicar:
+
+**Build Command:**
+
+```bash
+node scripts/generate-config.js
+```
+
+**Publish Directory:**
+`./` (o la carpeta raíz)
+
+Esto ejecutará nuestro script seguro que tomará las variables de entorno y creará el archivo `js/config.js` solo en el servidor de despliegue, manteniéndolo fuera de GitHub.
+
+---
+
 **Última actualización**: Diciembre 2025  
-**Versión de seguridad**: 2.0 (Con protección de asistencias)
+**Versión de seguridad**: 2.1 (Protección de repositorio público)

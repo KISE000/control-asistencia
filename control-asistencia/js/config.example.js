@@ -1,47 +1,62 @@
-// ========================================
-// CREDENCIALES SUPABASE - EJEMPLO
-// ========================================
-// ⚠️ INSTRUCCIONES:
-// 1. Copia este archivo como "config.js"
-// 2. Reemplaza las credenciales con las tuyas de Supabase
-// 3. NUNCA subas config.js a GitHub (ya está en .gitignore)
-//
-// Para obtener tus credenciales:
-// - Ve a https://supabase.com → Tu proyecto → Settings → API
-// ========================================
-
-const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
-const SUPABASE_KEY = 'tu_clave_anon_aqui';
+// CREDENCIALES SUPABASE
+// ⚠️ REEMPLAZAR CON TUS CREDENCIALES
+const SUPABASE_URL = 'https://tu-proyecto.supabase.co';
+const SUPABASE_KEY = 'tu-clave-anon';
 
 // Variables Globales
-let supabase = null;
+// No declaramos 'var supabase = null' aquí para evitar sobrescribir la librería cargada por CDN antes de usarla.
+
+// DETECCIÓN DE ENTORNO
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// FILTRADO DE LOGS EN PRODUCCIÓN
+if (!IS_LOCAL) {
+    // Guardamos las funciones originales por si se necesitan (opcional, para depuración de emergencia)
+    const originalConsoleLog = console.log;
+    const originalConsoleInfo = console.info;
+
+    // Sobrescribimos para que no hagan nada
+    console.log = function() {};
+    console.info = function() {};
+    
+    // Mantenemos console.warn y console.error para errores críticos
+}
 
 // Inicializar Supabase
 // ⚠️ ADVERTENCIA DE SEGURIDAD:
 // Las claves están expuestas en el cliente. Asegúrate de tener RLS (Row Level Security)
 // habilitado en Supabase para proteger tus datos.
-if (typeof window.supabase !== 'undefined') {
+
+// Verificar si la librería está cargada (el objeto window.supabase debe tener createClient)
+const sbLib = window.supabase;
+
+if (typeof sbLib !== 'undefined' && sbLib !== null && typeof sbLib.createClient === 'function') {
     try {
-        if (!supabase) {
-            // El CDN @supabase/supabase-js@2 expone el objeto en window.supabase
-            // y createClient es window.supabase.createClient
-            const { createClient } = window.supabase;
-            if (createClient) {
-                supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase inicializado correctamente desde config.js');
-            } else {
-                console.error('❌ createClient no encontrado en window.supabase');
-            }
-        }
+        // Crear cliente usando la librería
+        const client = sbLib.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Asignar el cliente a la variable global 'supabase' (sobrescribiendo la librería, lo cual es intencional para que auth.js funcione)
+        window.supabase = client;
+        
+        console.log('✅ Supabase inicializado correctamente.');
     } catch (error) {
         console.error('❌ Error al inicializar Supabase:', error);
     }
 } else {
-    console.error('❌ La librería de Supabase no se ha cargado. Verifica tu conexión a internet.');
+    // Si llegamos aquí, window.supabase no es la librería o no cargó
+    // Verificamos si ya es el cliente (por si se ejecutó dos veces)
+    if (window.supabase && window.supabase.auth) {
+        console.log('ℹ️ Supabase ya estaba inicializado.');
+    } else {
+        console.error('❌ La librería de Supabase no se ha cargado correctamente.');
+        console.log('Estado actual de window.supabase:', window.supabase);
+    }
 }
 
-// Datos iniciales (vacíos por defecto, se cargan desde Supabase)
 let empleados = [];
 let feriados = []; 
 let logoData = null; 
 let nextId = 1;
+
+// ⚠️ NOTA: Si vas a desplegar a producción, usa js/config.example.js como base
+// para crear tu config.js usando variables de entorno o manualmente.
