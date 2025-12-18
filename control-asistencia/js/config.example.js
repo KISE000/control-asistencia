@@ -20,11 +20,18 @@ let supabase = null;
 // ⚠️ ADVERTENCIA DE SEGURIDAD:
 // Las claves están expuestas en el cliente. Asegúrate de tener RLS (Row Level Security)
 // habilitado en Supabase para proteger tus datos.
-if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+if (typeof window.supabase !== 'undefined') {
     try {
         if (!supabase) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log('✅ Supabase inicializado correctamente desde config.js');
+            // El CDN @supabase/supabase-js@2 expone el objeto en window.supabase
+            // y createClient es window.supabase.createClient
+            const { createClient } = window.supabase;
+            if (createClient) {
+                supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase inicializado correctamente desde config.js');
+            } else {
+                console.error('❌ createClient no encontrado en window.supabase');
+            }
         }
     } catch (error) {
         console.error('❌ Error al inicializar Supabase:', error);

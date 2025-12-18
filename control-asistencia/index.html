@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Control de Asistencia PRO | Dashboard</title>
-    
-
 
     <!-- Favicon -->
     <link
@@ -33,6 +31,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- SheetJS con Soporte de Estilos -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- Chart.js para gráficas de estadísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/layout.css" />
@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="css/timepicker.css" />
     <link rel="stylesheet" href="css/modals.css" />
     <link rel="stylesheet" href="css/cloud_records.css" />
+    <link rel="stylesheet" href="css/charts.css" />
   </head>
   <body>
     <!-- Toast Container Removed -->
@@ -86,7 +87,6 @@
     <div class="modal-excel" id="modalLogin" style="display: none">
       <!-- Contenedor Principal Split -->
       <div class="login-split-container">
-        
         <!-- LADO IZQUIERDO: Branding y Visual -->
         <div class="login-brand-side">
           <div class="brand-content">
@@ -95,7 +95,7 @@
             </div>
             <h1>Control Asistencia <span class="text-highlight">PRO</span></h1>
             <p>Gestiona tu personal de manera eficiente, segura y moderna.</p>
-            
+
             <div class="feature-list">
               <div class="feature-item">
                 <i data-lucide="check-circle-2"></i>
@@ -119,7 +119,6 @@
         <!-- LADO DERECHO: Formularios -->
         <div class="login-form-side">
           <div class="login-form-wrapper">
-            
             <div class="login-header">
               <h2 id="authModalTitle">Iniciar Sesión</h2>
               <p class="login-subtitle">Bienvenido de nuevo</p>
@@ -186,7 +185,12 @@
                   <input type="checkbox" id="recordarSesion" />
                   <span>Recordar sesión</span>
                 </label>
-                <a href="#" id="forgotPasswordLink" onclick="mostrarRecuperarPassword()">¿Olvidaste tu contraseña?</a>
+                <a
+                  href="#"
+                  id="forgotPasswordLink"
+                  onclick="mostrarRecuperarPassword()"
+                  >¿Olvidaste tu contraseña?</a
+                >
               </div>
             </div>
 
@@ -254,7 +258,7 @@
             </div>
 
             <!-- MENSAJE DE ERROR -->
-            <div id="loginError" class="login-alert" style="display: none;">
+            <div id="loginError" class="login-alert" style="display: none">
               <i data-lucide="alert-circle"></i>
               <span id="loginErrorText">Error</span>
             </div>
@@ -262,18 +266,25 @@
             <!-- BOTONES DE ACCIÓN -->
             <div class="login-actions">
               <button class="btn-primary btn-block btn-lg" id="btnLogin">
-                <span class="btn-text-content">Iniciar Sesión <i data-lucide="arrow-right"></i></span>
+                <span class="btn-text-content"
+                  >Iniciar Sesión <i data-lucide="arrow-right"></i
+                ></span>
                 <div class="btn-loader" style="display: none"></div>
               </button>
 
-              <button class="btn-primary btn-block btn-lg" id="btnRegistro" style="display: none;">
-                <span class="btn-text-content">Crear Cuenta <i data-lucide="user-plus"></i></span>
+              <button
+                class="btn-primary btn-block btn-lg"
+                id="btnRegistro"
+                style="display: none"
+              >
+                <span class="btn-text-content"
+                  >Crear Cuenta <i data-lucide="user-plus"></i
+                ></span>
                 <div class="btn-loader" style="display: none"></div>
               </button>
             </div>
 
             <p class="copyright-text">© 2025 Control Asistencia</p>
-
           </div>
         </div>
       </div>
@@ -514,7 +525,10 @@
         style="max-width: 440px; animation: fadeInUp 0.3s ease"
       >
         <!-- Sin header rojo, todo integrado en el body -->
-        <div class="modal-excel-body" style="padding: 48px 40px; text-align: center">
+        <div
+          class="modal-excel-body"
+          style="padding: 48px 40px; text-align: center"
+        >
           <!-- Icono circular con animación sutil -->
           <div class="logout-icon-container">
             <div class="logout-icon-circle">
@@ -523,20 +537,16 @@
           </div>
 
           <!-- Título y descripción -->
-          <h3 class="logout-title">
-            ¿Cerrar sesión?
-          </h3>
+          <h3 class="logout-title">¿Cerrar sesión?</h3>
 
           <p class="logout-description">
-            Tu sesión actual se cerrará. Podrás volver a iniciar sesión en cualquier momento.
+            Tu sesión actual se cerrará. Podrás volver a iniciar sesión en
+            cualquier momento.
           </p>
 
           <!-- Botones mejorados -->
           <div class="logout-actions">
-            <button
-              class="btn-logout-cancel"
-              onclick="cerrarModalLogout()"
-            >
+            <button class="btn-logout-cancel" onclick="cerrarModalLogout()">
               Cancelar
             </button>
             <button
@@ -569,37 +579,54 @@
             <div class="brand-info">
               <h1>Control Asistencia</h1>
             </div>
-          
           </div>
         </div>
 
         <div class="topbar-actions">
-
-          
           <!-- INDICADOR DE ESTADO (Cargando...) -->
-          <div id="statusIndicator" class="status-indicator" style="display: none;">
-             <i data-lucide="loader-2" class="spin-anim"></i>
-             <span id="statusText">Procesando...</span>
+          <div
+            id="statusIndicator"
+            class="status-indicator"
+            style="display: none"
+          >
+            <i data-lucide="loader-2" class="spin-anim"></i>
+            <span id="statusText">Procesando...</span>
           </div>
 
           <!-- NOTIFICACIONES (CAMPANA) -->
-          <div class="notification-container" style="position: relative;">
-            <button class="btn-icon-circle notification-btn" onclick="toggleNotifications()" id="btnNotifications" aria-label="Notificaciones">
-              <i data-lucide="bell" style="width: 22px;"></i>
-              <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+          <div class="notification-container" style="position: relative">
+            <button
+              class="btn-icon-circle notification-btn"
+              onclick="toggleNotifications()"
+              id="btnNotifications"
+              aria-label="Notificaciones"
+            >
+              <i data-lucide="bell" style="width: 22px"></i>
+              <span
+                class="notification-badge"
+                id="notificationBadge"
+                style="display: none"
+                >0</span
+              >
             </button>
-            
+
             <!-- DROPDOWN NOTIFICACIONES -->
-            <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
-                <div class="notification-header-panel">
-                    <h3>Notificaciones</h3>
-                    <button class="btn-text-mini" onclick="limpiarNotificaciones()">Limpiar</button>
+            <div
+              class="notification-dropdown"
+              id="notificationDropdown"
+              style="display: none"
+            >
+              <div class="notification-header-panel">
+                <h3>Notificaciones</h3>
+                <button class="btn-text-mini" onclick="limpiarNotificaciones()">
+                  Limpiar
+                </button>
+              </div>
+              <div class="notification-list" id="notificationList">
+                <div class="empty-notifications">
+                  <p>No tienes notificaciones recientes</p>
                 </div>
-                <div class="notification-list" id="notificationList">
-                    <div class="empty-notifications">
-                        <p>No tienes notificaciones recientes</p>
-                    </div>
-                </div>
+              </div>
             </div>
           </div>
 
@@ -641,8 +668,6 @@
               </button>
             </div>
           </div>
-
-
         </div>
       </div>
     </nav>
@@ -1161,6 +1186,94 @@
           </div>
         </div>
 
+        <!-- SECCIÓN ESTADÍSTICAS -->
+        <div class="card main-card" id="seccionEstadisticas" style="margin-top: 32px">
+          <div class="card-header-flex">
+            <div class="header-title">
+              <div class="icon-box" style="color: #8b5cf6; background: #ede9fe">
+                <i data-lucide="bar-chart-3"></i>
+              </div>
+              <div>
+                <h3>Estadísticas de Asistencia</h3>
+                <p class="subtitle">Visualiza el resumen mensual de tu equipo</p>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="btn-text" onclick="actualizarGraficas()">
+                <i data-lucide="refresh-cw" style="width: 16px"></i>
+                <span class="desktop-only">Actualizar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filtros de gráficas -->
+          <div class="charts-filter-bar">
+            <div class="select-wrapper">
+              <select id="chartMes" onchange="actualizarGraficas()">
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-icon"></i>
+            </div>
+            <input
+              type="number"
+              id="chartAno"
+              value="2025"
+              min="2020"
+              max="2050"
+              onchange="actualizarGraficas()"
+            />
+            <button class="btn-primary" onclick="actualizarGraficas()">
+              <i data-lucide="bar-chart-3" style="width: 18px"></i>
+              Generar Gráficas
+            </button>
+          </div>
+
+          <!-- Grid de gráficas -->
+          <div class="charts-grid" style="display: none">
+            <!-- Gráfica 1: Distribución de Estados (Pastel) -->
+            <div class="chart-card">
+              <h4><i data-lucide="pie-chart"></i> Distribución de Estados</h4>
+              <div class="chart-container">
+                <canvas id="chartEstados"></canvas>
+              </div>
+            </div>
+
+            <!-- Gráfica 2: Horas por Empleado (Barras) -->
+            <div class="chart-card">
+              <h4><i data-lucide="bar-chart-2"></i> Horas por Empleado</h4>
+              <div class="chart-container">
+                <canvas id="chartHoras"></canvas>
+              </div>
+            </div>
+
+            <!-- Gráfica 3: Tendencia Diaria (Línea) -->
+            <div class="chart-card chart-card-wide">
+              <h4><i data-lucide="trending-up"></i> Tendencia de Asistencia Diaria</h4>
+              <div class="chart-container chart-container-wide">
+                <canvas id="chartTendencia"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estado vacío -->
+          <div id="chartsEmptyState" class="charts-empty">
+            <i data-lucide="bar-chart-3"></i>
+            <p>Selecciona un período y haz clic en "Generar Gráficas"</p>
+            <span>Las gráficas se generarán con los datos guardados en la nube</span>
+          </div>
+        </div>
+
         <div class="card main-card" style="margin-top: 32px">
           <div class="card-header-flex">
             <div class="header-title">
@@ -1337,6 +1450,7 @@
     <script src="js/auth.js"></script>
     <script src="js/enhanced.js"></script>
     <script src="js/timepicker.js"></script>
+    <script src="js/charts.js"></script>
     <script src="js/app.js"></script>
     <script src="js/events.js"></script>
     <script>

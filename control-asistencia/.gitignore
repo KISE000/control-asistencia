@@ -37,6 +37,7 @@ secrets.js
 # Configuración con credenciales de Supabase
 js/config.js
 
+
 # ===========================
 # Base de Datos
 # ===========================

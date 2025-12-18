@@ -1,0 +1,244 @@
+/* ========================================
+   CHARTS - Estadísticas de Asistencia
+   Estilos para la sección de gráficas Chart.js
+   ======================================== */
+
+/* Barra de filtros */
+.charts-filter-bar {
+    display: flex;
+    gap: 12px;
+    padding: 0 24px 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.charts-filter-bar .select-wrapper {
+    min-width: 140px;
+}
+
+.charts-filter-bar input[type="number"] {
+    width: 100px;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    background: var(--bg-input);
+    transition: var(--transition);
+}
+
+.charts-filter-bar input[type="number"]:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Grid de gráficas */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    padding: 0 24px 24px;
+}
+
+/* Tarjeta de gráfica individual */
+.chart-card {
+    background: var(--surface-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: var(--transition);
+    animation: fadeInUp 0.4s ease;
+}
+
+.chart-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.chart-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.chart-card h4 i {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+}
+
+/* Contenedor del canvas */
+.chart-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+/* Gráfica ancha (ocupa 2 columnas) */
+.chart-card-wide {
+    grid-column: span 2;
+}
+
+.chart-container-wide {
+    height: 220px;
+}
+
+/* Estado vacío */
+.charts-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.charts-empty i {
+    width: 56px;
+    height: 56px;
+    color: var(--border);
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.charts-empty p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.charts-empty span {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Leyendas personalizadas */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.chart-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* Loader de gráficas */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+}
+
+.chart-loading::after {
+    content: '';
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Animación de entrada */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Tooltip personalizado de Chart.js */
+.chartjs-tooltip {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--glass-shadow) !important;
+    padding: 10px 14px !important;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1024px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-card-wide {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .charts-filter-bar {
+        padding: 0 16px 16px;
+    }
+    
+    .charts-grid {
+        padding: 0 16px 16px;
+        gap: 16px;
+    }
+    
+    .chart-card {
+        padding: 16px;
+    }
+    
+    .chart-container {
+        height: 240px;
+    }
+    
+    .chart-container-wide {
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .charts-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .charts-filter-bar .select-wrapper,
+    .charts-filter-bar input[type="number"] {
+        width: 100%;
+    }
+    
+    .chart-container {
+        height: 220px;
+    }
+}

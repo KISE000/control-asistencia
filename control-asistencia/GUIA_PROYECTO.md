@@ -18,6 +18,7 @@ Esta guía proporciona una visión detallada de tu aplicación **Control de Asis
   - `Supabase JS Client`: Conexión con la nube.
   - `Lucide`: Iconos SVG modernos.
   - `jsPDF`: Generación de PDFs (funcionalidad secundaria).
+  - `Chart.js`: Gráficas interactivas de estadísticas de asistencia.
 
 ---
 
@@ -32,6 +33,8 @@ El proyecto se encuentra en la carpeta `control-asistencia`. Aquí están los co
   - `enhanced.css` / `mobile.css`: Estilos para diseño responsivo y mejoras visuales.
   - `excel-theme.css`: Estilos específicos para temas de Excel.
 - **`js/`**: Lógica de la aplicación.
+  - `config.js`: 🔒 **Credenciales de Supabase** (NO versionado, ver sección de configuración).
+  - `config.example.js`: Plantilla para crear tu `config.js` con tus credenciales.
   - `app.js`: Punto de entrada. Inicializa la app, configura fechas y maneja empleados locales.
   - `supabase.js`: Maneja **toda** la comunicación con la nube (Guardar asistencias, Cargar empleados, Historial).
   - `excel.js`: El módulo más complejo. Maneja el **Editor Modal**, cálculos de horas y la generación del archivo `.xlsx` estético.
@@ -133,9 +136,18 @@ Posibilidad de generar reportes individuales en formato PDF listos para firmar:
 
 ### Primera vez (Configuración)
 
-1. **Abrir la aplicación**: Abre `index.html` en tu navegador (o el servidor local en puerto 8080).
-2. **Crear cuenta**: Haz clic en "Crear Cuenta" y regístrate con email y contraseña.
-3. **Agregar empleados**: En el panel izquierdo, agrega los nombres de tus empleados.
+1. **Configurar credenciales de Supabase**:
+
+   - Copia `js/config.example.js` → `js/config.js`
+   - Ve a [Supabase](https://supabase.com) → Tu proyecto → Settings → API
+   - Copia tu `Project URL` y `anon public key`
+   - Pégalos en `js/config.js`
+
+   > ⚠️ **Importante**: `js/config.js` está en `.gitignore` para proteger tus credenciales.
+
+2. **Abrir la aplicación**: Abre `index.html` en tu navegador (o el servidor local en puerto 8080).
+3. **Crear cuenta**: Haz clic en "Crear Cuenta" y regístrate con email y contraseña.
+4. **Agregar empleados**: En el panel izquierdo, agrega los nombres de tus empleados.
 
 ### Uso diario
 
@@ -359,7 +371,7 @@ Si es la primera vez que usas el proyecto, necesitas configurar las políticas R
 
 ## 10. Próximos Pasos / Mejoras Futuras
 
-- [ ] Agregar reportes de estadísticas (gráficas de asistencia)
+- [x] Agregar reportes de estadísticas (gráficas de asistencia) ✅ Implementado
 - [ ] Notificaciones automáticas para ausencias
 - [x] Exportar a PDF directamente (Implementado ✅)
 - [ ] App móvil nativa
@@ -376,4 +388,4 @@ Si es la primera vez que usas el proyecto, necesitas configurar las políticas R
 ---
 
 **Última actualización**: Diciembre 2024  
-**Versión**: 2.1 (Con mejoras de UX en modal de logout y formulario de login)
+**Versión**: 2.3 (Agregado Chart.js para gráficas de estadísticas)
