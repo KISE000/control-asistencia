@@ -89,7 +89,8 @@ function showToast(msg, type = 'info', description = '') {
         timestamp: new Date()
     };
     
-    notifications.unshift(newNotif);
+    // Reemplazamos toda la lista con la nueva notificación (SOLO UNA)
+    notifications = [newNotif];
     updateNotificationBadge();
     renderNotifications();
     playNotificationSound(type);
