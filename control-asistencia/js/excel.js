@@ -797,50 +797,7 @@ function abrirTimePickerParaTabla(idx, campo, titulo) {
     }
 }
 
-/**
- * Cambia la pestaña activa del empleado
- */
-function cambiarTabEmpleado(empleadoId) {
-    // Ocultar todos los contenidos
-    document.querySelectorAll('[data-tab-content]').forEach(el => {
-        el.style.display = 'none';
-    });
-    
-    // Mostrar el contenido seleccionado
-    const content = document.getElementById('tab-content-' + empleadoId);
-    if (content) {
-        content.style.display = 'block';
-    }
-    
-    // Actualizar estilos de las pestañas
-    document.querySelectorAll('[data-tab-id]').forEach(tab => {
-        const isActive = tab.getAttribute('data-tab-id') === empleadoId;
-        tab.style.background = isActive ? 'white' : 'transparent';
-        tab.style.color = isActive ? '#1e293b' : '#64748b';
-        tab.style.fontWeight = isActive ? '600' : '500';
-        tab.style.borderBottom = isActive ? '3px solid #3b82f6' : '3px solid transparent';
-        
-        // Actualizar avatar
-        const avatar = tab.querySelector('div');
-        if (avatar) {
-            avatar.style.background = isActive ? '#3b82f6' : '#cbd5e1';
-        }
-        
-        // Actualizar badge
-        const badge = tab.querySelector('span:last-child');
-        if (badge) {
-            badge.style.background = isActive ? '#dbeafe' : '#e2e8f0';
-            badge.style.color = isActive ? '#1e40af' : '#64748b';
-        }
-        
-        // Clase para CSS hover
-        if (isActive) {
-            tab.classList.add('tab-active');
-        } else {
-            tab.classList.remove('tab-active');
-        }
-    });
-}
+// Nota: cambiarTabEmpleado está definida más abajo (línea ~1440)
 
 /**
  * Actualiza una celda específica en memoria (Mantenido)
@@ -1026,25 +983,7 @@ function actualizarCeldaExcel(idx, campo, valor) {
     }
 }
 
-/**
- * Calcula la diferencia de horas en formato decimal (Mantenido)
- */
-function calcularDiferenciaHoras(hora1, hora2) {
-    if (!hora1 || !hora2) return 0;
-
-    const [h1, m1] = hora1.split(':').map(Number);
-    const [h2, m2] = hora2.split(':').map(Number);
-
-    const entrada = h1 * 60 + m1;
-    let salida = h2 * 60 + m2;
-
-    if (salida < entrada) {
-        salida += 24 * 60;
-    }
-
-    const diff = salida - entrada;
-    return (diff / 60).toFixed(1);
-}
+// Nota: calcularDiferenciaHoras está definida abajo como alias de calcularDiferenciaHorasAMPM
 
 /**
  * Calcula diferencia de horas soportando formato 12h (AM/PM) y 24h

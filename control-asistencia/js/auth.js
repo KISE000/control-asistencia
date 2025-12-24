@@ -48,7 +48,7 @@ async function loginSupabase() {
         if (recordarSesion && recordarSesion.checked) {
             localStorage.setItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL, email);
         } else {
-            localStorage.removeItem('rememberedEmail');
+            localStorage.removeItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL);
         }
         
         // Desbloquear contenido
@@ -452,7 +452,7 @@ async function registrarSupabase() {
             
         } else if (data.session) {
             // Sesión creada automáticamente (sin confirmación de email)
-            localStorage.setItem('supabaseSession', JSON.stringify(data.session));
+            localStorage.setItem(APP_CONSTANTS.KEYS.SESSION, JSON.stringify(data.session));
             
             // Desbloquear contenido
             toggleContentLock(false);

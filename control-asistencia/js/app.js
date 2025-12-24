@@ -268,6 +268,7 @@ function toggleSeleccionarTodos() {
 
 function editarNombre(id) {
     const e = empleados.find(x => x.id === id);
+    if (!e) return;
     const n = prompt('Nuevo nombre:', e.nombre);
     if(n) { e.nombre = n; renderEmpleados(); guardarConfiguracion(); }
 }
