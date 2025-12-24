@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Sistema de Control de Asistencia",
   "scripts": {
-    "build": "node scripts/generate-config.js"
+    "build": "echo 'No build step needed'"
   },
   "keywords": [],
   "author": "",
