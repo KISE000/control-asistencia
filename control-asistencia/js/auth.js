@@ -1,51 +1,114 @@
 // === AUTENTICACIÓN SUPABASE ===
 
 /**
+ * Constantes de mensajes de error para autenticación
+ * Centralizados para fácil mantenimiento y traducción
+ */
+const AUTH_MESSAGES = {
+    ERRORS: {
+        EMPTY_FIELDS: 'Por favor completa todos los campos',
+        INVALID_EMAIL: 'El formato del email no es válido',
+        PASSWORD_SHORT: 'La contraseña debe tener al menos 6 caracteres',
+        PASSWORD_MISMATCH: 'Las contraseñas no coinciden',
+        NETWORK_ERROR: 'Error de conexión. Verifica tu internet.',
+        INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
+        EMAIL_NOT_CONFIRMED: 'Por favor confirma tu email primero',
+        EMAIL_ALREADY_REGISTERED: 'Este email ya está registrado. Intenta iniciar sesión.',
+        WEAK_PASSWORD: 'Contraseña demasiado débil. Usa al menos 6 caracteres.',
+        DATABASE_ERROR: 'Error de conexión a base de datos',
+        GENERIC_LOGIN: 'Error al iniciar sesión',
+        GENERIC_REGISTER: 'Error al crear la cuenta'
+    },
+    SUCCESS: {
+        LOGIN: '✅ Bienvenido! Sesión iniciada correctamente',
+        REGISTER: '✅ Cuenta creada e iniciada sesión!',
+        REGISTER_CONFIRM: '📧 Revisa tu email para confirmar tu cuenta',
+        LOGOUT: '👋 Sesión cerrada correctamente',
+        PASSWORD_RESET: '📧 Revisa tu correo para restablecer tu contraseña',
+        PASSWORD_RESET_SENT: '✅ Email enviado! Revisa tu bandeja de entrada.'
+    }
+};
+
+/**
+ * Valida el formato de un email
+ * @param {string} email - Email a validar
+ * @returns {boolean} True si el email es válido
+ */
+function validarEmail(email) {
+    if (!email || typeof email !== 'string') return false;
+    
+    // Regex simple pero efectivo para validación de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+}
+
+/**
+ * Obtiene un elemento por ID de forma segura (helper local)
+ * @param {string} id - ID del elemento
+ * @returns {HTMLElement|null}
+ */
+function getAuthElement(id) {
+    return document.getElementById(id);
+}
+
+/**
  * Iniciar sesión con Supabase
+ * @returns {Promise<void>}
  */
 async function loginSupabase() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
+    const emailInput = getAuthElement('loginEmail');
+    const passwordInput = getAuthElement('loginPassword');
+    
+    if (!emailInput || !passwordInput) {
+        console.error('Elementos de login no encontrados');
+        return;
+    }
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
     
     // Validaciones
     if (!email || !password) {
-        mostrarErrorLogin('Por favor completa todos los campos');
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.EMPTY_FIELDS);
+        return;
+    }
+    
+    if (!validarEmail(email)) {
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.INVALID_EMAIL);
         return;
     }
     
     if (!supabase) {
-        mostrarErrorLogin('Error: Conexión a base de datos no disponible');
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.DATABASE_ERROR);
         return;
     }
     
     // UI Loading
-    const btn = document.getElementById('btnLogin');
-    const btnTextContent = btn.querySelector('.btn-text-content');
-    const btnLoader = btn.querySelector('.btn-loader');
+    const btn = getAuthElement('btnLogin');
+    const btnTextContent = btn?.querySelector('.btn-text-content');
+    const btnLoader = btn?.querySelector('.btn-loader');
     
-    btn.disabled = true;
-    btnTextContent.style.display = 'none';
-    btnLoader.style.display = 'block';
+    if (btn) btn.disabled = true;
+    if (btnTextContent) btnTextContent.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'block';
     ocultarErrorLogin();
     
     try {
-        // Intentar login
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
             password: password
         });
         
-        if (error) {
-            throw error;
-        }
-        console.log('✅ Login exitoso:', data);
+        if (error) throw error;
         
-        // Guardar sesión en localStorage para persistencia
-        localStorage.setItem(APP_CONSTANTS.KEYS.SESSION, JSON.stringify(data.session));
+        // Guardar sesión
+        if (data.session) {
+            localStorage.setItem(APP_CONSTANTS.KEYS.SESSION, JSON.stringify(data.session));
+        }
         
         // Guardar email si "Recordar sesión" está marcado
-        const recordarSesion = document.getElementById('recordarSesion');
-        if (recordarSesion && recordarSesion.checked) {
+        const recordarSesion = getAuthElement('recordarSesion');
+        if (recordarSesion?.checked) {
             localStorage.setItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL, email);
         } else {
             localStorage.removeItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL);
@@ -54,60 +117,78 @@ async function loginSupabase() {
         // Desbloquear contenido
         toggleContentLock(false);
         
-        // Actualizar UI con datos del usuario
+        // Actualizar UI
         actualizarUIUsuario(data.user);
         
         // Cerrar modal
         cerrarModalLogin();
         
         // Mostrar mensaje de éxito
-        showToast('✅ Bienvenido! Sesión iniciada correctamente', 'success');
+        showToast(AUTH_MESSAGES.SUCCESS.LOGIN, 'success');
         
-        // Limpiar contraseña (pero no email si está marcado "recordar")
-        document.getElementById('loginPassword').value = '';
-        if (!recordarSesion || !recordarSesion.checked) {
-            document.getElementById('loginEmail').value = '';
+        // Limpiar contraseña
+        passwordInput.value = '';
+        if (!recordarSesion?.checked) {
+            emailInput.value = '';
         }
         
     } catch (error) {
         console.error('❌ Error en login:', error);
         
-        // Mensajes de error personalizados
-        let mensaje = 'Error al iniciar sesión';
-        
-        if (error.message.includes('Invalid login credentials')) {
-            mensaje = 'Email o contraseña incorrectos';
-        } else if (error.message.includes('Email not confirmed')) {
-            mensaje = 'Por favor confirma tu email primero';
-        } else if (error.message.includes('network') || error.message.includes('Failed to fetch')) {
-            mensaje = 'Error de conexión. Verifica tu internet.';
-        } else if (error.message) {
-            mensaje = error.message;
-        }
-        
+        const mensaje = mapearErrorAuth(error, 'login');
         mostrarErrorLogin(mensaje);
         
     } finally {
-        // Restaurar botón
-        btn.disabled = false;
-        btnTextContent.style.display = 'flex';
-        btnLoader.style.display = 'none';
+        if (btn) btn.disabled = false;
+        if (btnTextContent) btnTextContent.style.display = 'flex';
+        if (btnLoader) btnLoader.style.display = 'none';
     }
 }
 
 /**
+ * Mapea errores de Supabase a mensajes amigables
+ * @param {Error} error - Error de Supabase
+ * @param {string} context - Contexto: 'login' o 'register'
+ * @returns {string} Mensaje de error amigable
+ */
+function mapearErrorAuth(error, context = 'login') {
+    const message = error.message || '';
+    
+    if (message.includes('Invalid login credentials')) {
+        return AUTH_MESSAGES.ERRORS.INVALID_CREDENTIALS;
+    }
+    if (message.includes('Email not confirmed')) {
+        return AUTH_MESSAGES.ERRORS.EMAIL_NOT_CONFIRMED;
+    }
+    if (message.includes('already registered')) {
+        return AUTH_MESSAGES.ERRORS.EMAIL_ALREADY_REGISTERED;
+    }
+    if (message.includes('Invalid email')) {
+        return AUTH_MESSAGES.ERRORS.INVALID_EMAIL;
+    }
+    if (message.includes('Password should be')) {
+        return AUTH_MESSAGES.ERRORS.WEAK_PASSWORD;
+    }
+    if (message.includes('network') || message.includes('Failed to fetch')) {
+        return AUTH_MESSAGES.ERRORS.NETWORK_ERROR;
+    }
+    
+    return context === 'login' 
+        ? AUTH_MESSAGES.ERRORS.GENERIC_LOGIN 
+        : AUTH_MESSAGES.ERRORS.GENERIC_REGISTER;
+}
+
+/**
  * Verificar sesión activa
+ * @returns {Promise<boolean>} True si hay sesión activa
  */
 async function verificarSesion() {
     if (!supabase) return false;
     
     try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
         if (error) throw error;
-        
         return session !== null;
-        
     } catch (error) {
         console.error('Error verificando sesión:', error);
         return false;
@@ -116,69 +197,73 @@ async function verificarSesion() {
 
 /**
  * Abrir modal de login
+ * @returns {void}
  */
 function abrirModalLogin() {
-    const modal = document.getElementById('modalLogin');
-    if (modal) {
-        modal.style.display = 'flex';
-        
-        // Cargar email recordado si existe
-        const rememberedEmail = localStorage.getItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL);
-        const emailInput = document.getElementById('loginEmail');
-        const recordarCheckbox = document.getElementById('recordarSesion');
-        
-        if (rememberedEmail && emailInput) {
-            emailInput.value = rememberedEmail;
-            if (recordarCheckbox) {
-                recordarCheckbox.checked = true;
-            }
-            // Focus en contraseña si hay email guardado
-            setTimeout(() => {
-                document.getElementById('loginPassword')?.focus();
-            }, 100);
-        } else {
-            // Focus en email si no hay nada guardado
-            setTimeout(() => {
-                emailInput?.focus();
-            }, 100);
+    const modal = getAuthElement('modalLogin');
+    if (!modal) return;
+    
+    modal.style.display = 'flex';
+    
+    // Cargar email recordado si existe
+    const rememberedEmail = localStorage.getItem(APP_CONSTANTS.KEYS.REMEMBERED_EMAIL);
+    const emailInput = getAuthElement('loginEmail');
+    const recordarCheckbox = getAuthElement('recordarSesion');
+    
+    if (rememberedEmail && emailInput) {
+        emailInput.value = rememberedEmail;
+        if (recordarCheckbox) {
+            recordarCheckbox.checked = true;
         }
-        
-        if (window.lucide) lucide.createIcons();
+        // Focus en contraseña si hay email guardado
+        setTimeout(() => {
+            getAuthElement('loginPassword')?.focus();
+        }, 100);
+    } else {
+        // Focus en email si no hay nada guardado
+        setTimeout(() => {
+            emailInput?.focus();
+        }, 100);
     }
+    
+    if (window.lucide) lucide.createIcons();
 }
 
 /**
  * Mostrar modal de recuperar contraseña
+ * @returns {void}
  */
 function mostrarRecuperarPassword() {
-    const modal = document.getElementById('modalRecuperarPassword');
-    if (modal) {
-        // Limpiar campos previos
-        document.getElementById('recuperarEmail').value = '';
-        ocultarInfoRecuperar();
-        
-        // Pre-llenar con el email del login si existe
-        const emailLogin = document.getElementById('loginEmail').value;
-        if (emailLogin) {
-            document.getElementById('recuperarEmail').value = emailLogin;
-        }
-        
-        modal.style.display = 'flex';
-        
-        // Focus en el input
-        setTimeout(() => {
-            document.getElementById('recuperarEmail')?.focus();
-        }, 100);
-        
-        if (window.lucide) lucide.createIcons();
+    const modal = getAuthElement('modalRecuperarPassword');
+    if (!modal) return;
+    
+    // Limpiar campos
+    const emailRecuperar = getAuthElement('recuperarEmail');
+    if (emailRecuperar) emailRecuperar.value = '';
+    ocultarInfoRecuperar();
+    
+    // Pre-llenar con email del login si existe
+    const emailLogin = getAuthElement('loginEmail')?.value;
+    if (emailLogin && emailRecuperar) {
+        emailRecuperar.value = emailLogin;
     }
+    
+    modal.style.display = 'flex';
+    
+    // Focus en el input
+    setTimeout(() => {
+        emailRecuperar?.focus();
+    }, 100);
+    
+    if (window.lucide) lucide.createIcons();
 }
 
 /**
  * Cerrar modal de recuperar contraseña
+ * @returns {void}
  */
 function cerrarRecuperarPassword() {
-    const modal = document.getElementById('modalRecuperarPassword');
+    const modal = getAuthElement('modalRecuperarPassword');
     if (modal) {
         modal.style.display = 'none';
         ocultarInfoRecuperar();
@@ -187,9 +272,13 @@ function cerrarRecuperarPassword() {
 
 /**
  * Enviar email de recuperación de contraseña
+ * @returns {Promise<void>}
  */
 async function enviarRecuperacionPassword() {
-    const email = document.getElementById('recuperarEmail').value.trim();
+    const emailInput = getAuthElement('recuperarEmail');
+    if (!emailInput) return;
+    
+    const email = emailInput.value.trim();
     
     // Validaciones
     if (!email) {
@@ -197,24 +286,24 @@ async function enviarRecuperacionPassword() {
         return;
     }
     
-    if (!email.includes('@')) {
-        mostrarInfoRecuperar('Correo electrónico inválido', 'error');
+    if (!validarEmail(email)) {
+        mostrarInfoRecuperar(AUTH_MESSAGES.ERRORS.INVALID_EMAIL, 'error');
         return;
     }
     
     if (!supabase) {
-        mostrarInfoRecuperar('Error: Conexión no disponible', 'error');
+        mostrarInfoRecuperar(AUTH_MESSAGES.ERRORS.DATABASE_ERROR, 'error');
         return;
     }
     
     // UI Loading
-    const btn = document.getElementById('btnEnviarRecuperacion');
-    const btnTextContent = btn.querySelector('.btn-text-content');
-    const btnLoader = btn.querySelector('.btn-loader');
+    const btn = getAuthElement('btnEnviarRecuperacion');
+    const btnTextContent = btn?.querySelector('.btn-text-content');
+    const btnLoader = btn?.querySelector('.btn-loader');
     
-    btn.disabled = true;
-    btnTextContent.style.display = 'none';
-    btnLoader.style.display = 'block';
+    if (btn) btn.disabled = true;
+    if (btnTextContent) btnTextContent.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'block';
     ocultarInfoRecuperar();
     
     try {
@@ -224,58 +313,61 @@ async function enviarRecuperacionPassword() {
         
         if (error) throw error;
         
-        mostrarInfoRecuperar('✅ Email enviado! Revisa tu bandeja de entrada.', 'success');
+        mostrarInfoRecuperar(AUTH_MESSAGES.SUCCESS.PASSWORD_RESET_SENT, 'success');
         
         // Cerrar modal después de 3 segundos
         setTimeout(() => {
             cerrarRecuperarPassword();
-            showToast('📧 Revisa tu correo para restablecer tu contraseña', 'success');
+            showToast(AUTH_MESSAGES.SUCCESS.PASSWORD_RESET, 'success');
         }, 3000);
         
     } catch (error) {
         console.error('Error recuperando contraseña:', error);
         mostrarInfoRecuperar('Error al enviar el correo. Intenta nuevamente.', 'error');
     } finally {
-        // Restaurar botón
-        btn.disabled = false;
-        btnTextContent.style.display = 'flex';
-        btnLoader.style.display = 'none';
+        if (btn) btn.disabled = false;
+        if (btnTextContent) btnTextContent.style.display = 'flex';
+        if (btnLoader) btnLoader.style.display = 'none';
     }
 }
 
 /**
  * Mostrar mensaje en modal de recuperar
+ * @param {string} mensaje - Mensaje a mostrar
+ * @param {string} [tipo='error'] - Tipo: 'error' o 'success'
+ * @returns {void}
  */
 function mostrarInfoRecuperar(mensaje, tipo = 'error') {
-    const infoDiv = document.getElementById('recuperarInfo');
-    const infoText = document.getElementById('recuperarInfoText');
-    const infoIcon = document.getElementById('recuperarInfoIcon');
+    const infoDiv = getAuthElement('recuperarInfo');
+    const infoText = getAuthElement('recuperarInfoText');
+    const infoIcon = getAuthElement('recuperarInfoIcon');
     
-    if (infoDiv && infoText && infoIcon) {
-        infoText.textContent = mensaje;
-        
-        if (tipo === 'success') {
-            infoDiv.style.background = '#ecfdf5';
-            infoDiv.style.border = '1px solid #a7f3d0';
-            infoDiv.style.color = '#065f46';
-            infoIcon.setAttribute('data-lucide', 'check-circle');
-        } else {
-            infoDiv.style.background = '#fef2f2';
-            infoDiv.style.border = '1px solid #fecaca';
-            infoDiv.style.color = '#dc2626';
-            infoIcon.setAttribute('data-lucide', 'alert-circle');
-        }
-        
-        infoDiv.style.display = 'flex';
-        if (window.lucide) lucide.createIcons();
+    if (!infoDiv || !infoText || !infoIcon) return;
+    
+    infoText.textContent = mensaje;
+    
+    if (tipo === 'success') {
+        infoDiv.style.background = '#ecfdf5';
+        infoDiv.style.border = '1px solid #a7f3d0';
+        infoDiv.style.color = '#065f46';
+        infoIcon.setAttribute('data-lucide', 'check-circle');
+    } else {
+        infoDiv.style.background = '#fef2f2';
+        infoDiv.style.border = '1px solid #fecaca';
+        infoDiv.style.color = '#dc2626';
+        infoIcon.setAttribute('data-lucide', 'alert-circle');
     }
+    
+    infoDiv.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
 }
 
 /**
  * Ocultar mensaje en modal de recuperar
+ * @returns {void}
  */
 function ocultarInfoRecuperar() {
-    const infoDiv = document.getElementById('recuperarInfo');
+    const infoDiv = getAuthElement('recuperarInfo');
     if (infoDiv) {
         infoDiv.style.display = 'none';
     }
@@ -283,9 +375,10 @@ function ocultarInfoRecuperar() {
 
 /**
  * Cerrar modal de login
+ * @returns {void}
  */
 function cerrarModalLogin() {
-    const modal = document.getElementById('modalLogin');
+    const modal = getAuthElement('modalLogin');
     if (modal) {
         modal.style.display = 'none';
         ocultarErrorLogin();
@@ -293,83 +386,89 @@ function cerrarModalLogin() {
 }
 
 /**
- * Toggle visibilidad de contraseña (versión mejorada)
+ * Toggle visibilidad de contraseña
+ * @param {string} inputId - ID del input de contraseña
+ * @param {string} iconId - ID del icono
+ * @returns {void}
  */
 function togglePasswordVisibility(inputId, iconId) {
-    const passwordInput = document.getElementById(inputId);
-    const toggleIcon = document.getElementById(iconId);
+    const passwordInput = getAuthElement(inputId);
+    const toggleIcon = getAuthElement(iconId);
     
-    if (passwordInput && toggleIcon) {
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            toggleIcon.setAttribute('data-lucide', 'eye-off');
-        } else {
-            passwordInput.type = 'password';
-            toggleIcon.setAttribute('data-lucide', 'eye');
-        }
-        
-        if (window.lucide) lucide.createIcons();
-    }
+    if (!passwordInput || !toggleIcon) return;
+    
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    toggleIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+    
+    if (window.lucide) lucide.createIcons();
 }
 
 /**
  * Cambiar entre tabs de Login y Registro
+ * @param {string} modo - 'login' o 'registro'
+ * @returns {void}
  */
 function cambiarTabAuth(modo) {
-    const tabLogin = document.getElementById('tabLogin');
-    const tabRegistro = document.getElementById('tabRegistro');
-    const formLogin = document.getElementById('formLogin');
-    const formRegistro = document.getElementById('formRegistro');
-    const btnLogin = document.getElementById('btnLogin');
-    const btnRegistro = document.getElementById('btnRegistro');
-    const authModalTitle = document.getElementById('authModalTitle');
+    const elements = {
+        tabLogin: getAuthElement('tabLogin'),
+        tabRegistro: getAuthElement('tabRegistro'),
+        formLogin: getAuthElement('formLogin'),
+        formRegistro: getAuthElement('formRegistro'),
+        btnLogin: getAuthElement('btnLogin'),
+        btnRegistro: getAuthElement('btnRegistro'),
+        title: getAuthElement('authModalTitle')
+    };
     
-    // Ocultar error
+    // Verificar elementos necesarios
+    if (!elements.tabLogin || !elements.formLogin) return;
+    
     ocultarErrorLogin();
     
+    // Estilos para tabs
+    const activeStyle = {
+        background: 'white',
+        color: 'var(--primary)',
+        fontWeight: '600',
+        borderBottom: '3px solid var(--primary)'
+    };
+    
+    const inactiveStyle = {
+        background: 'transparent',
+        color: 'var(--text-muted)',
+        fontWeight: '500',
+        borderBottom: '3px solid transparent'
+    };
+    
+    /**
+     * Aplica estilos a un tab
+     * @param {HTMLElement} tab - Elemento tab
+     * @param {Object} style - Estilos a aplicar
+     */
+    const applyStyle = (tab, style) => {
+        if (!tab) return;
+        Object.assign(tab.style, style);
+    };
+    
     if (modo === 'login') {
-        // Activar tab Login
-        tabLogin.style.background = 'white';
-        tabLogin.style.color = 'var(--primary)';
-        tabLogin.style.fontWeight = '600';
-        tabLogin.style.borderBottom = '3px solid var(--primary)';
+        applyStyle(elements.tabLogin, activeStyle);
+        applyStyle(elements.tabRegistro, inactiveStyle);
         
-        // Desactivar tab Registro
-        tabRegistro.style.background = 'transparent';
-        tabRegistro.style.color = 'var(--text-muted)';
-        tabRegistro.style.fontWeight = '500';
-        tabRegistro.style.borderBottom = '3px solid transparent';
-        
-        // Mostrar formulario Login
-        formLogin.style.display = 'block';
-        formRegistro.style.display = 'none';
-        btnLogin.style.display = 'block';
-        btnRegistro.style.display = 'none';
-        
-        // Cambiar título
-        authModalTitle.textContent = 'Iniciar Sesión';
+        if (elements.formLogin) elements.formLogin.style.display = 'block';
+        if (elements.formRegistro) elements.formRegistro.style.display = 'none';
+        if (elements.btnLogin) elements.btnLogin.style.display = 'block';
+        if (elements.btnRegistro) elements.btnRegistro.style.display = 'none';
+        if (elements.title) elements.title.textContent = 'Iniciar Sesión';
         
     } else if (modo === 'registro') {
-        // Desactivar tab Login
-        tabLogin.style.background = 'transparent';
-        tabLogin.style.color = 'var(--text-muted)';
-        tabLogin.style.fontWeight = '500';
-        tabLogin.style.borderBottom = '3px solid transparent';
+        applyStyle(elements.tabLogin, inactiveStyle);
+        applyStyle(elements.tabRegistro, activeStyle);
         
-        // Activar tab Registro
-        tabRegistro.style.background = 'white';
-        tabRegistro.style.color = 'var(--primary)';
-        tabRegistro.style.fontWeight = '600';
-        tabRegistro.style.borderBottom = '3px solid var(--primary)';
-        
-        // Mostrar formulario Registro
-        formLogin.style.display = 'none';
-        formRegistro.style.display = 'block';
-        btnLogin.style.display = 'none';
-        btnRegistro.style.display = 'block';
-        
-        // Cambiar título
-        authModalTitle.textContent = 'Crear Cuenta';
+        if (elements.formLogin) elements.formLogin.style.display = 'none';
+        if (elements.formRegistro) elements.formRegistro.style.display = 'block';
+        if (elements.btnLogin) elements.btnLogin.style.display = 'none';
+        if (elements.btnRegistro) elements.btnRegistro.style.display = 'block';
+        if (elements.title) elements.title.textContent = 'Crear Cuenta';
     }
     
     if (window.lucide) lucide.createIcons();
@@ -377,46 +476,61 @@ function cambiarTabAuth(modo) {
 
 /**
  * Registrar nuevo usuario en Supabase
+ * @returns {Promise<void>}
  */
 async function registrarSupabase() {
-    const nombre = document.getElementById('registroNombre').value.trim();
-    const email = document.getElementById('registroEmail').value.trim();
-    const password = document.getElementById('registroPassword').value;
-    const passwordConfirm = document.getElementById('registroPasswordConfirm').value;
+    const nombreInput = getAuthElement('registroNombre');
+    const emailInput = getAuthElement('registroEmail');
+    const passwordInput = getAuthElement('registroPassword');
+    const passwordConfirmInput = getAuthElement('registroPasswordConfirm');
+    
+    if (!nombreInput || !emailInput || !passwordInput || !passwordConfirmInput) {
+        console.error('Elementos de registro no encontrados');
+        return;
+    }
+    
+    const nombre = nombreInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const passwordConfirm = passwordConfirmInput.value;
     
     // Validaciones
     if (!nombre || !email || !password || !passwordConfirm) {
-        mostrarErrorLogin('Por favor completa todos los campos');
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.EMPTY_FIELDS);
+        return;
+    }
+    
+    if (!validarEmail(email)) {
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.INVALID_EMAIL);
         return;
     }
     
     if (password.length < 6) {
-        mostrarErrorLogin('La contraseña debe tener al menos 6 caracteres');
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.PASSWORD_SHORT);
         return;
     }
     
     if (password !== passwordConfirm) {
-        mostrarErrorLogin('Las contraseñas no coinciden');
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.PASSWORD_MISMATCH);
         return;
     }
     
     if (!supabase) {
-        mostrarErrorLogin('Error: Conexión a base de datos no disponible');
+        mostrarErrorLogin(AUTH_MESSAGES.ERRORS.DATABASE_ERROR);
         return;
     }
     
     // UI Loading
-    const btn = document.getElementById('btnRegistro');
-    const btnTextContent = btn.querySelector('.btn-text-content');
-    const btnLoader = btn.querySelector('.btn-loader');
+    const btn = getAuthElement('btnRegistro');
+    const btnTextContent = btn?.querySelector('.btn-text-content');
+    const btnLoader = btn?.querySelector('.btn-loader');
     
-    btn.disabled = true;
-    btnTextContent.style.display = 'none';
-    btnLoader.style.display = 'block';
+    if (btn) btn.disabled = true;
+    if (btnTextContent) btnTextContent.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'block';
     ocultarErrorLogin();
     
     try {
-        // Intentar registro
         const { data, error } = await supabase.auth.signUp({
             email: email,
             password: password,
@@ -427,88 +541,59 @@ async function registrarSupabase() {
             }
         });
         
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
         
-        console.log('✅ Registro exitoso:', data);
+        // Limpiar campos
+        const limpiarCampos = () => {
+            nombreInput.value = '';
+            emailInput.value = '';
+            passwordInput.value = '';
+            passwordConfirmInput.value = '';
+        };
         
         // Verificar si requiere confirmación de email
         if (data.user && !data.session) {
-            // Requiere confirmación de email
-            showToast('📧 Revisa tu email para confirmar tu cuenta', 'success');
+            showToast(AUTH_MESSAGES.SUCCESS.REGISTER_CONFIRM, 'success');
+            limpiarCampos();
             
-            // Limpiar campos
-            document.getElementById('registroNombre').value = '';
-            document.getElementById('registroEmail').value = '';
-            document.getElementById('registroPassword').value = '';
-            document.getElementById('registroPasswordConfirm').value = '';
-            
-            // Cambiar a tab de login
             setTimeout(() => {
                 cambiarTabAuth('login');
                 mostrarErrorLogin('✅ Cuenta creada. Revisa tu email para confirmarla.');
             }, 1500);
             
         } else if (data.session) {
-            // Sesión creada automáticamente (sin confirmación de email)
             localStorage.setItem(APP_CONSTANTS.KEYS.SESSION, JSON.stringify(data.session));
-            
-            // Desbloquear contenido
             toggleContentLock(false);
-            
-            // Actualizar UI
             actualizarUIUsuario(data.user);
-            
-            // Cerrar modal
             cerrarModalLogin();
-            
-            showToast('✅ Cuenta creada e iniciada sesión!', 'success');
-            
-            // Limpiar campos
-            document.getElementById('registroNombre').value = '';
-            document.getElementById('registroEmail').value = '';
-            document.getElementById('registroPassword').value = '';
-            document.getElementById('registroPasswordConfirm').value = '';
+            showToast(AUTH_MESSAGES.SUCCESS.REGISTER, 'success');
+            limpiarCampos();
         }
         
     } catch (error) {
         console.error('❌ Error en registro:', error);
         
-        // Mensajes de error personalizados
-        let mensaje = 'Error al crear la cuenta';
-        
-        if (error.message.includes('already registered')) {
-            mensaje = 'Este email ya está registrado. Intenta iniciar sesión.';
-        } else if (error.message.includes('Invalid email')) {
-            mensaje = 'Email inválido';
-        } else if (error.message.includes('Password should be')) {
-            mensaje = 'Contraseña demasiado débil. Usa al menos 6 caracteres.';
-        } else if (error.message.includes('network') || error.message.includes('Failed to fetch')) {
-            mensaje = 'Error de conexión. Verifica tu internet.';
-        } else if (error.message) {
-            mensaje = error.message;
-        }
-        
+        const mensaje = mapearErrorAuth(error, 'register');
         mostrarErrorLogin(mensaje);
         
     } finally {
-        // Restaurar botón
-        btn.disabled = false;
-        btnTextContent.style.display = 'flex';
-        btnLoader.style.display = 'none';
+        if (btn) btn.disabled = false;
+        if (btnTextContent) btnTextContent.style.display = 'flex';
+        if (btnLoader) btnLoader.style.display = 'none';
     }
 }
 
 /**
  * Mostrar error en el modal de login
+ * @param {string} mensaje - Mensaje de error
+ * @returns {void}
  */
 function mostrarErrorLogin(mensaje) {
-    const errorDiv = document.getElementById('loginError');
-    const errorText = document.getElementById('loginErrorText');
+    const errorDiv = getAuthElement('loginError');
+    const errorText = getAuthElement('loginErrorText');
     
     if (errorDiv && errorText) {
-        errorText.textContent = mensaje;
+        errorText.textContent = mensaje || 'Error desconocido';
         errorDiv.style.display = 'flex';
         if (window.lucide) lucide.createIcons();
     }
@@ -516,9 +601,10 @@ function mostrarErrorLogin(mensaje) {
 
 /**
  * Ocultar error del modal de login
+ * @returns {void}
  */
 function ocultarErrorLogin() {
-    const errorDiv = document.getElementById('loginError');
+    const errorDiv = getAuthElement('loginError');
     if (errorDiv) {
         errorDiv.style.display = 'none';
     }
@@ -526,38 +612,38 @@ function ocultarErrorLogin() {
 
 /**
  * Configurar listeners para el menú de usuario
+ * @returns {void}
  */
 function setupUserMenuListeners() {
-    const btn = document.getElementById('btnUserMenu');
-    const dropdown = document.getElementById('userDropdown');
+    const btn = getAuthElement('btnUserMenu');
+    const dropdown = getAuthElement('userDropdown');
 
-    if (btn && dropdown) {
-        // Limpiar listeners anteriores para evitar duplicados si se llama múltiples veces (aunque idealmente solo una)
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        newBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isVisible = dropdown.style.display === 'block';
-            dropdown.style.display = isVisible ? 'none' : 'block';
-            if (window.lucide) lucide.createIcons();
-        });
+    if (!btn || !dropdown) return;
+    
+    // Clonar para remover listeners anteriores
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    
+    newBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+        if (window.lucide) lucide.createIcons();
+    });
 
-        // Listener global para cerrar al hacer clic fuera
-        // Nota: Agregamos este listener solo una vez al documento
-        if (!window.userMenuClickOutsideAttached) {
-            document.addEventListener('click', (e) => {
-                const d = document.getElementById('userDropdown');
-                const b = document.getElementById('btnUserMenu');
-                if (d && d.style.display === 'block') {
-                     // Si el clic no fue en el dropdown ni en el botón (el botón ya maneja su propio stopPropagation, pero por seguridad)
-                     if (!d.contains(e.target) && (!b || !b.contains(e.target))) {
-                         d.style.display = 'none';
-                     }
+    // Listener global para cerrar al hacer clic fuera (solo una vez)
+    if (!window.userMenuClickOutsideAttached) {
+        document.addEventListener('click', (e) => {
+            const d = getAuthElement('userDropdown');
+            const b = getAuthElement('btnUserMenu');
+            
+            if (d && d.style.display === 'block') {
+                if (!d.contains(e.target) && (!b || !b.contains(e.target))) {
+                    d.style.display = 'none';
                 }
-            });
-            window.userMenuClickOutsideAttached = true;
-        }
+            }
+        });
+        window.userMenuClickOutsideAttached = true;
     }
 }
 
@@ -570,68 +656,65 @@ if (document.readyState === 'loading') {
 
 /**
  * Actualizar UI con información del usuario
+ * @param {Object} userData - Datos del usuario de Supabase
+ * @returns {void}
  */
 function actualizarUIUsuario(userData) {
-    const userNameDisplay = document.getElementById('userNameDisplay');
-    const userEmailDisplay = document.getElementById('userEmailDisplay');
+    if (!userData || !userData.email) return;
     
-    if (userData && userData.email) {
-        const email = userData.email;
-        const nombreCorto = email.split('@')[0];
-        
-        if (userNameDisplay) {
-            userNameDisplay.textContent = nombreCorto;
-        }
-        
-        if (userEmailDisplay) {
-            userEmailDisplay.textContent = email;
-        }
-        
-        console.log('✅ UI actualizada para:', email);
-    }
+    const email = userData.email;
+    const nombreCorto = email.split('@')[0];
+    
+    const nameDisplay = getAuthElement('userNameDisplay');
+    const emailDisplay = getAuthElement('userEmailDisplay');
+    
+    if (nameDisplay) nameDisplay.textContent = nombreCorto;
+    if (emailDisplay) emailDisplay.textContent = email;
 }
 
 /**
  * Bloquear/Desbloquear contenido de la aplicación
+ * @param {boolean} locked - True para bloquear, false para desbloquear
+ * @returns {void}
  */
 function toggleContentLock(locked) {
     const dashboardContainer = document.querySelector('.dashboard-container');
     const topbar = document.querySelector('.topbar');
-    const body = document.body;
     
-    if (locked) {
-        if (dashboardContainer) dashboardContainer.classList.add('content-locked');
-        if (topbar) topbar.classList.add('content-locked');
-        body.classList.add('login-mode');
-    } else {
-        if (dashboardContainer) dashboardContainer.classList.remove('content-locked');
-        if (topbar) topbar.classList.remove('content-locked');
-        body.classList.remove('login-mode');
-    }
+    const toggleClass = (element, className, add) => {
+        if (element) {
+            add ? element.classList.add(className) : element.classList.remove(className);
+        }
+    };
+    
+    toggleClass(dashboardContainer, 'content-locked', locked);
+    toggleClass(topbar, 'content-locked', locked);
+    toggleClass(document.body, 'login-mode', locked);
 }
 
 /**
  * Mostrar modal de confirmación de cierre de sesión
+ * @returns {void}
  */
 function logoutSupabase() {
-    const modal = document.getElementById('modalConfirmarLogout');
-    if (modal) {
-        // Cerrar dropdown de usuario primero
-        const dropdown = document.getElementById('userDropdown');
-        if (dropdown) dropdown.style.display = 'none';
-        
-        // Mostrar modal
-        modal.style.display = 'flex';
-        
-        if (window.lucide) lucide.createIcons();
-    }
+    const modal = getAuthElement('modalConfirmarLogout');
+    if (!modal) return;
+    
+    // Cerrar dropdown de usuario primero
+    const dropdown = getAuthElement('userDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    
+    modal.style.display = 'flex';
+    
+    if (window.lucide) lucide.createIcons();
 }
 
 /**
  * Cerrar modal de confirmación de logout
+ * @returns {void}
  */
 function cerrarModalLogout() {
-    const modal = document.getElementById('modalConfirmarLogout');
+    const modal = getAuthElement('modalConfirmarLogout');
     if (modal) {
         modal.style.display = 'none';
     }
@@ -639,20 +722,19 @@ function cerrarModalLogout() {
 
 /**
  * Confirmar y ejecutar cierre de sesión
+ * @returns {Promise<void>}
  */
 async function confirmarLogout() {
     if (!supabase) return;
     
-    // Cerrar modal
     cerrarModalLogout();
     
     try {
         const { error } = await supabase.auth.signOut();
-        
         if (error) throw error;
         
         localStorage.removeItem('supabaseSession');
-        showToast('👋 Sesión cerrada correctamente', 'success');
+        showToast(AUTH_MESSAGES.SUCCESS.LOGOUT, 'success');
         
         // Bloquear contenido y mostrar login
         toggleContentLock(true);
@@ -668,6 +750,7 @@ async function confirmarLogout() {
 
 /**
  * Verificar y configurar autenticación al cargar
+ * @returns {Promise<void>}
  */
 async function inicializarAutenticacion() {
     if (!supabase) {
@@ -678,24 +761,15 @@ async function inicializarAutenticacion() {
     }
     
     try {
-        // Intentar obtener la sesión actual
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
         
         if (session && session.user) {
-            // HAY SESIÓN: Desbloquear y actualizar UI
-            console.log('✅ Sesión activa encontrada:', session.user.email);
             toggleContentLock(false);
             actualizarUIUsuario(session.user);
-            
-            // Asegurarnos de que el modal de login esté cerrado
             cerrarModalLogin();
         } else {
-            // NO HAY SESIÓN: Bloquear y mostrar login
-            console.log('⚠️ No hay sesión activa');
             toggleContentLock(true);
             abrirModalLogin();
         }
@@ -711,6 +785,5 @@ async function inicializarAutenticacion() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', inicializarAutenticacion);
 } else {
-    // DOM ya está listo
     inicializarAutenticacion();
 }

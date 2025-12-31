@@ -1,5 +1,14 @@
 // === LÓGICA DE NUBE (SUPABASE) ===
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 async function subirArchivoSupabase() {
     if (!supabase) return showToast('Error de conexión', 'error');
 
@@ -9,7 +18,7 @@ async function subirArchivoSupabase() {
     const btnText = btn.querySelector('.btn-text-content');
     const btnLoader = btn.querySelector('.btn-loader');
 
-    const file = fileInput.files[0];
+    const file = (fileInput.files && fileInput.files[0]) || fileInput._droppedFile;
 
     if (!file) return showToast('Por favor selecciona un archivo', 'warning');
     if (!nombreManual) return showToast('Escribe un nombre para el archivo', 'warning');
@@ -103,6 +112,7 @@ async function cargarHistorial() {
             const fecha = new Date(item.created_at);
             const tiempo = timeAgo(fecha);
             const pathStorage = item.url_archivo.split('/').pop();
+            const nombreArchivo = escapeHtml(item.nombre_archivo);
             
             const isPdf = item.url_archivo.toLowerCase().includes('.pdf');
             const iconClass = isPdf ? 'icon-pdf' : 'icon-img';
@@ -115,7 +125,7 @@ async function cargarHistorial() {
                         <i data-lucide="${iconName}"></i>
                     </div>
                     <div class="file-details">
-                        <span class="file-name" title="${item.nombre_archivo}">${item.nombre_archivo}</span>
+                        <span class="file-name" title="${nombreArchivo}">${nombreArchivo}</span>
                         <span class="file-meta">${tiempo} • ${item.periodo}</span>
                     </div>
                 </div>
@@ -145,7 +155,7 @@ async function borrarArchivo(id, pathStorage) {
         const { error: stErr } = await supabase.storage.from('nominas').remove([pathStorage]);
         if (stErr) console.warn("Storage warning:", stErr);
 
-        const { error: dbErr } = await supabase.from('historial_nominas').delete().eq('id', id);
+        const { error: dbErr } = await supabase.from(APP_CONSTANTS.TABLES.HISTORIAL).delete().eq('id', id);
         if (dbErr) throw dbErr;
 
         showToast('Archivo eliminado correctamente', 'success');
@@ -381,11 +391,12 @@ function renderTablaRegistros(registros) {
         
         const badge = badges[estado] || { icon: 'circle' };
         const badgeClass = getBadgeClass(estado);
+        const estadoSeguro = escapeHtml(estado || '');
         
         return `
             <span class="estado-badge-modern ${badgeClass}">
                 <i data-lucide="${badge.icon}"></i>
-                ${estado}
+                ${estadoSeguro}
             </span>
         `;
     };
@@ -411,17 +422,21 @@ function renderTablaRegistros(registros) {
         const fecha = new Date(reg.fecha + 'T00:00:00');
         const fechaFormateada = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
         const horasExtraColor = reg.horas_extra > 0 ? '#ea580c' : '#94a3b8';
+        const empleadoNombre = escapeHtml(reg.empleado_nombre || '');
+        const observaciones = escapeHtml(reg.observaciones || '');
+        const horaEntrada = escapeHtml(reg.hora_entrada || '--:--');
+        const horaSalida = escapeHtml(reg.hora_salida || '--:--');
         
         html += `
             <tr class="records-table-row" style="animation-delay: ${idx * 30}ms;">
-                <td class="records-table-cell cell-employee">${reg.empleado_nombre}</td>
+                <td class="records-table-cell cell-employee">${empleadoNombre}</td>
                 <td class="records-table-cell cell-date">${fechaFormateada}</td>
                 <td class="records-table-cell">${getEstadoBadge(reg.estado)}</td>
-                <td class="records-table-cell cell-time cell-time-entrada">${reg.hora_entrada || '--:--'}</td>
-                <td class="records-table-cell cell-time cell-time-salida">${reg.hora_salida || '--:--'}</td>
+                <td class="records-table-cell cell-time cell-time-entrada">${horaEntrada}</td>
+                <td class="records-table-cell cell-time cell-time-salida">${horaSalida}</td>
                 <td class="records-table-cell cell-hours">${reg.horas_trabajadas || 0}</td>
                 <td class="records-table-cell cell-hours-extra" style="color: ${horasExtraColor};">${reg.horas_extra || 0}</td>
-                <td class="records-table-cell cell-observations" title="${reg.observaciones || ''}">${reg.observaciones || '-'}</td>
+                <td class="records-table-cell cell-observations" title="${observaciones}">${observaciones || '-'}</td>
             </tr>
         `;
     });
@@ -785,7 +800,6 @@ async function guardarEmpleadoSupabase(nombre) {
 
         if (errorLog) console.warn('Error registrando log:', errorLog);
 
-        console.log('✅ Empleado guardado en base de datos:', empleado);
         return empleado;
 
     } catch (error) {
@@ -829,7 +843,6 @@ async function eliminarEmpleadoSupabase(empleadoId, nombre) {
 
         if (errorLog) console.warn('Error registrando log:', errorLog);
 
-        console.log('✅ Empleado eliminado en base de datos:', empleadoId);
         return true;
 
     } catch (error) {
@@ -862,7 +875,6 @@ async function limpiarEmpleadosSupabase() {
         if (errorGet) throw errorGet;
 
         if (!empleadosActivos || empleadosActivos.length === 0) {
-            console.log('No hay empleados activos para eliminar');
             return true;
         }
 
@@ -889,7 +901,6 @@ async function limpiarEmpleadosSupabase() {
 
         if (errorLog) console.warn('Error registrando logs:', errorLog);
 
-        console.log(`✅ ${empleadosActivos.length} empleados eliminados en base de datos`);
         showToast(`${empleadosActivos.length} empleados eliminados de la base de datos`, 'success');
         return true;
 
@@ -923,7 +934,6 @@ async function cargarEmpleadosDesdeSupabase() {
 
         if (error) throw error;
 
-        console.log(`✅ ${data?.length || 0} empleados cargados desde base de datos`);
         return data || [];
 
     } catch (error) {
@@ -952,7 +962,6 @@ async function sincronizarEmpleadosConSupabase() {
         const empleadosLocalesSinDB = empleados.filter(emp => !emp.supabaseId);
         
         if (empleadosLocalesSinDB.length > 0) {
-            console.log(`Sincronizando ${empleadosLocalesSinDB.length} empleados locales con Supabase...`);
             let nuevosCreados = 0;
             const { data: { user } } = await supabase.auth.getUser();
 
@@ -1030,8 +1039,6 @@ async function sincronizarEmpleadosConSupabase() {
         // Reflejar cambios en la UI y guardar configuración
         if (typeof renderEmpleados === 'function') renderEmpleados();
         if (typeof guardarConfiguracion === 'function') guardarConfiguracion();
-
-        console.log('✅ Sincronización de empleados completada');
 
     } catch (error) {
         console.error('❌ Error en sincronización de empleados:', error);

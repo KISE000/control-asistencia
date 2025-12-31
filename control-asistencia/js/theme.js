@@ -1,6 +1,6 @@
 /* MODO OSCURO ELIMINADO - Solo queda el modo claro por defecto */
 function toggleDarkMode() {
-    console.log("Dark mode feature has been removed.");
+    // Dark mode feature has been removed
 }
 
 function inicializarTema() {

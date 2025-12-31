@@ -30,7 +30,6 @@ function inicializarTimePicker() {
         }
         
         isTimePickerInitialized = true;
-        console.log('Time picker inicializado correctamente');
     } catch (error) {
         console.error('Error al inicializar time picker:', error);
         if(window.showToast) showToast('Error iniciando selector de hora', 'error');
@@ -279,7 +278,6 @@ function confirmarTiempo() {
             // Disparar evento change para que otros scripts detecten el cambio
             const event = new Event('change', { bubbles: true });
             input.dispatchEvent(event);
-            console.log('Tiempo actualizado:', timeString, 'en input:', currentTimeInputId);
         } else {
             console.error('Input destino no encontrado:', currentTimeInputId);
         }

@@ -5,6 +5,15 @@ let modoEdicionExcel = false;
 
 // Nota: obtenerNombreMes, showToast, empleados, feriados, supabase son globales del scope modular.
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 /**
  * Aplica estilos profesionales, colores, formato condicional y fórmulas al Excel
  * @param {Object} ws - La hoja de trabajo de SheetJS
@@ -22,7 +31,7 @@ function aplicarEstilosYFormulasExcel(ws, opts = {}) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellAddress = XLSX.utils.encode_cell({ r: tableHeaderRow, c: C });
         if (!ws[cellAddress]) continue;
-        ws[cellAddress].s = styles.header;
+        ws[cellAddress].s = styles.tableHeader;
     }
 
     // 2. Estilos para Datos y Fórmulas
@@ -321,7 +330,8 @@ async function abrirEditorExcel() {
     const periodo = `${obtenerNombreMes(mes)}_${ano}`;
 
     // Mostrar loader
-    const btn = document.querySelector('button[onclick="abrirEditorExcel()"]');
+    const btn = document.getElementById('btnAbrirEditorExcel')
+        || document.querySelector('button[onclick^="abrirEditorExcel"]');
     const originalText = btn ? btn.innerHTML : '';
     if (btn) {
         btn.innerHTML = '<div class="btn-loader"></div> Cargando...';
@@ -549,6 +559,8 @@ function renderTablaExcel() {
     
     gruposArray.forEach((grupo, idx) => {
         const isActive = idx === 0;
+        const nombreSeguro = escapeHtml(grupo.nombre || '');
+        const inicialSeguro = escapeHtml((grupo.nombre || '').charAt(0));
         html += `
             <button 
                 onclick="cambiarTabEmpleado('${grupo.id}')" 
@@ -582,8 +594,8 @@ function renderTablaExcel() {
                     border-radius: 6px;
                     font-weight: bold;
                     font-size: 0.8rem;
-                ">${grupo.nombre.charAt(0)}</div>
-                <span>${grupo.nombre}</span>
+                ">${inicialSeguro}</div>
+                <span>${nombreSeguro}</span>
                 <span style="
                     background: ${isActive ? 'var(--primary-light)' : 'var(--border-subtle)'};
                     color: ${isActive ? 'var(--primary)' : 'var(--text-muted)'};
@@ -637,6 +649,9 @@ function renderTablaExcel() {
         grupo.filas.forEach(fila => {
             const idx = fila.globalIdx;
             const esFeriado = fila.estado === 'Feriado';
+            const horaEntradaSegura = escapeHtml(fila.horaEntrada || '');
+            const horaSalidaSegura = escapeHtml(fila.horaSalida || '');
+            const observacionesSeguras = escapeHtml(fila.observaciones || '');
             
             // Estilos dinámicos usando variables CSS
             let rowClass = esFeriado ? 'row-feriado' : (fila.dia % 2 === 0 ? 'row-even' : 'row-odd');
@@ -652,7 +667,7 @@ function renderTablaExcel() {
             // SOLUCIÓN: Usar inputs readonly que abren el timepicker en lugar de selects
             const inputEntrada = `
                 <input type="text" 
-                    value="${fila.horaEntrada}" 
+                    value="${horaEntradaSegura}" 
                     readonly
                     onclick="abrirTimePickerParaTabla(${idx}, 'horaEntrada', 'Entrada ${fila.fecha}')"
                     class="input-tabla"
@@ -664,7 +679,7 @@ function renderTablaExcel() {
             
             const inputSalida = `
                 <input type="text" 
-                    value="${fila.horaSalida}" 
+                    value="${horaSalidaSegura}" 
                     readonly
                     onclick="abrirTimePickerParaTabla(${idx}, 'horaSalida', 'Salida ${fila.fecha}')"
                     class="input-tabla"
@@ -715,7 +730,7 @@ function renderTablaExcel() {
                             style="width: 100%; text-align: center; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px; background: var(--surface-subtle); color: ${fila.horasExtra > 0 ? 'var(--warning)' : 'var(--text-muted)'}; font-weight: ${fila.horasExtra > 0 ? 'bold' : 'normal'};">
                     </td>
                     <td data-label="Observaciones" style="padding: 10px 16px;">
-                        <input type="text" class="input-tabla" value="${fila.observaciones}" 
+                        <input type="text" class="input-tabla" value="${observacionesSeguras}" 
                             onchange="actualizarCeldaExcel(${idx}, 'observaciones', this.value)" 
                             placeholder="Observaciones..."
                             style="width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--bg-input); color: var(--text-main);">
@@ -1039,10 +1054,6 @@ async function guardarProgreso() {
  * Guarda los datos editados en Supabase con validación de autenticación
  * @param {boolean} keepOpen - Si es true, mantiene el modal abierto (guardado parcial)
  */
-/**
- * Guarda los datos editados en Supabase con validación de autenticación
- * @param {boolean} keepOpen - Si es true, mantiene el modal abierto (guardado parcial)
- */
 async function guardarExcelSupabase(keepOpen = false) {
     // Verificar que Supabase existe
     if (!supabase) {
@@ -1168,8 +1179,6 @@ async function ejecutarGuardado(keepOpen) {
             };
         });
 
-        console.log('📤 Enviando', registros.length, 'registros a Supabase...');
-        
         // Update loading message
         loadingToast.update(
             '☁️ Guardando en la nube...',
